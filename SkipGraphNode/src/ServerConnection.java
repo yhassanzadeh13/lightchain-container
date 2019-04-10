@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
@@ -8,16 +9,21 @@ public class ServerConnection extends Thread {
 	Socket socket = null ;
 	ServerSocket serverSocket = null;
 	
+	/*
+	 * Notes: I changed the port of the SkipNode to the default 1099
+	 * 
+	 * 
+	 * 
+	 */
+	
 	public ServerConnection() {
 		
-		log("What is my address ? Use format IP:port");
-		
-		SkipNode.address = get();
-		String[] adrs = SkipNode.address.split(":");
-		SkipNode.IP = adrs[0];
-		SkipNode.port = Integer.parseInt(adrs[1]);
+		//log("What is my address ? Use format IP:port"); Not needed
 		
 		try {
+			SkipNode.address = Inet4Address.getLocalHost().getHostAddress(); //Used to get the current node address.
+			SkipNode.IP = SkipNode.address;
+			SkipNode.port = 1099; //Changed this to 1099 (default)
 			serverSocket = new ServerSocket(SkipNode.port);
 		} catch(IOException e) {
 			e.printStackTrace();

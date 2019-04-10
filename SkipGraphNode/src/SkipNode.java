@@ -31,7 +31,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		try {
 			
 			SkipNode skipNode = new SkipNode();
-			Naming.rebind("//"+address+"/"+"RMIImpl",skipNode);
+			Naming.rebind("//localhost/"+"RMIImpl",skipNode);
 			log("Rebinding Successful");
 			while(true) {
 				printMenu();
@@ -40,6 +40,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			
 		}catch(IOException e){
 			log("Error in Rebinding");
+			e.printStackTrace();
 		}
 		
 		
