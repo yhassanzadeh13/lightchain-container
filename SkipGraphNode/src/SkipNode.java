@@ -168,6 +168,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		// This block needs revision
 		// get the address of the node that is supposed to be to my left at level 0
 		String yourAddress = introRMI.searchByNumID(numID);
+		
+		if(yourAddress == null)
+			log("The address resulting from the search is null");
+		else
+			log("The address resulting from the search is: " + yourAddress);
+		
 		String[] temp = yourAddress.split(":");
 		String yourIP = temp[0];
 		left = yourAddress ; 
@@ -175,6 +181,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		// use RMI to get the node to my right at level 0
 		RMIInterface yourRMI = (RMIInterface)Naming.lookup("//"+temp[0]+":1099/RMIImpl");
 		right  = yourRMI.getRightNode(0);
+		
 		
 		// update my left and right pointers and also set myself as the right node of the left node
 		lookup[0][0] = yourAddress;
@@ -294,6 +301,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		// The Target is on the right of numID
 		else if (numIDInt < targetInt) {
 			
+			log("The target is to the right of the current node");
+			
 			String next = null ;
 			
 			// as long as there is no right node keep going down
@@ -303,6 +312,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			if(level >= 0) {
 				
 				next = lookup[level][1]; // first process the right node at current level
+				
+				log("next value before loop is: "  + next);
 				
 				while(level >= 0) {
 					
@@ -335,6 +346,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		} else { // the target is to the left of the current node.
 			
+			log("The target is to the left of the current node");
+			
 			String next = null;
 			
 			while(level > 0 && lookup[level][0] == null)
@@ -343,6 +356,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			if(level >= 0) {
 				
 				next = lookup[level][0];
+				
+				log("next value before loop is: "  + next);
 				
 				while(level >= 0) {
 					
