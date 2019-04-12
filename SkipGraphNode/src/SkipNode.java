@@ -156,6 +156,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 	public static void insert() throws MalformedURLException, RemoteException, NotBoundException {
 		
+		
 		String left = null;
 		String right = null;
 		
@@ -454,9 +455,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		return lookup[level][1];
 	}
 	public void setLeftNode(int level,String newVal) throws RemoteException{
+		log("LeftNode at level "+level+" set to: "+newVal);
 		lookup[level][0] = newVal;
 	}
 	public void setRightNode(int level,String newVal) throws RemoteException {
+		log("RightNode at level "+level+" set to: "+newVal);
 		lookup[level][1] = newVal ;
 	}
 	public String getNumID() {
