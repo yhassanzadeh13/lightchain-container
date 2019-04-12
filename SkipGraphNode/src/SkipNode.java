@@ -26,11 +26,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	// Introducer 172.16.100.40:1099
 	// Try defining a function that gets an IP and return RMIInterface instance
 	// Currently we are assuming that RMI port for each node is 1099
+	// Noor IP: 172.16.100.5
 	
 	public static void main(String args[]) throws IOException, NotBoundException {
 		
 		
-		lookup = new String[maxLevels][2]; // initialize size of lookup table
+		lookup = new String[maxLevels+1][2]; // initialize size of lookup table
 		
 		setInfo();
 		
@@ -95,9 +96,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         InetAddress adrs = InetAddress.getLocalHost();
         log("Node at the address: " + address);
         log("Name ID: "+ nameID +" Number ID: " + numID);
-        log("Choose a query by entering it's code and then press Enter:\n"
-                + "1-Insert\n2-Search By Name ID\n3-Search By Number ID\n4-Print the Lookup Table\n"); 
-    }
+        log("Choose a query by entering it's code and then press Enter");
+        log("1-Insert");
+        log("2-Search By Name ID");
+        log("3-Search By Number ID");
+        log("4-Print the Lookup Table");
+        log("5-Print left node at a chosen level.");
+        log("6-Print right node at a chose level.");
+	}
 	
 	/*
 	 * Gets the type of operation to be executed from the user
@@ -119,9 +125,24 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			String num = get();
 			String result = searchByNumID(num);
 			log("The result of search by numberic ID is: "+ result);
-		}else 
+		}else if(query == 4)
 			printLookup();
-		
+		else if( query == 5) {
+			log("Please Enter the required level:");
+			int lvl = Integer.parseInt(get());
+			if(lookup[lvl][0] == null)
+				log("No left node present at level "+lvl);
+			else
+				log("Left node at level "+lvl+" is:" + lookup[lvl][0]);
+		}
+		else if (query == 6) {
+			log("Please Enter the required level:");
+			int lvl = Integer.parseInt(get());
+			if(lookup[lvl][1] == null)
+				log("No right node present at level "+lvl);
+			else
+				log("Right node at level "+lvl+" is:" + lookup[lvl][0]);
+		}
         
     }
 	
@@ -139,7 +160,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		String right = null;
 		
 		String[] introAddress = introducer.split(":");
-		
+	
 		RMIInterface introRMI = (RMIInterface)Naming.lookup("//"+introAddress[0]+":1099/RMIImpl");
 		
 		
@@ -151,7 +172,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		left = yourAddress ; 
 		
 		// use RMI to get the node to my right at level 0
-		RMIInterface yourRMI = (RMIInterface)Naming.lookup("//"+yourAddress+":1099/RMIImpl");
+		RMIInterface yourRMI = (RMIInterface)Naming.lookup("//"+temp[0]+":1099/RMIImpl");
 		right  = yourRMI.getRightNode(0);
 		
 		// update my left and right pointers and also set myself as the right node of the left node
@@ -365,7 +386,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		int level = 0;
 		
 		
-		// adjust to the appropriate level 
+		// adjust to the appropriate level in which current node and target
+		// exist in the same linked list
 		int prefix = commonPrefix(nameID,targetName) ;
 		if(prefix > level) {
 			level = prefix ;
