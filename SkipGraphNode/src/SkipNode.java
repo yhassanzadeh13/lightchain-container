@@ -141,7 +141,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			if(lookup[lvl][1] == null)
 				log("No right node present at level "+lvl);
 			else
-				log("Right node at level "+lvl+" is:" + lookup[lvl][0]);
+				log("Right node at level "+lvl+" is:" + lookup[lvl][1]);
 		}
         
     }
