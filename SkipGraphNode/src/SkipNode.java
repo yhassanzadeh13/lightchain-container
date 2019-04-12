@@ -176,23 +176,46 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		String[] temp = yourAddress.split(":");
 		String yourIP = temp[0];
-		left = yourAddress ; 
+		
 		
 		// use RMI to get the node to my right at level 0
 		RMIInterface yourRMI = (RMIInterface)Naming.lookup("//"+temp[0]+":1099/RMIImpl");
-		right  = yourRMI.getRightNode(0);
 		
-		
-		// update my left and right pointers and also set myself as the right node of the left node
-		lookup[0][0] = yourAddress;
-		lookup[0][1] = right ;
-		yourRMI.setRightNode(0, address);
-		
-		// in case the right node is not null set myself as its left node using RMI.
-		if(right != null) {
-			RMIInterface rightRMI = (RMIInterface) Naming.lookup("//"+right.split(":")[0]+":1099/RMIImpl");
-			rightRMI.setLeftNode(0,address);
+		if(Integer.parseInt(yourRMI.getNumID()) > Integer.parseInt(numID)) {
+			
+			right = yourAddress;
+			left = yourRMI.getLeftNode(0);
+			
+			lookup[0][0] = left;
+			lookup[0][1] = right;
+			
+			yourRMI.setLeftNode(0, address);
+			
+			if(left != null) {
+				RMIInterface leftRMI = (RMIInterface)Naming.lookup("//"+left.split(":")[0]+":1099/RMIImpl");
+				leftRMI.setRightNode(0, address);
+			}
+			
+		}else {
+			
+			right  = yourRMI.getRightNode(0);
+			left = yourAddress ; 
+			
+			
+			// update my left and right pointers and also set myself as the right node of the left node
+			lookup[0][0] = left;
+			lookup[0][1] = right ;
+			yourRMI.setRightNode(0, address);
+			
+			// in case the right node is not null set myself as its left node using RMI.
+			if(right != null) {
+				RMIInterface rightRMI = (RMIInterface) Naming.lookup("//"+right.split(":")[0]+":1099/RMIImpl");
+				rightRMI.setLeftNode(0,address);
+			}
+			
 		}
+		
+		
 		
 		// now insert myself in higher levels depending on the name ID
 		
@@ -301,7 +324,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		// The Target is on the right of numID
 		else if (numIDInt < targetInt) {
 			
-			log("The target is to the right of the current node");
 			
 			String next = null ;
 			
@@ -313,7 +335,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				
 				next = lookup[level][1]; // first process the right node at current level
 				
-				log("next value before loop is: "  + next);
 				
 				while(level >= 0) {
 					
@@ -346,7 +367,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		} else { // the target is to the left of the current node.
 			
-			log("The target is to the left of the current node");
 			
 			String next = null;
 			
@@ -357,7 +377,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				
 				next = lookup[level][0];
 				
-				log("next value before loop is: "  + next);
 				
 				while(level >= 0) {
 					
