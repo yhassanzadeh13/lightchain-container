@@ -309,7 +309,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			return next ;
 		}
 	}
-	
 	// 1: right
 	// 0: left
 	public String searchName(String searchTarget,int level,int direction) throws MalformedURLException, RemoteException, NotBoundException{
@@ -491,8 +490,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         for(int i = maxLevels-1 ; i >= 0 ; i--)
         {
             for(int j = 0 ; j<2 ; j++)
-                System.out.print(lookup[i][j]+"\t");
-            System.out.println("\n");
+                log(lookup[i][j].getAddress()+"\t");
+            log("\n");
         }
     }
 	/*
