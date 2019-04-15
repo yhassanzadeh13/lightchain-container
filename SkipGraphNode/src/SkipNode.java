@@ -434,10 +434,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * 
 	 */
 	public String getLeftNode(int level) throws RemoteException {
+		if(lookup[level][0] == null)
+			return null;
 		return lookup[level][0].getAddress();
 	}
 	
 	public String getRightNode(int level) throws RemoteException {
+		if(lookup[level][1] == null)
+			return null;
 		return lookup[level][1].getAddress();
 	}
 	public void setLeftNode(int level,NodeInfo newNode) throws RemoteException{
@@ -490,7 +494,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         for(int i = maxLevels-1 ; i >= 0 ; i--)
         {
             for(int j = 0 ; j<2 ; j++)
-                log(lookup[i][j].getAddress()+"\t");
+            	if(lookup[i][j] == null)
+            		log("null");
+            	else
+            		log(lookup[i][j].getAddress()+"\t");
             log("\n");
         }
     }

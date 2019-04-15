@@ -1,6 +1,11 @@
+import java.io.Serializable;
 
-public class NodeInfo {
+public class NodeInfo implements Serializable{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String address;
 	private String numID ;
 	private String nameID ;
