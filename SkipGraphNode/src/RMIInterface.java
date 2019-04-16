@@ -16,5 +16,4 @@ public interface RMIInterface extends Remote {
 	public String searchByNumID(String targetNum) throws RemoteException, MalformedURLException, NotBoundException;
 	public String searchName(String searchTarget,int level,int direction) throws RemoteException, MalformedURLException, NotBoundException;
 	public String searchNum(String searchTarget,int level) throws RemoteException, MalformedURLException, NotBoundException;
-
 }
