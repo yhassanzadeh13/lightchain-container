@@ -257,11 +257,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		if(numIDInt < targetInt) {
 			while(level >= 0 && lookup[level][1] == null)
 				level--;
-			if(level < 0)
+			if(level < 0) 
 				return address;
 			RMIInterface rightRMI = (RMIInterface)Naming.lookup("//"+lookup[level][1].getAddress().split(":")[0]+":1099/RMIImpl");
 			return rightRMI.searchNum(searchTarget,level);
 		}
+		
 		while(level >= 0 && lookup[level][0] == null)
 			level--;
 		if(level < 0)
