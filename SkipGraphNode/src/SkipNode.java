@@ -59,7 +59,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		
 	}
-
 	/*
 	 * Constructor for SkipNode class needed for RMI setup
 	 */
@@ -71,7 +70,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		System.out.println("RMI Server proptery set. Inet4Address: "+st);
 		// TODO Auto-generated constructor stub
 	}
-	
 	/*
 	 * This method initializes the information of the current node
 	 * and prints them to console
@@ -85,7 +83,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		log("Enter the address of the introducer:");
 		introducer = get();
 		
-		log("Your INFO:\nnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
+		log("Your INFO:\nnnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
 	}
 	
 	/*
@@ -250,77 +248,105 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 	}
 	
+	public String searchNum(String searchTarget,int level) throws RemoteException, MalformedURLException, NotBoundException {
+		
+		int numIDInt = Integer.parseInt(numID);
+		int targetInt = Integer.parseInt(searchTarget);
+		if(numIDInt == targetInt)
+			return address;
+		if(numIDInt < targetInt) {
+			while(level >= 0 && lookup[level][1] == null)
+				level--;
+			if(level < 0)
+				return address;
+			RMIInterface rightRMI = (RMIInterface)Naming.lookup("//"+lookup[level][1].getAddress().split(":")[0]+":1099/RMIImpl");
+			return rightRMI.searchNum(searchTarget,level);
+		}
+		while(level >= 0 && lookup[level][0] == null)
+			level--;
+		if(level < 0)
+			return address;
+		RMIInterface leftRMI = (RMIInterface)Naming.lookup("//"+lookup[level][0].getAddress().split(":")[0]+":1099/RMIImpl");
+		return leftRMI.searchNum(searchTarget, level);
+	}
+	
 	/* 
 	 * Executes a search through the skip graph by numeric id and returns the address of the 
 	 * the target node or if not found the node with closest numeric ID 
 	 * @see RMIInterface#searchByNumID(java.lang.String)
 	 */
-	public String searchByNumID(String targetNum) throws RemoteException, MalformedURLException, NotBoundException {
+	public String searchByNumID(String searchTarget) throws RemoteException, MalformedURLException, NotBoundException {
+	
+		int level = maxLevels;
 		
-		int level = maxLevels ; // start search at the highest level
+		if(lookup[0][0] == null && lookup[0][1] == null)
+			return address;
+		return searchNum(searchTarget,level);
 		
-		// cast target ID and this node's ID to integers not to use parsing several times again
-		int numIDInt = Integer.parseInt(numID);  
-		int targetInt = Integer.parseInt(targetNum); 
-		// If the introducer exists only
-		if(lookup[0][0] == null && lookup[0][1] == null) {
-			return address ;
-		}
-		// The Target is on the right of numID
-		else if (numIDInt < targetInt) {
-			String next = null ;
-			// as long as there is no right node keep going down
-			while(level >= 0 && lookup[level][1] == null)
-				level--;
-			if(level < 0)
-				return next;
-			next = lookup[level][1].getAddress();
-			while(level >= 0) {
-				RMIInterface nextRMI = (RMIInterface)Naming.lookup("//"+next.split(":")[0]+":1099/RMIImpl");
-				if(nextRMI.getRightNode(level) != null) {
-					RMIInterface nextOfNextRMI = (RMIInterface)Naming.lookup("//"+nextRMI.getRightNode(level).split(":")[0]+":1099/RMIImpl");
-					if(Integer.parseInt(nextOfNextRMI.getNumID()) < targetInt)
-						next = nextRMI.getRightNode(level);
-					else if (Integer.parseInt(nextOfNextRMI.getNumID()) == targetInt) // if found return it
-						return nextRMI.getRightNode(level);
-					else  level--; // otherwise go down a level
-				}else level--;
-			}
-			return next ;
-		}
-		else{ // the target is to the left of the current node.
-			String next = null;
-			while(level >= 0 && lookup[level][0] == null)
-				level--;
-			if(level < 0)
-				return next;
-			next = lookup[level][0].getAddress();
-			while(level >= 0) {		
-				RMIInterface nextRMI = (RMIInterface)Naming.lookup("//"+next.split(":")[0]+":1099/RMIImpl");
-				if(nextRMI.getLeftNode(level) != null) {
-					RMIInterface nextOfNextRMI = (RMIInterface)Naming.lookup("//"+nextRMI.getLeftNode(level).split(":")[0]+":1099/RMIImpl");
-					if(Integer.parseInt(nextOfNextRMI.getNumID()) > targetInt)
-							next = nextRMI.getLeftNode(level);
-					else if (Integer.parseInt(nextOfNextRMI.getNumID()) == targetInt)
-						return nextRMI.getLeftNode(level);
-					else level--;
-				}else level--;
-			}
-			return next ;
-		}
+//		int level = maxLevels ; // start search at the highest level
+//		
+//		// cast target ID and this node's ID to integers not to use parsing several times again
+//		int numIDInt = Integer.parseInt(numID);  
+//		int targetInt = Integer.parseInt(targetNum); 
+//		// If the introducer exists only
+//		if(lookup[0][0] == null && lookup[0][1] == null) {
+//			return address ;
+//		}
+//		// The Target is on the right of numID
+//		else if (numIDInt < targetInt) {
+//			String next = null ;
+//			// as long as there is no right node keep going down
+//			while(level >= 0 && lookup[level][1] == null)
+//				level--;
+//			if(level < 0)
+//				return next;
+//			next = lookup[level][1].getAddress();
+//			while(level >= 0) {
+//				RMIInterface nextRMI = (RMIInterface)Naming.lookup("//"+next.split(":")[0]+":1099/RMIImpl");
+//				if(nextRMI.getRightNode(level) != null) {
+//					RMIInterface nextOfNextRMI = (RMIInterface)Naming.lookup("//"+nextRMI.getRightNode(level).split(":")[0]+":1099/RMIImpl");
+//					if(Integer.parseInt(nextOfNextRMI.getNumID()) < targetInt)
+//						next = nextRMI.getRightNode(level);
+//					else if (Integer.parseInt(nextOfNextRMI.getNumID()) == targetInt) // if found return it
+//						return nextRMI.getRightNode(level);
+//					else  level--; // otherwise go down a level
+//				}else level--;
+//			}
+//			return next ;
+//		}
+//		else{ // the target is to the left of the current node.
+//			String next = null;
+//			while(level >= 0 && lookup[level][0] == null)
+//				level--;
+//			if(level < 0)
+//				return next;
+//			next = lookup[level][0].getAddress();
+//			while(level >= 0) {		
+//				RMIInterface nextRMI = (RMIInterface)Naming.lookup("//"+next.split(":")[0]+":1099/RMIImpl");
+//				if(nextRMI.getLeftNode(level) != null) {
+//					RMIInterface nextOfNextRMI = (RMIInterface)Naming.lookup("//"+nextRMI.getLeftNode(level).split(":")[0]+":1099/RMIImpl");
+//					if(Integer.parseInt(nextOfNextRMI.getNumID()) > targetInt)
+//							next = nextRMI.getLeftNode(level);
+//					else if (Integer.parseInt(nextOfNextRMI.getNumID()) == targetInt)
+//						return nextRMI.getLeftNode(level);
+//					else level--;
+//				}else level--;
+//			}
+//			return next ;
+//		}
 	}
 	// 1: right
 	// 0: left
 	public String searchName(String searchTarget,int level,int direction) throws MalformedURLException, RemoteException, NotBoundException{
 		
-		if(searchTarget.equals(nameID))
+		if(nameID.equals(searchTarget))
 			return address;
 		int newLevel = commonBits(searchTarget);
 		if(direction == 1) {
 			
 			if(newLevel <= level ) {
 				if(lookup[level][1] == null)
-					return nameID ;
+					return address ;
 				RMIInterface rightRMI = (RMIInterface)Naming.lookup("//"+lookup[level][1].getAddress()+":1099/RMIImpl");
 				return rightRMI.searchName(searchTarget, level, direction);
 			}
@@ -340,7 +366,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 		if(newLevel <= level) {
 			if(lookup[level][0] == null)
-				return nameID ;
+				return address ;
 			RMIInterface leftRMI = (RMIInterface)Naming.lookup("//"+lookup[level][0].getAddress()+":1099/RMIImpl");
 			return leftRMI.searchName(searchTarget, level, direction);
 		}
@@ -349,15 +375,17 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			RMIInterface rightRMI = (RMIInterface)Naming.lookup("//"+lookup[newLevel][1].getAddress()+":1099/RMIImpl");
 			result = rightRMI.searchName(searchTarget,newLevel,1);
 		}
-		if(result != null && result.equals(searchTarget))
-			return result;
+		if(result != null) {
+			RMIInterface resultRMI = (RMIInterface)Naming.lookup("//"+result.split(":")[0]+":1099/RMIImpl");
+			if(resultRMI.getNameID().contains(searchTarget))
+				return result;
+		}
 		if(lookup[newLevel][0] != null) {
 			RMIInterface leftRMI = (RMIInterface)Naming.lookup("//"+lookup[newLevel][0].getAddress()+":1099/RMIImpl");
 			result = leftRMI.searchName(searchTarget, newLevel, -1);
 		}
 		return result;
 	}
-	
 	/*
 	 * Execute search by nameID
 	 * and return the closest result
@@ -366,27 +394,24 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public String searchByNameID(String searchTarget) throws RemoteException, MalformedURLException, NotBoundException{
 		
 		int newLevel = commonBits(searchTarget);
-		
-		String left = null;
-		String right = null;
-		if(lookup[newLevel][0] != null)
-			left = lookup[0][0].getAddress();
-		if(lookup[newLevel][1] != null)
-			right = lookup[0][1].getAddress();
 		String result = null;
 		
 		if(lookup[newLevel][1] != null) {
 			RMIInterface rightRMI = (RMIInterface)Naming.lookup("//"+lookup[newLevel][1].getAddress()+":1099/RMIImpl");
 			result = rightRMI.searchName(searchTarget,newLevel,1);
 		}
-		if(result != null && result.equals(searchTarget))
-			return result;
+		if(result != null) {
+			RMIInterface resultRMI = (RMIInterface)Naming.lookup("//"+result.split(":")[0]+":1099/RMIImpl");
+			if(resultRMI.getNameID().contains(searchTarget))
+				return result;
+		}
 		if(lookup[newLevel][0] != null) {
 			RMIInterface leftRMI = (RMIInterface)Naming.lookup("//"+lookup[newLevel][0].getAddress()+":1099/RMIImpl");
 			result = leftRMI.searchName(searchTarget, newLevel, -1);
 		}
 		return result;
-		
+//		String left = null
+//		String right = null;
 //		int prefix = commonBits(nameID,targetName) ;
 //		if(prefix > level) {
 //			level = prefix ;
