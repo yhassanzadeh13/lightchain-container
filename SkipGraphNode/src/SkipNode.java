@@ -17,7 +17,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public static int numID;
 	public static String IP ;
 	public static NodeInfo[][] lookup ;
-	public static int port;
 	public static int maxLevels = 5; 
 	public static String introducer; 
 	public static int RMIPort = 1099;
@@ -106,7 +105,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 		RMIPort = Integer.parseInt(numInput);
 		try {
-			address = Inet4Address.getLocalHost().getHostAddress() + RMIPort; //Used to get the current node address.
+			address = Inet4Address.getLocalHost().getHostAddress() +":"+ RMIPort; //Used to get the current node address.
 			IP = Inet4Address.getLocalHost().getHostAddress();
 		}catch(UnknownHostException e) {
 			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
@@ -561,7 +560,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public static RMIInterface getRMI(String adrs) {		
 		if(validateIP(adrs))
 			try {
-				return (RMIInterface)Naming.lookup("//"+adrs.split(":")[0]+":" + RMIPort + "/RMIImpl");
+				return (RMIInterface)Naming.lookup("//"+adrs.split(":")[0]+"/RMIImpl");
 			}catch(Exception e) {
 				System.err.println("Exception while attempting to lookup RMI located at address: "+adrs);
 			}
