@@ -24,6 +24,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	// General Notes :
 	// Try defining a function that gets an IP and return RMIInterface instance
 	// Currently we are assuming that RMI port for each node is 1099
+	// In the future, different ports could be used.
 	
 	public static void main(String args[]) {
 		
