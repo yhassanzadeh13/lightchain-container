@@ -3,6 +3,8 @@ import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Scanner;
 
@@ -40,8 +42,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			
 			SkipNode skipNode = new SkipNode();
 			
-			Naming.rebind("//localhost/"+"RMIImpl",skipNode); // make methods of skipNode instance available on RMI Registry
-			
+			//Naming.rebind("//localhost/"+"RMIImpl",skipNode); // make methods of skipNode instance available on RMI Registry
+			Registry reg = LocateRegistry.createRegistry(RMIPort);
+			reg.rebind("RMIImpl", skipNode);
 			log("Rebinding Successful");
 			
 			while(true) {
@@ -98,6 +101,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			log("Invalid IP. Please enter a valid IP address ('none' if original node): ");
 			introducer = get();
 		}
+		log("Enter RMI port: ");
+		RMIPort = Integer.parseInt(get());
 		log("Your INFO:\nnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
 	}
 	
