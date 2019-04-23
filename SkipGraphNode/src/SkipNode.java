@@ -35,9 +35,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		setInfo();
 		
-		ServerConnection server = new ServerConnection();
-		server.start();	
-		
 		try {
 			
 			SkipNode skipNode = new SkipNode();
@@ -102,7 +99,19 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			introducer = get();
 		}
 		log("Enter RMI port: ");
-		RMIPort = Integer.parseInt(get());
+		numInput = get();
+		while(!numInput.matches("0|[1-9][0-9]*")) {
+			log("Invalid port. Enter a valid port number for RMI:");
+			numInput = get();			
+		}
+		RMIPort = Integer.parseInt(numInput);
+		try {
+			address = Inet4Address.getLocalHost().getHostAddress() + RMIPort; //Used to get the current node address.
+			IP = Inet4Address.getLocalHost().getHostAddress();
+		}catch(UnknownHostException e) {
+			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
+			System.exit(0);
+		}
 		log("Your INFO:\nnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
 	}
 	
@@ -301,12 +310,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 	public String searchNum(int targetInt,int level){
 		if(numID == targetInt)
-			return address;
+			return address+ ":" + RMIPort;
 		if(numID < targetInt) {
 			while(level >= 0 && (lookup[level][1] == null || lookup[level][1].getNumID() > targetInt))
 				level--;
-			if(level < 0) 
-				return address;
+			if(level < 0) 			
+				return address+ ":" + RMIPort;
 			RMIInterface rightRMI = getRMI(lookup[level][1].getAddress());
 			try{
 				return rightRMI.searchNum(targetInt,level);
@@ -318,7 +327,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			while(level >= 0 && (lookup[level][0] == null || lookup[level][1].getNumID() > targetInt))
 				level--;
 			if(level < 0)
-				return address;
+				return address+ ":" + RMIPort;
 			RMIInterface leftRMI = getRMI(lookup[level][0].getAddress());
 			try{
 				return leftRMI.searchNum(targetInt, level);
@@ -339,7 +348,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		int level = maxLevels;
 		
 		if(lookup[0][0] == null && lookup[0][1] == null)
-			return address;
+			return address+ ":" + RMIPort;
 		return searchNum(searchTarget,level);
 		
 //		int level = maxLevels ; // start search at the highest level
@@ -349,7 +358,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 //		int targetInt = Integer.parseInt(targetNum); 
 //		// If the introducer exists only
 //		if(lookup[0][0] == null && lookup[0][1] == null) {
-//			return address ;
+//			return address+ ":" + RMIPort;
 //		}
 //		// The Target is on the right of numID
 //		else if (numIDInt < targetInt) {
@@ -399,13 +408,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public String searchName(String searchTarget,int level,int direction) throws RemoteException{
 		
 		if(nameID.equals(searchTarget))
-			return address;
+			return address+ ":" + RMIPort;
 		int newLevel = commonBits(searchTarget);
 		if(direction == 1) {
 			
 			if(newLevel <= level ) {
 				if(lookup[level][1] == null)
-					return address ;
+					return address+ ":" + RMIPort;
 				RMIInterface rightRMI = getRMI(lookup[level][1].getAddress());
 				return rightRMI.searchName(searchTarget, level, direction);
 			}
@@ -428,7 +437,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 		if(newLevel <= level) {
 			if(lookup[level][0] == null)
-				return address ;
+				return address+ ":" + RMIPort;
 			RMIInterface leftRMI = getRMI(lookup[level][0].getAddress());
 			return leftRMI.searchName(searchTarget, level, direction);
 		}
@@ -552,7 +561,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public static RMIInterface getRMI(String adrs) {		
 		if(validateIP(adrs))
 			try {
-				return (RMIInterface)Naming.lookup("//"+adrs.split(":")[0]+":1099/RMIImpl");
+				return (RMIInterface)Naming.lookup("//"+adrs.split(":")[0]+":" + RMIPort + "/RMIImpl");
 			}catch(Exception e) {
 				System.err.println("Exception while attempting to lookup RMI located at address: "+adrs);
 			}
