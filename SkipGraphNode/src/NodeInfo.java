@@ -7,10 +7,10 @@ public class NodeInfo implements Serializable{
 	 */
 	private static final long serialVersionUID = 1L;
 	private String address;
-	private String numID ;
+	private int numID ;
 	private String nameID ;
 	
-	public NodeInfo(String adrs, String num, String name) {
+	public NodeInfo(String adrs, int num, String name) {
 		this.address = adrs;
 		this.numID = num;
 		this.nameID = name;
@@ -19,7 +19,7 @@ public class NodeInfo implements Serializable{
 	public String getAddress() {
 		return address;
 	}
-	public String getNumID() {
+	public int getNumID() {
 		return numID;
 	}
 	public String getNameId() {
@@ -28,7 +28,7 @@ public class NodeInfo implements Serializable{
 	public void setAddress(String adrs) {
 		this.address = adrs;
 	}
-	public void setNumID(String num) {
+	public void setNumID(int num) {
 		this.numID = num;
 	}
 	public void setNameID(String name) {

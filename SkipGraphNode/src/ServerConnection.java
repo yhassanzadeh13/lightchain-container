@@ -16,7 +16,7 @@ public class ServerConnection extends Thread {
 	
 			SkipNode.address = Inet4Address.getLocalHost().getHostAddress() + ":1100"; //Used to get the current node address.
 			SkipNode.IP = Inet4Address.getLocalHost().getHostAddress();
-			SkipNode.port = 1100; //Changed this to 1099 (default)
+			SkipNode.port = 1100;
 			serverSocket = new ServerSocket(SkipNode.port);
 		} catch(IOException e) {
 			e.printStackTrace();
