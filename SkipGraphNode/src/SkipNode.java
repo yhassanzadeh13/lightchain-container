@@ -418,12 +418,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				RMIInterface rightRMI = getRMI(lookup[level][1].getAddress());
 				return rightRMI.searchName(searchTarget, level, direction);
 			}
-			String result = null;
+			String result = address;
 			if(lookup[newLevel][1] != null) {
 				RMIInterface rightRMI = getRMI(lookup[newLevel][1].getAddress());
 				result = rightRMI.searchName(searchTarget,newLevel,1);
 			}
-			if(result != null) {
+			if(!result.equals(address) ) {
 				RMIInterface resultRMI = getRMI(result);
 				if(resultRMI.getNameID().contains(searchTarget))
 					return result;
@@ -440,12 +440,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			RMIInterface leftRMI = getRMI(lookup[level][0].getAddress());
 			return leftRMI.searchName(searchTarget, level, direction);
 		}
-		String result = null;
+		String result = address;
 		if(lookup[newLevel][1] != null) {
 			RMIInterface rightRMI = getRMI(lookup[newLevel][1].getAddress());
 			result = rightRMI.searchName(searchTarget,newLevel,1);
 		}
-		if(result != null) {
+		if(!result.equals(address)) {
 			RMIInterface resultRMI = getRMI(result);
 			if(resultRMI.getNameID().contains(searchTarget))
 				return result;
@@ -464,13 +464,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public String searchByNameID(String searchTarget) throws RemoteException{
 		
 		int newLevel = commonBits(searchTarget);
-		String result = null;
+		String result = address;
 		
 		if(lookup[newLevel][1] != null) {
 			RMIInterface rightRMI = getRMI(lookup[newLevel][1].getAddress());
 			result = rightRMI.searchName(searchTarget,newLevel,1);
 		}
-		if(result != null) {
+		if(!result.equals(address)) {
 			RMIInterface resultRMI = getRMI(result);
 			if(resultRMI.getNameID().contains(searchTarget))
 				return result;
