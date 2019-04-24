@@ -106,6 +106,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		try {
 			address = Inet4Address.getLocalHost().getHostAddress() +":"+ RMIPort; //Used to get the current node address.
 			IP = Inet4Address.getLocalHost().getHostAddress();
+			log("My Address is :" + address);
 		}catch(UnknownHostException e) {
 			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
 			System.exit(0);
