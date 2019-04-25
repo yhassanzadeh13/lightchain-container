@@ -20,6 +20,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public static int maxLevels = 5; 
 	public static String introducer; 
 	public static int RMIPort = 1099;
+	private static boolean insertable;
 	private static Scanner in = new Scanner(System.in);
 	
 	// General Notes :
@@ -92,10 +93,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		numID = Integer.parseInt(numInput);
 		log("Enter the address of the introducer:");
 		introducer = get();
+		insertable = true;
 		while(!(introducer.equalsIgnoreCase("None") || validateIP(introducer))) {
 			log("Invalid IP. Please enter a valid IP address ('none' if original node): ");
 			introducer = get();
 		}
+		if(introducer.equalsIgnoreCase("None")) insertable = false;
 		log("Enter RMI port: ");
 		numInput = get();
 		while(!numInput.matches("0|[1-9][0-9]*")) {
@@ -144,7 +147,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		if(query == 1)
 			if(introducer.equalsIgnoreCase("none"))System.out.println("Can't insert. Current node is the initial node.");
-			else insert();
+			else if(insertable) insert();
+			else log("Already inserted. Cannot insert node more than once.");
 		else if (query == 2) {
 			log("Please Enter the name ID to be searched");
 			String name = get();
@@ -571,6 +575,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	}
 	
 	private static boolean validateIP(String adrs) { //Makes sure its of the form xxx.xxx.xxx.xxx
+		//return adrs.matches("(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[0-9]{4,5})";))
+			
 		int colonIndex = adrs.indexOf(':');
 		String ip = adrs;
 		if(colonIndex != -1) ip = adrs.substring(0,colonIndex);
@@ -610,7 +616,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			return -1;
 		int i = 0;
 		for(i = 0; i < name1.length() && name1.charAt(i) == name2.charAt(i) ; ++i);
-		log("Common Prefix for " + name1 + " and " + name2 + " is: " + i);
+		log("Common Prefix for " +name1 + " and " + name2 + " is: " + i);
 			return i;		
 		}
 	/*
