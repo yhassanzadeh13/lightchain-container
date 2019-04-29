@@ -22,7 +22,7 @@ public class NodeInfo implements Serializable{
 	public int getNumID() {
 		return numID;
 	}
-	public String getNameId() {
+	public String getNameID() {
 		return nameID;
 	}
 	public void setAddress(String adrs) {
@@ -33,5 +33,9 @@ public class NodeInfo implements Serializable{
 	}
 	public void setNameID(String name) {
 		this.nameID = name;
+	}
+	
+	public boolean equals(NodeInfo node) {
+		return address.equals(node.getAddress());
 	}
 }
