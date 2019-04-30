@@ -213,18 +213,21 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * 
 	 */
 	
-	public NodeInfo insertSearch(int level, int direction,int num, String target) {
+	public NodeInfo insertSearch(int level, int direction,int num, String target) throws RemoteException {
+		log("recieved null of value: "+ num);
 		int dataIdx = dataID.get(num);
 		if(commonBits(target) > level)
 			return data.get(dataIdx);
 		if(direction == 1) {
 			if(lookup[level][1][dataIdx] == null)
 				return null;
-			return insertSearch(level,direction,lookup[level][1][dataIdx].getNumID(),target);
+			RMIInterface rRMI = getRMI(lookup[level][1][dataIdx].getAddress());
+			return rRMI.insertSearch(level,direction,lookup[level][1][dataIdx].getNumID(),target);
 		}else {
 			if(lookup[level][0][dataIdx] == null)
 				return null;
-			return insertSearch(level,direction,lookup[level][0][dataIdx].getNumID(),target);
+			RMIInterface lRMI = getRMI(lookup[level][0][dataIdx].getAddress());
+			return lRMI.insertSearch(level,direction,lookup[level][0][dataIdx].getNumID(),target);
 		}
 	}
 	
@@ -305,7 +308,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					rightNum = -1;
 					if(rit != null) {
 						RMIInterface ritRMI = getRMI(rit.getAddress());
-						ritRMI.setLeftNode(level+1, new NodeInfo(address,num,name), rightNum);
+						ritRMI.setLeftNode(level+1, new NodeInfo(address,num,name), rit.getNumID());
 						right = rit.getAddress();
 						rightNum = rit.getNumID();
 					}
