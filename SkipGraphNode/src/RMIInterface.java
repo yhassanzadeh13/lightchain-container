@@ -13,5 +13,6 @@ public interface RMIInterface extends Remote {
 	public String searchByNameID(String targetString) throws RemoteException;
 	public String searchByNumID(int targetNum) throws RemoteException;
 	public String searchName(String searchTarget,int level,int direction) throws RemoteException;
-	public String searchNum(int searchTarget,int level) throws RemoteException;
+	public String searchNum(int searchTarget,int level, int numIDOfNode) throws RemoteException;
+	public void setLookupTable(NodeInfo[][] newLookupTable) throws RemoteException;
 }

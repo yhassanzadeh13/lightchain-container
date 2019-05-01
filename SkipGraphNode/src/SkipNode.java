@@ -311,7 +311,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 	}
 	
-	public String searchNum(int targetInt,int level){
+	public String searchNum(int targetInt,int level, int numIDOfNode){//Modified in order to facilitate testing
 		log("Search at: "+address);
 		if(numID == targetInt)
 			return address ;
@@ -322,7 +322,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				return address;
 			RMIInterface rightRMI = getRMI(lookup[level][1].getAddress());
 			try{
-				return rightRMI.searchNum(targetInt,level);
+				return rightRMI.searchNum(targetInt,level, lookup[level][1].getNumID());
 			}catch(Exception e) {
 				log("Exception in searchNum. Target: "+targetInt);
 			}
@@ -334,7 +334,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				return address;
 			RMIInterface leftRMI = getRMI(lookup[level][0].getAddress());
 			try{
-				return leftRMI.searchNum(targetInt, level);
+				return leftRMI.searchNum(targetInt, level, lookup[level][0].getNumID());
 			}catch(Exception e) {
 				log("Exception in searchNum. Target: "+targetInt);
 			}
@@ -353,59 +353,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		if(lookup[0][0] == null && lookup[0][1] == null)
 			return address;
-		return searchNum(searchTarget,level);
-		
-//		int level = maxLevels ; // start search at the highest level
-//		
-//		// cast target ID and this node's ID to integers not to use parsing several times again
-//		int numIDInt = Integer.parseInt(numID);  
-//		int targetInt = Integer.parseInt(targetNum); 
-//		// If the introducer exists only
-//		if(lookup[0][0] == null && lookup[0][1] == null) {
-//			return address+ ":" + RMIPort;
-//		}
-//		// The Target is on the right of numID
-//		else if (numIDInt < targetInt) {
-//			String next = null ;
-//			// as long as there is no right node keep going down
-//			while(level >= 0 && lookup[level][1] == null)
-//				level--;
-//			if(level < 0)
-//				return next;
-//			next = lookup[level][1].getAddress();
-//			while(level >= 0) {
-//				RMIInterface nextRMI = getRMI(next);
-//				if(nextRMI.getRightNode(level) != null) {
-//					RMIInterface nextOfNextRMI = getRMI(nextRMI.getRightNode(level));
-//					if(Integer.parseInt(nextOfNextRMI.getNumID()) < targetInt)
-//						next = nextRMI.getRightNode(level);
-//					else if (Integer.parseInt(nextOfNextRMI.getNumID()) == targetInt) // if found return it
-//						return nextRMI.getRightNode(level);
-//					else  level--; // otherwise go down a level
-//				}else level--;
-//			}
-//			return next ;
-//		}
-//		else{ // the target is to the left of the current node.
-//			String next = null;
-//			while(level >= 0 && lookup[level][0] == null)
-//				level--;
-//			if(level < 0)
-//				return next;
-//			next = lookup[level][0].getAddress();
-//			while(level >= 0) {		
-//				RMIInterface nextRMI = getRMI(next);
-//				if(nextRMI.getLeftNode(level) != null) {
-//					RMIInterface nextOfNextRMI = getRMI(nextRMI.getLeftNode(level));
-//					if(Integer.parseInt(nextOfNextRMI.getNumID()) > targetInt)
-//							next = nextRMI.getLeftNode(level);
-//					else if (Integer.parseInt(nextOfNextRMI.getNumID()) == targetInt)
-//						return nextRMI.getLeftNode(level);
-//					else level--;
-//				}else level--;
-//			}
-//			return next ;
-//		}
+		return searchNum(searchTarget,level,numID);// Last argument added just for testing
 	}
 	// 1: right
 	// 0: left
@@ -484,49 +432,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			result = leftRMI.searchName(searchTarget, newLevel, -1);
 		}
 		return result;
-//		String left = null
-//		String right = null;
-//		int prefix = commonBits(nameID,targetName) ;
-//		if(prefix > level) {
-//			level = prefix ;
-//			left = lookup[level][0].getAddress();
-//			right = lookup[level][1].getAddress();
-//		}
-//		while(true) {
-//			
-//			if(left != null) {		
-//				RMIInterface leftRMI = getRMI(left);
-//				prefix =  commonBits(leftRMI.getNameID(),targetName) ;
-//				if(leftRMI.getNameID().contains(targetName))
-//					return left ;
-//				else if (prefix <= level)
-//					left = leftRMI.getLeftNode(level);
-//				else { // commonBits > level
-//					level = prefix ;
-//					right = leftRMI.getRightNode(level);
-//					left = leftRMI.getLeftNode(level);
-//					continue;
-//				}
-//			} else if(right != null) {
-//				RMIInterface rightRMI = getrRMI(right);
-//				prefix = commonBits(rightRMI.getNameID(),targetName);
-//				
-//				if(rightRMI.getNameID().contains(targetName))
-//					return right;
-//				else if (prefix <= level)
-//					right = rightRMI.getRightNode(level);
-//				else {
-//					level = prefix ;
-//					right = rightRMI.getRightNode(level);
-//					left = rightRMI.getLeftNode(level);
-//					continue;
-//				}
-//			}
-//			if(right == null && left == null)
-//				break;
-//			
-//		}
-//		return nameID ;
 	}
 	/*
 	 * getters and setters for lookup table and numID and nameID
@@ -649,5 +554,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public static String get() {
 		String response = in.nextLine();
 		return response;
+	}
+	
+	
+	public void setLookupTable(NodeInfo[][] newLookupTable) throws RemoteException { //For Testing purposes
+		lookup = newLookupTable;
 	}
 }
