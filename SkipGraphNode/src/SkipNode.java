@@ -30,9 +30,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static Scanner in = new Scanner(System.in);
 	private static TreeMap<Integer,Integer> dataID = new TreeMap<>();
 	private static ArrayList<NodeInfo> data = new ArrayList<>();
+	private DigitalSignature digitalSignature;
 	
-	// A bug to fix: when a data node is inserted next to a data node
-	// it is giving a null pointer at the insert method
 	
 	public static void main(String args[]) {
 		
@@ -96,7 +95,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			numInput = get();
 		}
 		numID = Integer.parseInt(numInput);
-		
 		log("Enter the address of the introducer:");
 		introducer = get();
 		while(!(introducer.equalsIgnoreCase("None") || validateIP(introducer))) {
@@ -119,7 +117,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}catch(UnknownHostException e) {
 			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
 			System.exit(0);
-		
 		}
 		// In case the introducer to this node is null, then the insert method
 		// will not be called on it, so we manually add it to the data list and 
@@ -146,6 +143,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         log("4-Print the Lookup Table");
         log("5-Print left node at a chosen level.");
         log("6-Print right node at a chose level.");
+        log("7-Print data array.");
 	}
 	
 	/*
@@ -154,7 +152,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public void ask() {
         String input = get();
-        if(!input.matches("[1-6]")) {
+        if(!input.matches("[1-7]")) {
         	log("Invalid query. Please enter the number of one of the possible operations");
         	return;
         }
@@ -195,9 +193,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			int num = Integer.parseInt(numInput);
 			NodeInfo result = searchByNumID(num);
 			log("The result of search by numberic ID is: "+ result.getAddress());
-		}else if(query == 4) // print the lookup table of the current node
-			printLookup();
-		else if( query == 5) { // print the left neighbor at a certain level
+		}else if(query == 4) { // print the lookup table of the current node
+			log("In case you want the lookup table of the original node enter 0.");
+			log("Otherwise, emter the index of the data node ");
+			int num = Integer.parseInt(get());
+			if(num < dataNum)
+				printLookup(num);
+			else
+				log("Data node with given index does not exist");
+		}else if( query == 5) { // print the left neighbor at a certain level
 			log("Please Enter the required level:");
 			int lvl = Integer.parseInt(get());
 			if(lookup[lvl][0][0] == null)
@@ -212,6 +216,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				log("No right node present at level "+lvl);
 			else
 				log("Right node at level "+lvl+" is:" + lookup[lvl][1][0].getAddress());
+		}else if (query == 7) {
+			printData();
 		}
         
     }
@@ -254,19 +260,21 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * This method inserts either the current node to the skip graph of the introducer,
 	 * or it is used to insert a data node.
 	 */
-	public static void insert(int num ,String name){
+	public void insert(int num ,String name){
 		try {
 			String left = null;
 			String right = null;
 
 			// We search through the introducer node to find the node with 
 			// the closest num ID
-			String medium = introducer;
-			if(introducer.equalsIgnoreCase("none"))
-				medium = address;
-			RMIInterface introRMI = getRMI(medium);		
-			NodeInfo position = introRMI.searchByNumID(num);
-	
+			NodeInfo position ;
+			if(introducer.equalsIgnoreCase("none")) {
+				position = searchByNumID(num);
+			}else {
+				RMIInterface introRMI = getRMI(introducer);		
+				position = introRMI.searchByNumID(num);
+			}
+			
 			if(position == null) {
 				log("The address resulting from the search is null");
 				log("Please check the introducer's IP address and try again.");
@@ -294,15 +302,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				left = posRMI.getLeftNode(0,posNum); // the left of my right will be my left
 				rightNum = position.getNumID(); // we need the numID to be able to access it
 				
-				lookup[0][1][dataNum] = new NodeInfo(right,posNum,posName);
-				posRMI.setLeftNode(0, new NodeInfo(address,num,name),posNum); // insert the current node in the lookup table of its right neighbor
-				
 				if(left != null) { // insert the current node in the lookup table of my left node if it exists
 					RMIInterface leftRMI = getRMI(left);
 					leftNum = posRMI.getLeftNumID(0,posNum);
 					lookup[0][0][dataNum] = new NodeInfo(left,leftNum,posRMI.getLeftNameID(0,posNum));
 					leftRMI.setRightNode(0, new NodeInfo(address,num,name),leftNum);
 				}
+				
+				lookup[0][1][dataNum] = new NodeInfo(right,posNum,posName);
+				posRMI.setLeftNode(0, new NodeInfo(address,num,name),posNum); // insert the current node in the lookup table of its right neighbor
+				
 			
 			}else{ // if the closest node is to the left
 				
@@ -310,15 +319,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				left = position.getAddress() ; 
 				leftNum = position.getNumID(); // we need the numID to be able to access it
 				
-				lookup[0][0][dataNum] = new NodeInfo(left,posNum,posName);
-				posRMI.setRightNode(0, new NodeInfo(address,num,name),posNum);
-				
 				if(right != null) { // insert current node in the lookup table of its right neighbor if it exists
 					RMIInterface rightRMI = getRMI(right);
 					rightNum = posRMI.getRightNumID(0, posNum);
 					lookup[0][1][dataNum] = new NodeInfo(right,rightNum,posRMI.getRightNameID(0,posNum)) ;
 					rightRMI.setLeftNode(0,new NodeInfo(address,num,name),rightNum);
 				}
+				
+				lookup[0][0][dataNum] = new NodeInfo(left,posNum,posName);
+				posRMI.setRightNode(0, new NodeInfo(address,num,name),posNum);
 				
 			}
 			
@@ -689,18 +698,23 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	/* 
 	 * Print the contents of the lookup table
 	 */
-	public static void printLookup() {
+	public static void printLookup(int num) {
         System.out.println("\n");
         for(int i = maxLevels-1 ; i >= 0 ; i--)
         {
             for(int j = 0 ; j<2 ; j++)
-            	if(lookup[i][j][0] == null)
+            	if(lookup[i][j][num] == null)
             		logLine("null\t");
             	else
-            		logLine(lookup[i][j][0].getAddress()+"\t");
+            		logLine(lookup[i][j][num].getAddress()+"\t");
             log("\n\n");
         }
     }
+	public static void printData() {
+		for(int i=0 ; i<data.size(); ++i)
+			log(data.get(i).getNumID() + " " + data.get(i).getNameID());
+		log("");
+	}
 	/*
 	 * A shortcut for getting input from user
 	 */
