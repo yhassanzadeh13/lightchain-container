@@ -9,7 +9,7 @@ public class HashingTools implements Hasher {
 	 * SHA-256 Hashing function, will be used in the future for generating name IDs.
 	 */
 	public String getHash(String input, int neededSize) { //Returns a binary hash of input with required size
-		if(neededSize>256 || neededSize<-1) {
+		if(neededSize>256 || neededSize<0) {
 			System.out.println("The input size to the getHash function is out of bounds. Returning full hash.");
 			return getHash(input);
 		}
@@ -17,7 +17,7 @@ public class HashingTools implements Hasher {
 	}
 	
 	public String getHash(byte[] input, int neededSize) {
-		if(neededSize>256 || neededSize<-1) {
+		if(neededSize>256 || neededSize<0) {
 			System.out.println("The input size to the getHash function is out of bounds. Returning full hash.");
 			return getHash(input);
 		}

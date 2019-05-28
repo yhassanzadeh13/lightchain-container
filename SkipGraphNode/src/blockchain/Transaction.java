@@ -1,20 +1,22 @@
 package blockchain;
 
-public class Transaction {
+import java.util.List;
+import skipGraph.NodeInfo;
+
+public class Transaction extends NodeInfo{
 	private final String prev;
 	private final String owner;
-	private final String cont;
-	private final String search_proof;//Type?
-	private final String h;
-	private final String sigma;
+	private final String cont;//Use random string for this
+	private final String h;//Hash
+	private final List<String> sigma;
 	
 	
-	public Transaction(String prev, String owner, String cont, String search_proof, String h, String sigma) {
-		super();
+	public Transaction(String prev, String owner, String cont, String h, List<String> sigma){
+		super("temp",19,"temp");
+		//super(h,prev);
 		this.prev = prev;
 		this.owner = owner;
 		this.cont = cont;
-		this.search_proof = search_proof;
 		this.h = h;
 		this.sigma = sigma;
 	}

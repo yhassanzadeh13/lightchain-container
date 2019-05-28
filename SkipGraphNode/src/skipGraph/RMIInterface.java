@@ -1,9 +1,14 @@
+package skipGraph;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface RMIInterface extends Remote {
-
+	
+	/*
+	 * Normal Skip Node functions
+	 */
+	
 	public String getLeftNode(int level,int num) throws RemoteException ;
 	public String getRightNode(int level,int num) throws RemoteException ;
 	public void setLeftNode(int level, NodeInfo newNode,int num) throws RemoteException;
@@ -17,6 +22,18 @@ public interface RMIInterface extends Remote {
 	public int getLeftNumID(int level,int num) throws RemoteException;
 	public int getRightNumID(int level,int num) throws RemoteException;
 	public String getLeftNameID(int level,int num) throws RemoteException;
-	public String getRightNameID(int level,int num) throws RemoteException ;
+	public String getRightNameID(int level,int num) throws RemoteException;
+	
+	/*
+	 * Skip Node with data nodes functions
+	 */
+	
 	public NodeInfo insertSearch(int level, int direction,int num, String target) throws RemoteException;
+	
+	/*
+	 * Skip Node with blockchain support
+	 */
+	
+	
+	
 }
