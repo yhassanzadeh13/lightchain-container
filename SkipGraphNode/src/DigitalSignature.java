@@ -1,12 +1,16 @@
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -14,29 +18,132 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 public class DigitalSignature {
+	
+	
+	public static void main(String args[]) {
+		String pth = "C:\\Users\\USER\\Documents\\Research\\TestKeys";
+		DigitalSignature sign = new DigitalSignature("RSA");
+		PublicKey otherKey = sign.loadKey(pth, "publicTest", "RSA");
+		sign.storeKey(pth, "otherKey", otherKey);
+	}
 	
 	// investigate using SecureRandom
 	 
 	private PrivateKey privateKey;
 	private PublicKey publicKey;
+	private String privateKeyName;
+	private String publicKeyName;
+	private String keysPath;
+	private static Scanner in = new Scanner(System.in);
+	private ArrayList<String> otherPubKeys;
+	
 	
 	/*
 	 * A constructor for the digital signature
 	 * Once we declare a digital signature for a node
 	 * we generate a public-private key pair for the node given a certain algorithm
 	 */
-	public DigitalSignature(String genAlgorithm, String signAlgorithm) {
+	public DigitalSignature(String genAlgorithm) {
 		try {
 			KeyPairGenerator gen = KeyPairGenerator.getInstance(genAlgorithm);
 			gen.initialize(2048);
 			KeyPair keyPair = gen.generateKeyPair();
 			privateKey = keyPair.getPrivate();
 			publicKey = keyPair.getPublic();
+			otherPubKeys = new ArrayList<>();
+			log("Enter the name of the private key.");
+			privateKeyName = get();
+			log("Enter the name of the public key.");
+			publicKeyName = get();
+			//log("Enter the storage path of the key pair.");
+			keysPath = "C:\\Users\\USER\\Documents\\Research\\TestKeys";
+			storeKeyPair();
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void storeKeyPair() {
+		
+		try {
+			FileOutputStream out = new FileOutputStream(keysPath + "\\" + privateKeyName + ".key");
+			out.write(privateKey.getEncoded());
+			out.close();
+			out = new FileOutputStream(keysPath + "\\" + publicKeyName + ".key");
+			out.write(publicKey.getEncoded());
+			out.close();
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public KeyPair loadKeyPair(String path, String algorithm) {
+		
+		try {
+			Path p = Paths.get(keysPath + "\\" + publicKeyName + ".key");
+			byte[] bytes;
+			bytes = Files.readAllBytes(p);
+			X509EncodedKeySpec pub = new X509EncodedKeySpec(bytes);
+			KeyFactory kf = KeyFactory.getInstance(algorithm);
+			PublicKey pb = kf.generatePublic(pub);
+			
+			p = Paths.get(keysPath + "\\" + privateKeyName + ".key");
+			bytes = Files.readAllBytes(p);
+			PKCS8EncodedKeySpec pri = new PKCS8EncodedKeySpec(bytes);
+			KeyFactory kk = KeyFactory.getInstance(algorithm);
+			PrivateKey pr = kk.generatePrivate(pri);
+			return new KeyPair(pb,pr);
+				
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public void storeKey(String path, String name, PublicKey key) {
+		otherPubKeys.add(path + "\\" + name + ".key");
+		try {
+			FileOutputStream out = new FileOutputStream(path + "\\" + name + ".key");
+			out.write(key.getEncoded());
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public PublicKey loadKey(String path, String name, String algorithm) {
+		Path p = Paths.get(path + "\\" + name + ".key");
+		byte[] bytes;
+		try {
+			bytes = Files.readAllBytes(p);
+			X509EncodedKeySpec pub = new X509EncodedKeySpec(bytes);
+			KeyFactory kf = KeyFactory.getInstance(algorithm);
+			PublicKey pb = kf.generatePublic(pub);
+			return pb;
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	/*
@@ -143,7 +250,11 @@ public class DigitalSignature {
 	public PublicKey getPublicKey() {
 		return publicKey;
 	}
-	public void log(String s) {
+	public static void log(String s) {
 		System.out.println(s);
+	}
+	public static String get() {
+		String res = in.nextLine();
+		return res;
 	}
 }
