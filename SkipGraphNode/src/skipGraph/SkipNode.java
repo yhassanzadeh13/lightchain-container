@@ -11,9 +11,14 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 import java.util.TreeMap;
 
+import blockchain.Transaction;
+import hashing.HashingTools;
+import hashing.Hasher;
 import signature.DigitalSignature;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
@@ -33,7 +38,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static Scanner in = new Scanner(System.in);
 	private static TreeMap<Integer,Integer> dataID = new TreeMap<>();
 	private static ArrayList<NodeInfo> data = new ArrayList<>();
-	private DigitalSignature digitalSignature;
+	private static DigitalSignature digitalSignature;
+	private static Hasher hasher;
+	private static int trunc = 20;
+	private static int valThreshold = 10;
 	
 	
 	public static void main(String args[]) {
@@ -71,6 +79,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	protected SkipNode() throws RemoteException{
 		super();
 		try {
+			hasher = new HashingTools();
+			digitalSignature = new DigitalSignature("RSA");
 			String st = Inet4Address.getLocalHost().getHostAddress();
 			System.setProperty("java.rmi.server.hostname",st);
 			System.out.println("RMI Server proptery set. Inet4Address: "+st);
@@ -84,20 +94,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public static void setInfo() {
 		
-		log("Enter your Name ID:");
-		nameID = get();
-		while(!nameID.matches("[0-1]+")) {//Makes sure the name ID is a binary string
-			log("Name ID should be a binary string. Please enter a valid Name ID:");
-			nameID = get();
-		}
-		
-		log("Enter your Numeric Id:");
 		String numInput = get();
-		while(!numInput.matches("0|[1-9][0-9]*")) {//Makes sure the number ID is an actual number
-			log("Number ID should be a number. Please enter a valid Number ID:");
-			numInput = get();
-		}
-		numID = Integer.parseInt(numInput);
 		log("Enter the address of the introducer:");
 		introducer = get();
 		while(!(introducer.equalsIgnoreCase("None") || validateIP(introducer))) {
@@ -121,6 +118,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
 			System.exit(0);
 		}
+		
+		// The nameID and numID are hash values of the address
+		nameID = hasher.getHash(address,trunc);
+		numID = Integer.parseInt(nameID,2);
+		
 		// In case the introducer to this node is null, then the insert method
 		// will not be called on it, so we manually add it to the data list and 
 		// map index in the data array with its numID.
@@ -394,6 +396,27 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	}
 	
 	/*
+	 * This method returns the validators of a given transaction
+	 */
+	public List<NodeInfo> getValidators(Transaction t){
+		List<NodeInfo> validators = new ArrayList<>();
+		HashMap<NodeInfo,Integer> taken = new HashMap<>();
+		
+		int count = 0 , i = 0;
+		while(count < valThreshold) {
+			String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
+			int num = Integer.parseInt(hasher.getHash(hash,trunc),2);
+			NodeInfo node = searchByNumID(num);
+			i++;
+			if(taken.containsKey(node))continue;
+			count++;
+			taken.put(node, 1);
+			validators.add(node);
+		}
+		return validators;
+	}
+	
+	/*
 	 * This method receives a number, and returns the data node (or possibly the main node)
 	 * which has the closest numID to the given number
 	 */
@@ -407,7 +430,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			}
 		return best;
 	}
-	
 	
 	/*
 	 * This method is a hepler method for searchByNumID()
