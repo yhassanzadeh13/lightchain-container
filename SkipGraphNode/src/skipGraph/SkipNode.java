@@ -748,4 +748,21 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		String response = in.nextLine();
 		return response;
 	}
+	
+	
+	/*
+	 * Getters (For use in the remote testing)
+	 */
+	
+	public int getDataNum() {
+		return dataNum;
+	}
+	
+	public ArrayList<NodeInfo> getData(){
+		return data;
+	}
+	public NodeInfo[][][] getLookupTable(){
+		return lookup;
+	}
+
 }
