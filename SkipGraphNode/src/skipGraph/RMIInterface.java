@@ -2,6 +2,7 @@ package skipGraph;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 
 public interface RMIInterface extends Remote {
 	
@@ -35,5 +36,12 @@ public interface RMIInterface extends Remote {
 	 */
 	
 	
+	
+	/*
+	 * For remote testing
+	 */
+	public int getDataNum();
+	public ArrayList<NodeInfo> getData();
+	public NodeInfo[][][] getLookupTable();
 	
 }
