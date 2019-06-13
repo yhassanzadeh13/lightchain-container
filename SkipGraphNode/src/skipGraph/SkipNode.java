@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.TreeMap;
 
+import blockchain.Block;
 import blockchain.Transaction;
 import hashing.HashingTools;
 import hashing.Hasher;
@@ -38,10 +39,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static Scanner in = new Scanner(System.in);
 	private static TreeMap<Integer,Integer> dataID = new TreeMap<>();
 	private static ArrayList<NodeInfo> data = new ArrayList<>();
+	private static ArrayList<Transaction> transactions = new ArrayList<>();
+	private static ArrayList<Block> blocks = new ArrayList<>();
 	private static DigitalSignature digitalSignature;
 	private static Hasher hasher;
-	private static int trunc = 20;
-	private static int valThreshold = 10;
+	public static final int TRUNC = 20;
+	private static int valThreshold = 3;
 	
 	
 	public static void main(String args[]) {
@@ -79,8 +82,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	protected SkipNode() throws RemoteException{
 		super();
 		try {
-			hasher = new HashingTools();
-			digitalSignature = new DigitalSignature("RSA");
 			String st = Inet4Address.getLocalHost().getHostAddress();
 			System.setProperty("java.rmi.server.hostname",st);
 			System.out.println("RMI Server proptery set. Inet4Address: "+st);
@@ -93,15 +94,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * and prints them to console
 	 */
 	public static void setInfo() {
+		hasher = new HashingTools();
 		
-		String numInput = get();
+		String numInput ;
 		log("Enter the address of the introducer:");
 		introducer = get();
 		while(!(introducer.equalsIgnoreCase("None") || validateIP(introducer))) {
 			log("Invalid IP. Please enter a valid IP address ('none' if original node): ");
 			introducer = get();
 		}
-		
 		log("Enter RMI port: ");
 		numInput = get();
 		while(!numInput.matches("0|[1-9][0-9]*")) {
@@ -120,7 +121,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 		
 		// The nameID and numID are hash values of the address
-		nameID = hasher.getHash(address,trunc);
+		nameID = hasher.getHash(address,TRUNC);
 		numID = Integer.parseInt(nameID,2);
 		
 		// In case the introducer to this node is null, then the insert method
@@ -142,13 +143,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         log("Node at the address: " + address);
         log("Name ID: "+ nameID +" Number ID: " + numID);
         log("Choose a query by entering it's code and then press Enter");
-        log("1-Insert");
-        log("2-Search By Name ID");
-        log("3-Search By Number ID");
-        log("4-Print the Lookup Table");
-        log("5-Print left node at a chosen level.");
-        log("6-Print right node at a chose level.");
-        log("7-Print data array.");
+        log("1-Insert Node");
+        log("2-Insert Transaction");
+        log("3-Insert Block");
+        log("4-Search By Name ID");
+        log("5-Search By Number ID");
+        log("6-Get Validators");
+        log("7-Print the Lookup Table");
 	}
 	
 	/*
@@ -163,17 +164,26 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         }
 		int query = Integer.parseInt(input);
 		
-		if(query == 1) { // insert 
+		if(query == 1) { // insert node
 			if(dataNum == 0) // if there are no inserted nodes yet then, then we insert the current node
-				insert(numID,nameID);
-			else { // if this node is already inserted, this means we want to insert a data node		
-				log("Please enter name ID of data Node:");
-				String name = get();
-				log("Please enter num ID of data Node:");
-				int num = Integer.parseInt(get());
-				insert(num,name);
-			}
-		}else if (query == 2) {// search by name ID
+				insert(new NodeInfo(address,numID,nameID));
+			else
+				log("Already Inserted");
+		}else if (query == 2){ // insert transaction
+			log("Enter prev of transaction");
+			String prev = get();
+			log("Enter cont of transaction");
+			String cont = get();
+			Transaction t = new Transaction(prev,address,cont);
+			transactions.add(t);
+			insert(t);
+		}else if (query == 3){ // insert block
+			log("Enter prev of block");
+			String prev = get();
+			Block b = new Block(address,prev);
+			blocks.add(b);
+			insert(b);
+		}else if (query == 4) {// search by name ID
 			log("Please Enter the name ID to be searched");
 			String name = get();
 			while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
@@ -187,8 +197,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				e.printStackTrace();
 				log("Remote Exception in query.");
 			}
-			log("The result of search by name ID is: "+result.getAddress());
-		}else if(query == 3) { // search by num ID
+			log("The result of search by name ID is: " + result.getAddress());
+		}else if(query == 5) { // search by num ID
 			log("Please Enter the numeric ID to be searched");
 			String numInput = get();
 			while(!numInput.matches("0|[1-9][0-9]*")) {
@@ -198,7 +208,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			int num = Integer.parseInt(numInput);
 			NodeInfo result = searchByNumID(num);
 			log("The result of search by numberic ID is: "+ result.getAddress());
-		}else if(query == 4) { // print the lookup table of the current node
+		}else if(query == 6) {
+			log("Which transaction to validate, you have "+transactions.size()+" option");
+			int num = Integer.parseInt(get());
+			ArrayList<NodeInfo> v = getValidators(transactions.get(num));
+			log("The validators are: ");
+			for(int i=0 ; i<v.size() ; ++i) {
+				logLine(v.get(i).getAddress() + " ");
+			}
+			log("");
+		}else if(query == 7) { // print the lookup table of the current node
 			log("In case you want the lookup table of the original node enter 0.");
 			log("Otherwise, emter the index of the data node ");
 			int num = Integer.parseInt(get());
@@ -206,23 +225,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				printLookup(num);
 			else
 				log("Data node with given index does not exist");
-		}else if( query == 5) { // print the left neighbor at a certain level
-			log("Please Enter the required level:");
-			int lvl = Integer.parseInt(get());
-			if(lookup[lvl][0][0] == null)
-				log("No left node present at level "+lvl);
-			else
-				log("Left node at level "+lvl+" is:" + lookup[lvl][0][0].getAddress());
-		}
-		else if (query == 6) { // print the right neighbor at a certain level
-			log("Please Enter the required level:");
-			int lvl = Integer.parseInt(get());
-			if(lookup[lvl][1][0] == null)
-				log("No right node present at level "+lvl);
-			else
-				log("Right node at level "+lvl+" is:" + lookup[lvl][1][0].getAddress());
-		}else if (query == 7) {
-			printData();
 		}
         
     }
@@ -265,7 +267,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * This method inserts either the current node to the skip graph of the introducer,
 	 * or it is used to insert a data node.
 	 */
-	public void insert(int num ,String name){
+	public void insert(NodeInfo node){
 		try {
 			String left = null;
 			String right = null;
@@ -274,10 +276,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// the closest num ID
 			NodeInfo position ;
 			if(introducer.equalsIgnoreCase("none")) {
-				position = searchByNumID(num);
+				position = searchByNumID(node.getNumID());
 			}else {
 				RMIInterface introRMI = getRMI(introducer);		
-				position = introRMI.searchByNumID(num);
+				position = introRMI.searchByNumID(node.getNumID());
 			}
 			
 			if(position == null) {
@@ -301,7 +303,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			int leftNum = -1 ; // numID of left node
 			int rightNum = -1 ; // numID of right node
 			
-			if(posNum > num) { // if the closest node is to the right
+			if(posNum > node.getNumID()) { // if the closest node is to the right
 				
 				right = position.getAddress();
 				left = posRMI.getLeftNode(0,posNum); // the left of my right will be my left
@@ -311,12 +313,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					RMIInterface leftRMI = getRMI(left);
 					leftNum = posRMI.getLeftNumID(0,posNum);
 					lookup[0][0][dataNum] = new NodeInfo(left,leftNum,posRMI.getLeftNameID(0,posNum));
-					leftRMI.setRightNode(0, new NodeInfo(address,num,name),leftNum);
+					leftRMI.setRightNode(0, node,leftNum);
 				}
 				
 				lookup[0][1][dataNum] = new NodeInfo(right,posNum,posName);
-				posRMI.setLeftNode(0, new NodeInfo(address,num,name),posNum); // insert the current node in the lookup table of its right neighbor
-				
+				posRMI.setLeftNode(0, node, posNum); // insert the current node in the lookup table of its right neighbor
 			
 			}else{ // if the closest node is to the left
 				
@@ -328,11 +329,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					RMIInterface rightRMI = getRMI(right);
 					rightNum = posRMI.getRightNumID(0, posNum);
 					lookup[0][1][dataNum] = new NodeInfo(right,rightNum,posRMI.getRightNameID(0,posNum)) ;
-					rightRMI.setLeftNode(0,new NodeInfo(address,num,name),rightNum);
+					rightRMI.setLeftNode(0,node,rightNum);
 				}
 				
 				lookup[0][0][dataNum] = new NodeInfo(left,posNum,posName);
-				posRMI.setRightNode(0, new NodeInfo(address,num,name),posNum);
+				posRMI.setRightNode(0, node,posNum);
 				
 			}
 			
@@ -346,7 +347,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				if(left != null) {
 					
 					RMIInterface leftRMI = getRMI(left);
-					NodeInfo lft = leftRMI.insertSearch(level,-1,leftNum,name); // start search left
+					NodeInfo lft = leftRMI.insertSearch(level,-1,leftNum,node.getNameID()); // start search left
 					lookup[level+1][0][dataNum] = lft ; 
 					
 					// set left and leftNum to default values (null,-1)
@@ -357,7 +358,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					
 					if(lft != null) {
 						RMIInterface lftRMI = getRMI(lft.getAddress());
-						lftRMI.setRightNode(level+1,new NodeInfo(address,num,name), lft.getNumID());
+						lftRMI.setRightNode(level+1,node, lft.getNumID());
 						left = lft.getAddress();
 						leftNum = lft.getNumID();
 					}	
@@ -365,7 +366,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				if(right != null) {
 					
 					RMIInterface rightRMI = getRMI(right);
-					NodeInfo rit = rightRMI.insertSearch(level, 1, rightNum, name); // start search right
+					NodeInfo rit = rightRMI.insertSearch(level, 1, rightNum, node.getNameID()); // start search right
 					lookup[level+1][1][dataNum] = rit;
 					
 					// set right and rightNum to default values (null,-1)
@@ -376,7 +377,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					
 					if(rit != null) {
 						RMIInterface ritRMI = getRMI(rit.getAddress());
-						ritRMI.setLeftNode(level+1, new NodeInfo(address,num,name), rit.getNumID());
+						ritRMI.setLeftNode(level+1, node, rit.getNumID());
 						right = rit.getAddress();
 						rightNum = rit.getNumID();
 					}
@@ -386,8 +387,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// after we conclude inserting the node in all levels,
 			// we add the inserted node to the data array
 			// and we map its numID with its index in the data array using dataID
-			dataID.put(num,dataNum);
-			data.add(new NodeInfo(address,num,name));
+			dataID.put(node.getNumID(),dataNum);
+			data.add(node);
 			dataNum++;
 		}catch(RemoteException e) {
 			e.printStackTrace();
@@ -398,19 +399,24 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	/*
 	 * This method returns the validators of a given transaction
 	 */
-	public List<NodeInfo> getValidators(Transaction t){
-		List<NodeInfo> validators = new ArrayList<>();
-		HashMap<NodeInfo,Integer> taken = new HashMap<>();
+	public ArrayList<NodeInfo> getValidators(Transaction t){
+		// stores the validators to be returned
+		ArrayList<NodeInfo> validators = new ArrayList<>(); 
+		// used as a lookup to check if a node has been already added to the validators array
+		// because the search might return the same node more than once
+		// so in order to avoid this case, when we find an already added node, 
+		// we repeat the search
+		HashMap<String,Integer> taken = new HashMap<>(); 
 		
 		int count = 0 , i = 0;
-		while(count < valThreshold) {
+		while(count < valThreshold) { // terminates when we get the required number of validators
 			String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
-			int num = Integer.parseInt(hasher.getHash(hash,trunc),2);
+			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
 			NodeInfo node = searchByNumID(num);
 			i++;
-			if(taken.containsKey(node))continue;
+			if(taken.containsKey(node.getAddress()) || node.equals(data.get(0)))continue;
 			count++;
-			taken.put(node, 1);
+			taken.put(node.getAddress(), 1);
 			validators.add(node);
 		}
 		return validators;
@@ -735,11 +741,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
             log("\n\n");
         }
     }
-	public static void printData() {
-		for(int i=0 ; i<data.size(); ++i)
-			log(data.get(i).getNumID() + " " + data.get(i).getNameID());
-		log("");
-	}
 	/*
 	 * A shortcut for getting input from user
 	 */

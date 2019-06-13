@@ -1,10 +1,11 @@
 package hashing;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class HashingTools implements Hasher {
+public class HashingTools implements Hasher,Serializable {
 	/*
 	 * SHA-256 Hashing function, will be used in the future for generating name IDs.
 	 */

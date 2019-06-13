@@ -5,32 +5,24 @@ import java.util.List;
 import hashing.Hasher;
 import hashing.HashingTools;
 import skipGraph.NodeInfo;
+import skipGraph.SkipNode;
 
 public class Transaction extends NodeInfo{
 	private final String prev;
 	private final String owner;
 	private final String cont;//Use random string for this
 	private final String h;//Hash
-	private final List<String> sigma;
+	private List<String> sigma;
 	private Hasher hasher;
 	
-	public Transaction(String prev, String owner, String cont, String h, List<String> sigma){
-		super("temp",19,"temp");
-		//super(h,prev);
+	public Transaction(String prev, String owner, String cont){
+		super(owner,0,prev);
 		this.prev = prev;
 		this.owner = owner;
 		this.cont = cont;
-		this.h = h;
-		this.sigma = sigma;
 		hasher = new HashingTools();
-	}
-	
-	public String nameID() {
-		return prev;
-	}
-	
-	public String numID() {
-		return hasher.getHash(cont,20);
+		this.h = hasher.getHash(prev + owner + cont,SkipNode.TRUNC);
+		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	
 	public String getPrev() {
@@ -43,6 +35,10 @@ public class Transaction extends NodeInfo{
 	
 	public String getCont() {
 		return cont;
+	}
+	
+	public String getH() {
+		return h;
 	}
 		
 }

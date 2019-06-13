@@ -37,6 +37,8 @@ public class NodeInfo implements Serializable{
 	}
 	
 	public boolean equals(NodeInfo node) {
-		return address.equals(node.getAddress());
+		return address.equals(node.getAddress()) || 
+				numID == node.getNumID() || 
+				nameID.equals(node.getNameID()); 
 	}
 }
