@@ -4,6 +4,9 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 
+import blockchain.Block;
+import blockchain.Transaction;
+
 public interface RMIInterface extends Remote {
 	
 	/*
@@ -40,8 +43,11 @@ public interface RMIInterface extends Remote {
 	/*
 	 * For remote testing
 	 */
-	public int getDataNum();
-	public ArrayList<NodeInfo> getData();
-	public NodeInfo[][][] getLookupTable();
+	public int getDataNum() throws RemoteException;
+	public ArrayList<NodeInfo> getData() throws RemoteException;
+	public ArrayList<Transaction> getTransactions() throws RemoteException;
+	public NodeInfo[][][] getLookupTable() throws RemoteException;
+	public void put(Transaction t) throws RemoteException;
+	public void put(Block t) throws RemoteException;
 	
 }

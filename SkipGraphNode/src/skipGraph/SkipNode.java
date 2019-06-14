@@ -209,7 +209,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			NodeInfo result = searchByNumID(num);
 			log("The result of search by numberic ID is: "+ result.getAddress());
 		}else if(query == 6) {
-			log("Which transaction to validate, you have "+transactions.size()+" option");
+			log("Which transaction to validate, you have "+transactions.size()+ " option");
 			int num = Integer.parseInt(get());
 			ArrayList<NodeInfo> v = getValidators(transactions.get(num));
 			log("The validators are: ");
@@ -753,16 +753,29 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	/*
 	 * Getters (For use in the remote testing)
 	 */
+
+	public ArrayList<Transaction> getTransactions() throws RemoteException{
+		return transactions;
+	}
 	
-	public int getDataNum() {
+	public int getDataNum() throws RemoteException{
 		return dataNum;
 	}
 	
-	public ArrayList<NodeInfo> getData(){
+	public ArrayList<NodeInfo> getData() throws RemoteException{
 		return data;
 	}
-	public NodeInfo[][][] getLookupTable(){
+	public NodeInfo[][][] getLookupTable() throws RemoteException{
 		return lookup;
+	}
+	
+	public void put(Transaction t) throws RemoteException{
+		transactions.add(t);
+		insert(t);
+	}
+	public void put(Block t) throws RemoteException{
+		blocks.add(t);
+		insert(t);
 	}
 
 }

@@ -1,10 +1,13 @@
 package remoteTest;
 
+import java.io.IOException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import blockchain.Block;
+import blockchain.Transaction;
 import skipGraph.NodeInfo;
 import skipGraph.RMIInterface;
 
@@ -13,7 +16,10 @@ public class RemoteAccessTool {
 	static String port;
 	static Scanner in = new Scanner(System.in);
 	static ArrayList<NodeInfo> data;
+	private static ArrayList<Transaction> transactions;
 	static NodeInfo[][][] lookup;
+	static String nameID, numID;
+	
 
 	public static void main(String[] args) {
 		while(true) {
@@ -27,7 +33,6 @@ public class RemoteAccessTool {
 			String[] ipsp = ip.split(":");
 			ip = ipsp[0];
 			port = ipsp[1];
-			String nameID, numID;
 			log("Enter name ID:");
 			nameID = in.nextLine();
 			log("Enter num ID:");
@@ -38,73 +43,71 @@ public class RemoteAccessTool {
 				log("Couldn't fetch the node. Please make sure the input is correct.");
 				continue;
 			}
-			data = node.getData();
-			lookup = node.getLookupTable();
-			if(data == null || lookup == null) {
-				log("Couldn't fetch data and lookup properly. Please try again.");
-				continue;
-			}
 			try {
-			while(true) {
-				String input = get();
-				if(!input.matches("[1-7]")) {
-					log("Invalid query. Please enter the number of one of the possible operations");
-					return;
+				data = node.getData();
+				lookup = node.getLookupTable();
+				if(data == null || lookup == null) {
+					log("Couldn't fetch data and lookup properly. Please try again.");
+					continue;
 				}
-				int query = Integer.parseInt(input);
-
-				if(query == 1) { // search by name ID
-					log("Please Enter the name ID to be searched");
-					String name = get();
-					while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
-						log("Name ID should be a binary string. Please enter a valid Name ID:");
-						name = get();
+				while(true) {
+					String input = get();
+					if(!input.matches("[1-7]")) {
+						log("Invalid query. Please enter the number of one of the possible operations");
+						continue;
 					}
-					NodeInfo result = null;
-					try{
-						result = node.searchByNameID(name);
-					}catch(RemoteException e) {
-						e.printStackTrace();
-						log("Remote Exception in query.");
+					int query = Integer.parseInt(input);
+					if(query == 1) {
+						log("Enter prev of transaction");
+						String prev = get();
+						log("Enter cont of transaction");
+						String cont = get();
+						Transaction t = new Transaction(prev,ip+":"+port,cont);
+						node.put(t);
+					}else if (query == 2){ // insert block
+						log("Enter prev of block");
+						String prev = get();
+						Block b = new Block(ip+":"+port,prev);
+						node.put(b);
+					}else if(query == 3) { // search by name ID
+						log("Please Enter the name ID to be searched");
+						String name = get();
+						while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
+							log("Name ID should be a binary string. Please enter a valid Name ID:");
+							name = get();
+						}
+						NodeInfo result = null;
+						try{
+							result = node.searchByNameID(name);
+						}catch(RemoteException e) {
+							e.printStackTrace();
+							log("Remote Exception in query.");
+						}
+						log("The result of search by name ID is: "+result.getAddress());
+					}else if(query == 4) { // search by num ID
+						log("Please Enter the numeric ID to be searched");
+						String numInput = get();
+						while(!numInput.matches("0|[1-9][0-9]*")) {
+							log("Invalid number entered. Please enter a valid number");
+							numInput = get();
+						}
+						int num = Integer.parseInt(numInput);
+						NodeInfo result = node.searchByNumID(num);
+						log("The result of search by numeric ID is: "+ result.getAddress());
+					}else if(query == 5) { // print the lookup table of the current node
+						log("In case you want the lookup table of the original node enter 0.");
+						log("Otherwise, emter the index of the data node ");
+						int num = Integer.parseInt(get());
+						if(num < node.getDataNum())
+							printLookup(num);
+						else
+							log("Data node with given index does not exist");
+					}else if(query == 6) {
+						printData();
+					}else if(query == 7) {
+						break;
 					}
-					log("The result of search by name ID is: "+result.getAddress());
-				}else if(query == 3) { // search by num ID
-					log("Please Enter the numeric ID to be searched");
-					String numInput = get();
-					while(!numInput.matches("0|[1-9][0-9]*")) {
-						log("Invalid number entered. Please enter a valid number");
-						numInput = get();
-					}
-					int num = Integer.parseInt(numInput);
-					NodeInfo result = node.searchByNumID(num);
-					log("The result of search by numberic ID is: "+ result.getAddress());
-				}else if(query == 4) { // print the lookup table of the current node
-					log("In case you want the lookup table of the original node enter 0.");
-					log("Otherwise, emter the index of the data node ");
-					int num = Integer.parseInt(get());
-					if(num < node.getDataNum())
-						printLookup(num);
-					else
-						log("Data node with given index does not exist");
-				}else if( query == 5) { // print the left neighbor at a certain level
-					log("Please Enter the required level:");
-					int lvl = Integer.parseInt(get());
-					if(lookup[lvl][0][0] == null)
-						log("No left node present at level "+lvl);
-					else
-						log("Left node at level "+lvl+" is:" + lookup[lvl][0][0].getAddress());
 				}
-				else if (query == 6) { // print the right neighbor at a certain level
-					log("Please Enter the required level:");
-					int lvl = Integer.parseInt(get());
-					if(lookup[lvl][1][0] == null)
-						log("No right node present at level "+lvl);
-					else
-						log("Right node at level "+lvl+" is:" + lookup[lvl][1][0].getAddress());
-				}else if (query == 7) {
-					printData();
-				}
-			}
 			}catch(Exception e)
 			{
 				e.printStackTrace();
@@ -113,6 +116,19 @@ public class RemoteAccessTool {
 		}
 	}
 
+	
+	public static void printMenu() throws IOException{
+        log("Address of node being controlled: " + ip + ":" + port);
+        log("Name ID: "+ nameID +" Number ID: " + numID);
+        log("Choose a query by entering it's code and then press Enter");
+        log("1-Insert Transaction");
+        log("2-Insert Block");
+        log("3-Search By Name ID");
+        log("4-Search By Number ID");
+        log("5-Print the Lookup Table");
+        log("6-Print data");
+        log("7-Exit");
+	}
 
 	/*
 	 * Taken from SkipNode class. However, it needs to be implemented here so that println would print here rather than in the other node.
