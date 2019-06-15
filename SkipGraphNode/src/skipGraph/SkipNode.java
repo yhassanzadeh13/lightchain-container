@@ -45,7 +45,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static Hasher hasher;
 	public static final int TRUNC = 20;
 	private static int valThreshold = 3;
-	
+	private static HashMap<String,Integer> blkIdx = new HashMap<>();
+	private static HashMap<Integer,String> view = new HashMap<>();	
 	
 	public static void main(String args[]) {
 		
@@ -174,7 +175,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			String prev = get();
 			log("Enter cont of transaction");
 			String cont = get();
-			Transaction t = new Transaction(prev,address,cont);
+			Transaction t = new Transaction(prev,numID,cont);
+			t.setAddress(address);
 			transactions.add(t);
 			insert(t);
 		}else if (query == 3){ // insert block
@@ -229,7 +231,50 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         
     }
 	
+	/*
+	 * This method validated the soundness of a given transaction
+	 * It checks if the given transaction is associated with a block
+	 * which does not precede the block that contains the transaction's owner's 
+	 * last transaction.
+	 */
+	public boolean isSound(Transaction t) {
+		long start = System.currentTimeMillis();
+		// get the hash value of the block that contains the owner's latest transaction
+		String lastblk = view.get(t.getOwner());
+		// get the index of the block that the given transaction is linked to
+		int tIdx = blkIdx.get(t.getPrev());
+		// get the index of the block the contains the owner's latest transaction
+		int bIdx = blkIdx.get(lastblk);
+		long end = System.currentTimeMillis();
+		log("Time of Checking Soundness: " + (end-start));
+		return tIdx > bIdx ;
+	}
 	
+	/*
+	 * This method returns the validators of a given transaction
+	 */
+	public ArrayList<NodeInfo> getValidators(Transaction t){
+		// stores the validators to be returned
+		ArrayList<NodeInfo> validators = new ArrayList<>(); 
+		// used as a lookup to check if a node has been already added to the validators array
+		// because the search might return the same node more than once
+		// so in order to avoid this case, when we find an already added node, 
+		// we repeat the search
+		HashMap<String,Integer> taken = new HashMap<>(); 
+		
+		int count = 0 , i = 0;
+		while(count < valThreshold) { // terminates when we get the required number of validators
+			String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
+			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
+			NodeInfo node = searchByNumID(num);
+			i++;
+			if(taken.containsKey(node.getAddress()) || node.equals(data.get(0)))continue;
+			count++;
+			taken.put(node.getAddress(), 1);
+			validators.add(node);
+		}
+		return validators;
+	}
 	/*
 	 * This method is a helper method for insert() method
 	 * It is used to make the insert() operation recursive per level.
@@ -396,31 +441,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 	}
 	
-	/*
-	 * This method returns the validators of a given transaction
-	 */
-	public ArrayList<NodeInfo> getValidators(Transaction t){
-		// stores the validators to be returned
-		ArrayList<NodeInfo> validators = new ArrayList<>(); 
-		// used as a lookup to check if a node has been already added to the validators array
-		// because the search might return the same node more than once
-		// so in order to avoid this case, when we find an already added node, 
-		// we repeat the search
-		HashMap<String,Integer> taken = new HashMap<>(); 
-		
-		int count = 0 , i = 0;
-		while(count < valThreshold) { // terminates when we get the required number of validators
-			String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
-			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
-			NodeInfo node = searchByNumID(num);
-			i++;
-			if(taken.containsKey(node.getAddress()) || node.equals(data.get(0)))continue;
-			count++;
-			taken.put(node.getAddress(), 1);
-			validators.add(node);
-		}
-		return validators;
-	}
+	
 	
 	/*
 	 * This method receives a number, and returns the data node (or possibly the main node)
