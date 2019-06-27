@@ -9,14 +9,14 @@ import skipGraph.SkipNode;
 
 public class Transaction extends NodeInfo{
 	private final String prev;
-	private final String owner;
+	private final int owner;
 	private final String cont;//Use random string for this
 	private final String h;//Hash
 	private List<String> sigma;
 	private Hasher hasher;
 	
-	public Transaction(String prev, String owner, String cont){
-		super(owner,0,prev);
+	public Transaction(String prev, int owner, String cont){
+		super("",0,prev);
 		this.prev = prev;
 		this.owner = owner;
 		this.cont = cont;
@@ -29,7 +29,7 @@ public class Transaction extends NodeInfo{
 		return prev;
 	}
 	
-	public String getOwner() {
+	public int getOwner() {
 		return owner;
 	}
 	
