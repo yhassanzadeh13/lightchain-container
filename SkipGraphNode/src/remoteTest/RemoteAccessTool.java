@@ -170,8 +170,9 @@ public class RemoteAccessTool {
         int cnt = (lookup.length-1)*2;
         for(int i = lookup.length-2 ; i >= 0 ; i--)//double check the initial value of i
         {
-            	log(cnt-- + " " + ((lookup[i][0][num] == null)?"null\t":(lookup[i][1][num].getAddress()+"\t"))
-            	   +cnt-- + " " + ((lookup[i][1][num] == null)?"null\t":(lookup[i][1][num].getAddress()+"\t")));
+        		cnt-=2;
+            	log(cnt + " " + ((lookup[i][0][num] == null)?"null\t":(lookup[i][1][num].getAddress()+"\t"))
+               +(cnt+1) + " " + ((lookup[i][1][num] == null)?"null\t":(lookup[i][1][num].getAddress()+"\t")));
         }
     }
 	public static void printData() {
