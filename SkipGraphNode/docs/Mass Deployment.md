@@ -35,8 +35,8 @@ The configuration file should also be named node.conf and should be in the same 
 In order to deploy the whole graph, it is first required to deploy the master node. After deploying the master node, its IP address and port can be used to create the configuration file of the slave nodes. In order to deploy a master node, the field "testingMode" in the SkipNode class should be modified before running. The following states are currently possible:
 ```java
 private static int testingMode = 1;/*   0 = normal functionality
-										1 = master: Gives out a number (N) of configurations to first N nodes connecting to it
-										2 = slave: opens local config file and connects to the master as its introducer
+					1 = master: Gives out a number (N) of configurations to first N nodes connecting to it
+					2 = slave: opens local config file and connects to the master as its introducer
 										*/	 
 ```
 Setting the testingMode field to 1 and running would run a master node. After that, the field should be switched to  2 and whatever number of nodes required should be ran. 
