@@ -27,16 +27,9 @@ import java.util.Scanner;
 
 public class DigitalSignature {
 	
-	
-	public static void main(String args[]) {
-		String pth = "C:\\Users\\USER\\Documents\\Research\\TestKeys";
-		DigitalSignature sign = new DigitalSignature("RSA");
-		PublicKey otherKey = sign.loadKey(pth, "publicTest", "RSA");
-		sign.storeKey(pth, "otherKey", otherKey);
-	}
-	
-	// investigate using SecureRandom
-	 
+	private static String genAlgorithm = "RSA";
+	private static String signAlgorithm = "SHA256withRSA";
+		 
 	private PrivateKey privateKey;
 	private PublicKey publicKey;
 	private String privateKeyName;
@@ -51,7 +44,7 @@ public class DigitalSignature {
 	 * Once we declare a digital signature for a node
 	 * we generate a public-private key pair for the node given a certain algorithm
 	 */
-	public DigitalSignature(String genAlgorithm) {
+	public DigitalSignature() {
 		try {
 			KeyPairGenerator gen = KeyPairGenerator.getInstance(genAlgorithm);
 			gen.initialize(2048);
@@ -150,7 +143,7 @@ public class DigitalSignature {
 	/*
 	 * This method takes a string, signs it, and then returns the signed string
 	 */
-	public String signString(String text, String signAlgorithm) {
+	public String signString(String text) {
 		
 		Signature signature;
 		try {	
@@ -172,7 +165,7 @@ public class DigitalSignature {
 	 * in the same path of the of the given file
 	 * and returns true if the signing operation was successful and false otherwise
 	 */
-	public boolean signFile(String filePath, String signAlgorithm) {
+	public boolean signFile(String filePath) {
 		
 		Signature signature;
 		try {
@@ -200,7 +193,7 @@ public class DigitalSignature {
 	 * This methods receives a string and the signed data and verifies it
 	 * It returns true if the operation is successful and false otherwise
 	 */
-	public boolean verifyString(String data, String signedData,String signAlgorithm, PublicKey pKey) {
+	public boolean verifyString(String data, String signedData, PublicKey pKey) {
 			
 		Signature signature ;
 		try {
@@ -220,7 +213,7 @@ public class DigitalSignature {
 	 * This method receives that paths of a data file and a signed file and verifies the data file
 	 * It return true if the operation is successful and false otherise.
 	 */
-	public boolean verifyFile(String filePath, String signedPath,String signAlgorithm, PublicKey pKey) {
+	public boolean verifyFile(String filePath, String signedPath, PublicKey pKey) {
 		
 		Signature signature;
 		try {

@@ -2,6 +2,7 @@ package skipGraph;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 
 import blockchain.Block;
@@ -27,7 +28,9 @@ public interface RMIInterface extends Remote {
 	public int getRightNumID(int level,int num) throws RemoteException;
 	public String getLeftNameID(int level,int num) throws RemoteException;
 	public String getRightNameID(int level,int num) throws RemoteException;
-	
+	public PublicKey getPublicKey() throws RemoteException ;
+	public int getBalance() throws RemoteException;
+	public String PoV(Transaction t, PublicKey ownerPublicKey) throws RemoteException;
 	/*
 	 * Skip Node with data nodes functions
 	 */

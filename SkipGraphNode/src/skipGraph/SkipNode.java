@@ -10,6 +10,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,10 +44,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static ArrayList<Block> blocks = new ArrayList<>();
 	private static DigitalSignature digitalSignature;
 	private static Hasher hasher;
-	public static final int TRUNC = 20;
-	private static int valThreshold = 3;
 	private static HashMap<String,Integer> blkIdx = new HashMap<>();
-	private static HashMap<Integer,String> view = new HashMap<>();	
+	private static HashMap<Integer,String> view = new HashMap<>();
+	private static HashMap<Integer,Integer> viewBalance = new HashMap<>();
+	private static HashMap<Integer,Integer> viewMode = new HashMap<>();
+	private static int mode ; // 1: Honest, 0: Malicious
+	private static int balance = 20;
+	private static final int VALIDATION_FEES = 10;
+	private static int VAL_THRESHOLD = 2;
+	public static final int TRUNC = 6;
 	
 	public static void main(String args[]) {
 		
@@ -96,7 +102,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public static void setInfo() {
 		hasher = new HashingTools();
-		
+		digitalSignature = new DigitalSignature();
 		String numInput ;
 		log("Enter the address of the introducer:");
 		introducer = get();
@@ -125,6 +131,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		nameID = hasher.getHash(address,TRUNC);
 		numID = Integer.parseInt(nameID,2);
 		
+		log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
+		mode = Integer.parseInt(get());
+		while(mode != 0 && mode != 1) {
+			log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
+			mode = Integer.parseInt(get());
+		}
 		// In case the introducer to this node is null, then the insert method
 		// will not be called on it, so we manually add it to the data list and 
 		// map index in the data array with its numID.
@@ -149,7 +161,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         log("3-Insert Block");
         log("4-Search By Name ID");
         log("5-Search By Number ID");
-        log("6-Get Validators");
+        log("6-Validate a transaction");
         log("7-Print the Lookup Table");
 	}
 	
@@ -213,23 +225,53 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}else if(query == 6) {
 			log("Which transaction to validate, you have "+transactions.size()+ " option");
 			int num = Integer.parseInt(get());
-			ArrayList<NodeInfo> v = getValidators(transactions.get(num));
-			log("The validators are: ");
-			for(int i=0 ; i<v.size() ; ++i) {
-				logLine(v.get(i).getAddress() + " ");
+			try {
+				validate(transactions.get(num));
+			} catch (RemoteException e) {
+				e.printStackTrace();
 			}
-			log("");
 		}else if(query == 7) { // print the lookup table of the current node
 			log("In case you want the lookup table of the original node enter 0.");
-			log("Otherwise, emter the index of the data node ");
+			log("Otherwise, enter the index of the data node ");
 			int num = Integer.parseInt(get());
 			if(num < dataNum)
 				printLookup(num);
 			else
 				log("Data node with given index does not exist");
 		}
-        
     }
+	
+	public void validate(Transaction t) throws RemoteException {
+		ArrayList<NodeInfo> validators = getValidators(t);
+		ArrayList<String> sigma = new ArrayList<>();
+		String mySign = digitalSignature.signString(t.getH());
+		sigma.add(mySign);
+		t.setSigma(sigma);
+		for(int i=0 ; i<validators.size(); ++i) {
+			RMIInterface node = getRMI(validators.get(i).getAddress());
+			String signature = node.PoV(t,getPublicKey());
+			if(signature == null) {
+				log("Validating Transaction failed.");
+				return;
+			}
+			sigma.add(signature);
+		}
+		t.setSigma(sigma);
+		log("Validation Successful");
+	}
+	/*
+	 * Checks the soundness, correctness and authenticity of a transaction using other methods.
+	 * Checks if the owner of the transaction has enough balance to cover validation fees.
+	 * returns null in case any of the tests fails, otherwise it signs the hashvalue of the transaction
+	 * and sends the signed value to the owner.
+	 */
+	public String PoV(Transaction t, PublicKey ownerPublicKey) {
+		boolean val = isAuthenticated(t,ownerPublicKey) && isCorrect(t) && isSound(t) && hasBalanceCompliance(t);
+		if(val == false)
+			return null;
+		String signedHash = digitalSignature.signString(t.getH());
+		return signedHash;
+	}
 	
 	/*
 	 * This method validated the soundness of a given transaction
@@ -249,7 +291,44 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		log("Time of Checking Soundness: " + (end-start));
 		return tIdx > bIdx ;
 	}
-	
+	/*
+	 * Returns true if both nodes are of same type (HONEST,HONEST) or (MALICIOUS,MALICIOUS)
+	 * and returns false if both are of different types.
+	 */
+	public boolean isCorrect(Transaction t) {
+		int ownerMode = viewMode.get(t.getOwner());
+		return ownerMode == mode;
+	}
+	/*
+	 * This method receives a transaction and the public key of the owner and verifies two things:
+	 * 1- The hashvalue of the transaction was generated according to the correct equation
+	 * 2- The sigma of the transaction contains the transaction's owner signed value of the hashvalue
+	 */
+	public boolean isAuthenticated(Transaction t, PublicKey ownerPublicKey) {
+		// generate the hash using the equation to check if it was generated correctly
+		String hash = hasher.getHash(t.getPrev()+t.getOwner()+t.getCont(),TRUNC);
+		// return false if it was not generated properly
+		if(!hash.equals(t.getH()))
+			return false;
+		// now get the sigma array from transaction and iterate over signatures it contains
+		ArrayList<String> tSigma = t.getSigma();
+		boolean verified = false;
+		for(int i=0 ; i<tSigma.size(); ++i) {
+			// if we find one signature which belongs to the owner then we set verified to true
+			boolean is = digitalSignature.verifyString(hash, tSigma.get(i), ownerPublicKey);
+			if(is)
+				verified = true;
+		}
+		return verified;
+	}
+	/*
+	 * Checks if the owner of the transaction has enough balance to cover the fees
+	 * of validation
+	 */
+	public boolean hasBalanceCompliance(Transaction t) {
+		int ownerBalance = viewBalance.get(t.getOwner());
+		return ownerBalance >= VALIDATION_FEES;
+	}
 	/*
 	 * This method returns the validators of a given transaction
 	 */
@@ -263,7 +342,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		HashMap<String,Integer> taken = new HashMap<>(); 
 		
 		int count = 0 , i = 0;
-		while(count < valThreshold) { // terminates when we get the required number of validators
+		while(count < VAL_THRESHOLD) { // terminates when we get the required number of validators
 			String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
 			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
 			NodeInfo node = searchByNumID(num);
@@ -717,13 +796,21 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	// This method calculate the length of the common prefix 
 	// between the nameID of the current node and the given name
 	public static int commonBits(String name) {	
-			if(name.length() != nameID.length())
-				return -1;
-			int i = 0 ;
-			for(i = 0 ; i < name.length() && name.charAt(i) == nameID.charAt(i);i++);
-			log("Common Prefix for " + nameID + " and " + name + " is: " + i);
-			return i ;		
-		}
+		if(name.length() != nameID.length())
+			return -1;
+		int i = 0 ;
+		for(i = 0 ; i < name.length() && name.charAt(i) == nameID.charAt(i);i++);
+		log("Common Prefix for " + nameID + " and " + name + " is: " + i);
+		return i ;		
+	}
+	
+	public int getBalance() {
+		return balance;
+	}
+	
+	public PublicKey getPublicKey() {
+		return digitalSignature.getPublicKey();
+	}
 	/*
 	 * This method returns the length of the common prefix between two given strings
 	 */

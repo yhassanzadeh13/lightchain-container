@@ -1,5 +1,6 @@
 package blockchain;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import hashing.Hasher;
@@ -12,7 +13,7 @@ public class Transaction extends NodeInfo{
 	private final int owner;
 	private final String cont;//Use random string for this
 	private final String h;//Hash
-	private List<String> sigma;
+	private ArrayList<String> sigma;
 	private Hasher hasher;
 	
 	public Transaction(String prev, int owner, String cont){
@@ -23,6 +24,10 @@ public class Transaction extends NodeInfo{
 		hasher = new HashingTools();
 		this.h = hasher.getHash(prev + owner + cont,SkipNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
+	}
+	
+	public ArrayList<String> getSigma(){
+		return sigma;
 	}
 	
 	public String getPrev() {
@@ -39,6 +44,10 @@ public class Transaction extends NodeInfo{
 	
 	public String getH() {
 		return h;
+	}
+	
+	public void setSigma(ArrayList<String> s) {
+		sigma = s;
 	}
 		
 }

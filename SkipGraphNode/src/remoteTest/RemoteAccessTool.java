@@ -62,7 +62,7 @@ public class RemoteAccessTool {
 						String prev = get();
 						log("Enter cont of transaction");
 						String cont = get();
-						Transaction t = new Transaction(prev,ip+":"+port,cont);
+						Transaction t = new Transaction(prev,Integer.parseInt(numID),cont);
 						node.put(t);
 					}else if (query == 2){ // insert block
 						log("Enter prev of block");
