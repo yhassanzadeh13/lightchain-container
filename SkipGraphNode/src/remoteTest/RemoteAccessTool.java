@@ -76,16 +76,22 @@ public class RemoteAccessTool {
 					}else if(query == 3) { // search by name ID
 						log("Please Enter the name ID to be searched");
 						String name = get();
-						while(!name.matches("[0	-1]+")) {//Makes sure the name is a binary string
+						while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
 							log("Name ID should be a binary string. Please enter a valid Name ID:");
 							name = get();
 						}
+						ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
 						NodeInfo result = null;
 						try{
-							result = node.searchByNameID(name);
+							lst = node.searchByNameID(name,lst);
+							result = lst.get(lst.size()-1);
 						}catch(RemoteException e) {
 							e.printStackTrace();
 							log("Remote Exception in query.");
+						}
+						log("The search path is: ");
+						for(int i=0;i<lst.size();i++) {
+							log(i+") " + lst.get(i).getNameID());
 						}
 						log("The result of search by name ID is: "+result.getAddress());
 						if(promptSwitch(result)) break;
@@ -97,12 +103,18 @@ public class RemoteAccessTool {
 							numInput = get();
 						}
 						int num = Integer.parseInt(numInput);
+						ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
 						NodeInfo result = null;
 						try{
-							result = node.searchByNumID(num);
+							lst = node.searchByNumID(num,lst);
+							result = lst.get(lst.size()-1);
 						}catch(RemoteException e) {
 							e.printStackTrace();
 							log("Remote Exception in query.");
+						}
+						log("The search path is: ");
+						for(int i=0;i<lst.size();i++) {
+							log(i+") " + lst.get(i).getNumID());
 						}
 						log("The result of search by numeric ID is: "+ result.getAddress());
 						if(promptSwitch(result)) break;
@@ -172,8 +184,8 @@ public class RemoteAccessTool {
         for(int i = lookup.length-2 ; i >= 0 ; i--)//double check the initial value of i
         {
         		cnt-=2;
-            	log(cnt + " " + ((lookup[i][0][num] == null)?"null\t":(lookup[i][0][num].getAddress()+"\t"))
-               +(cnt+1) + " " + ((lookup[i][1][num] == null)?"null\t":(lookup[i][1][num].getAddress()+"\t")));
+            	log(cnt + " " + ((lookup[i][0][num] == null)?"null\t":(lookup[i][0][num].getNameID()+"\t"))
+               +(cnt+1) + " " + ((lookup[i][1][num] == null)?"null\t":(lookup[i][1][num].getNameID()+"\t")));
         }
         
     }
@@ -194,6 +206,8 @@ public class RemoteAccessTool {
 		String inp = get();
 		if(inp.equalsIgnoreCase("Y")) {
 			ip = node.getAddress();
+		}else {
+			return false;
 		}
 		skipInit = true;
 		return true;

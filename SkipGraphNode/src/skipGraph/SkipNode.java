@@ -504,15 +504,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * and it routes the search through the skip graph recursively using RMI
 	 * @see RMIInterface#searchNum(int, int)
 	 */
-	public NodeInfo searchNum(int targetInt,int level){
+	public ArrayList<NodeInfo> searchNum(int targetInt,int level, ArrayList<NodeInfo> lst){
 		
 		log("Search at: "+address); // we use this to see when a search has passed through this node
 		
 		int dataIdx = getBestNum(targetInt);// get the data node (or main node) that is closest to the target search
+		lst.add(data.get(dataIdx));//Add the current node's info to the search list
 		int num = data.get(dataIdx).getNumID();
-		if(num == targetInt) 
-			return data.get(dataIdx) ;
-		
+		if(num == targetInt) {
+			return lst;
+		}
 		// If the target is greater than the current node then we should search right
 		if(num < targetInt) {
 			
@@ -521,12 +522,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			while(level >= 0 && (lookup[level][1][dataIdx] == null || lookup[level][1][dataIdx].getNumID() > targetInt))
 				level--;
 			// If there are no more levels to go down to return the current node
-			if(level < 0) 			
-				return data.get(dataIdx);
+			if(level < 0) {
+				return lst;
+			}
 			// delegate the search to the right neighbor
 			RMIInterface rightRMI = getRMI(lookup[level][1][dataIdx].getAddress());
 			try{
-				return rightRMI.searchNum(targetInt,level);
+				return rightRMI.searchNum(targetInt,level,lst);
 			}catch(Exception e) {
 				log("Exception in searchNum. Target: "+targetInt);
 			}
@@ -538,16 +540,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				level--;
 			// If there are no more levels to go down to return the current node
 			if(level < 0)
-				return data.get(dataIdx);
+				return lst;
 			// delegate the search to the left neighbor
 			RMIInterface leftRMI = getRMI(lookup[level][0][dataIdx].getAddress());
 			try{
-				return leftRMI.searchNum(targetInt, level);
+				return leftRMI.searchNum(targetInt, level, lst);
 			}catch(Exception e) {
 				log("Exception in searchNum. Target: "+targetInt);
 			}
 		}
-		return data.get(dataIdx);
+		return lst;
 	}
 	
 	/* 
@@ -557,12 +559,23 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * @see RMIInterface#searchByNumID(java.lang.String)
 	 */
 	public NodeInfo searchByNumID(int searchTarget){
+		ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
+		lst = searchByNumID(searchTarget,lst);
+		if(lst == null) return null;
+		else {
+			return lst.get(lst.size()-1);
+		}
+	}
 	
+	public ArrayList<NodeInfo> searchByNumID(int searchTarget, ArrayList<NodeInfo> lst){
+		if(lst == null) {
+			lst = new ArrayList<NodeInfo>();
+		}
 		int level = maxLevels;
 		int dataIdx = getBestNum(searchTarget); // route search to closest data node
 		if(lookup[0][0][dataIdx] == null && lookup[0][1][dataIdx] == null)
-			return data.get(dataIdx);
-		return searchNum(searchTarget,level);	
+			lst.add(data.get(dataIdx));
+		return searchNum(searchTarget,level,lst);	
 	}
 	
 	/*
@@ -592,11 +605,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * If direction == 0, then search is to the left
 	 * @see RMIInterface#searchName(java.lang.String, int, int)
 	 */
-	public NodeInfo searchName(String searchTarget,int level,int direction) throws RemoteException {
+	public ArrayList<NodeInfo> searchName(String searchTarget,int level,int direction, ArrayList<NodeInfo> lst) throws RemoteException {
 		
 		int dataIdx = getBestName(searchTarget);
+		lst.add(data.get(dataIdx));
 		if(data.get(dataIdx).getNameID().equals(searchTarget)) // if the current node hold the same nameID, return it.
-			return data.get(dataIdx);
+			return lst;
 		// calculate common bits to find to which level the search must be routed
 		int newLevel = commonBits(searchTarget); 
 		
@@ -604,9 +618,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		// then we continue the search in the same level in the same direction
 		if(newLevel <= level ) {
 			if(lookup[level][direction][dataIdx] == null)// If no more nodes in this direction return the current node
-				return data.get(dataIdx) ;
+				return lst ;
 			RMIInterface rightRMI = getRMI(lookup[level][direction][dataIdx].getAddress());
-			return rightRMI.searchName(searchTarget, level, direction);
+			return rightRMI.searchName(searchTarget, level, direction, lst);
 		}
 		// If the number of common bits is more than the current level
 		// then the search will be continued on the new level
@@ -617,23 +631,26 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		// First we start the search on the same given direction and wait for the result it returns
 		if(lookup[newLevel][direction][dataIdx] != null) {
 			RMIInterface rightRMI = getRMI(lookup[newLevel][direction][dataIdx].getAddress());
-			result = rightRMI.searchName(searchTarget,newLevel,direction);
+			lst = rightRMI.searchName(searchTarget,newLevel,direction,lst);
+			result = lst.get(lst.size()-1);
 		}
 		// If it returns a result that differs from the current node then we check it
 		if(result != null && !result.equals(data.get(dataIdx))) {
 			RMIInterface resultRMI = getRMI(result.getAddress());
 			// If this is the result we want return it, otherwise continue the search in the opposite direction
 			if(resultRMI.getNameID().contains(searchTarget))
-				return result;
+				return lst;
 		}
 		// Continue the search on the opposite direction
 		if(lookup[newLevel][1-direction] != null) {
 			RMIInterface leftRMI = getRMI(lookup[newLevel][1-direction][dataIdx].getAddress());
-			NodeInfo k = leftRMI.searchName(searchTarget, newLevel, 1-direction);
+			lst = leftRMI.searchName(searchTarget, newLevel, 1-direction,lst);
+			NodeInfo k = lst.get(lst.size()-1);
 			if(result == null || commonBits(k.getNameID(),data.get(dataIdx).getNameID()) > commonBits(result.getNameID(),data.get(dataIdx).getNameID()))
 				result = k;
 		}
-		return result;			
+		lst.add(result);
+		return lst;			
 	}
 	
 	/*
@@ -644,32 +661,46 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * @see RMIInterface#searchByNameID(java.lang.String)
 	 */
 	public NodeInfo searchByNameID(String searchTarget) throws RemoteException{
+		ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
+		lst = searchByNameID(searchTarget, lst);
+		if(lst == null) return null;
+		else {
+			return lst.get(lst.size()-1);
+		}
+	}
+	
+	public ArrayList<NodeInfo> searchByNameID(String searchTarget, ArrayList<NodeInfo> lst) throws RemoteException{
 		
 		int dataIdx = getBestName(searchTarget);
+		lst.add(data.get(dataIdx));
 		int newLevel = commonBits(searchTarget);
 		NodeInfo result = data.get(dataIdx);
 		
 		// First execute the search in the right direction and see the result it returns
 		if(lookup[newLevel][1][dataIdx] != null) {
 			RMIInterface rightRMI = getRMI(lookup[newLevel][1][dataIdx].getAddress());
-			result = rightRMI.searchName(searchTarget,newLevel,1);
+			lst =  rightRMI.searchName(searchTarget,newLevel,1,lst);
+			result = lst.get(lst.size()-1);
 		}
 		// If the result is not null and is different from the default value we check it
 		if(result != null && !result.equals(data.get(dataIdx))) {
 			RMIInterface resultRMI = getRMI(result.getAddress());
 			// If this is the result we want return it, otherwise continue searching to the left
 			if(resultRMI.getNameID().contains(searchTarget))
-				return result;
+				return lst;
 		}
 		// If the desired result was not found try to search to the left
 		if(lookup[newLevel][0][dataIdx] != null) {
 			RMIInterface leftRMI = getRMI(lookup[newLevel][0][dataIdx].getAddress());
-			NodeInfo k = leftRMI.searchName(searchTarget, newLevel, 0);
+			lst = leftRMI.searchName(searchTarget, newLevel, 0,lst);
+			NodeInfo k = lst.get(lst.size()-1);
 			if(commonBits(k.getNameID(),data.get(dataIdx).getNameID()) > commonBits(result.getNameID(),data.get(dataIdx).getNameID()))
 				result = k;
 		}
-		return result;
+		lst.add(result);
+		return lst;
 	}
+	
 	/*
 	 * getters and setters for lookup table and numID and nameID
 	 * 

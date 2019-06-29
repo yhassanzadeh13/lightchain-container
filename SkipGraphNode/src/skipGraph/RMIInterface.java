@@ -22,8 +22,10 @@ public interface RMIInterface extends Remote {
 	public String getNameID() throws RemoteException;
 	public NodeInfo searchByNameID(String targetString) throws RemoteException;
 	public NodeInfo searchByNumID(int targetNum) throws RemoteException;
-	public NodeInfo searchName(String searchTarget,int level,int direction) throws RemoteException;
-	public NodeInfo searchNum(int searchTarget,int level) throws RemoteException;
+	public ArrayList<NodeInfo> searchByNameID(String targetString, ArrayList<NodeInfo> lst) throws RemoteException;
+	public ArrayList<NodeInfo> searchByNumID(int targetNum,ArrayList<NodeInfo> lst) throws RemoteException;
+	public ArrayList<NodeInfo> searchName(String searchTarget,int level,int direction,ArrayList<NodeInfo> lst) throws RemoteException;
+	public ArrayList<NodeInfo> searchNum(int searchTarget,int level,ArrayList<NodeInfo> lst) throws RemoteException;
 	public int getLeftNumID(int level,int num) throws RemoteException;
 	public int getRightNumID(int level,int num) throws RemoteException;
 	public String getLeftNameID(int level,int num) throws RemoteException;
