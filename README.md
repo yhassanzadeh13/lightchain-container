@@ -1,1 +1,1 @@
-# Skip-Node-with-RMI-
+# LightChain Implementation
