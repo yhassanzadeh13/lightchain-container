@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import blockchain.Block;
 import blockchain.Transaction;
+import remoteTest.Configuration;
 
 public interface RMIInterface extends Remote {
 	
@@ -52,5 +53,4 @@ public interface RMIInterface extends Remote {
 	public NodeInfo[][][] getLookupTable() throws RemoteException;
 	public void put(Transaction t) throws RemoteException;
 	public void put(Block t) throws RemoteException;
-	
 }

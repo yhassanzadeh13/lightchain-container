@@ -2,7 +2,6 @@ package skipGraph;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -13,14 +12,15 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Scanner;
 import java.util.TreeMap;
 
+import remoteTest.Configuration;
+
 import blockchain.Block;
 import blockchain.Transaction;
-import hashing.HashingTools;
 import hashing.Hasher;
+import hashing.HashingTools;
 import signature.DigitalSignature;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
@@ -58,20 +58,19 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		
 		
 		lookup = new NodeInfo[maxLevels+1][2][maxData]; // Initialize size of lookup table
-		setInfo();
+		setInfo();		
+		
 		try {
-			
 			SkipNode skipNode = new SkipNode();
-			
 			Registry reg = LocateRegistry.createRegistry(RMIPort);
 			reg.rebind("RMIImpl", skipNode);
 			log("Rebinding Successful");
-			
+
 			while(true) {
 				printMenu();
 				skipNode.ask();
 			}
-			
+
 		}catch(RemoteException e) {
 			System.out.println("Remote Exception in main method. Terminating.");
 			e.printStackTrace();
@@ -81,7 +80,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			e.printStackTrace();
 		}
 		in.close();
-		
+
 	}
 	/*
 	 * Constructor for SkipNode class needed for RMI setup
@@ -147,6 +146,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 		log("Your INFO:\nnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
 	}
+	
 	
 	/*
 	 * This method prints the options for user controlling the node to choose.
@@ -857,11 +857,17 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		return response;
 	}
 	
+	// For Testing purposes
+	private static int configurationsLeft = 0;
+	private static ArrayList<Configuration> cnfs; //0th = master nodeinfo
+
+	
+	// For Testing purposes
 	
 	/*
 	 * Getters (For use in the remote testing)
 	 */
-
+	
 	public ArrayList<Transaction> getTransactions() throws RemoteException{
 		return transactions;
 	}

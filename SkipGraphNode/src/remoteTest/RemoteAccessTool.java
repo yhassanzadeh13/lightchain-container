@@ -18,32 +18,35 @@ public class RemoteAccessTool {
 	static ArrayList<NodeInfo> data;
 	private static ArrayList<Transaction> transactions;
 	static NodeInfo[][][] lookup;
-	static String nameID, numID;
-	
+	static String nameID;
+	static int numID;
+	static boolean skipInit = false;
+	static RMIInterface node;
 
 	public static void main(String[] args) {
 		while(true) {
-			log("Enter IP address along with port (x to exit)");
-			ip = in.nextLine();
-			while(ip.equals("x") || (!validateIP(ip) && ip.split(":").length!=2)) {
-				if(ip.equals("x")) System.exit(0);
-				log("Please enter a valid IP address with respective port");
+			if(!skipInit) {
+				log("Enter IP address along with port (x to exit)");
 				ip = in.nextLine();
-			}
+				while(ip.equals("x") || (!validateIP(ip) && ip.split(":").length!=2)) {
+					if(ip.equals("x")) System.exit(0);
+					log("Please enter a valid IP address with respective port");
+					ip = in.nextLine();
+				}
+			}else skipInit = false;
+			if(ip == null) continue;
 			String[] ipsp = ip.split(":");
 			ip = ipsp[0];
 			port = ipsp[1];
-			log("Enter name ID:");
-			nameID = in.nextLine();
-			log("Enter num ID:");
-			numID = in.nextLine();
-
-			RMIInterface node = getRMI(ip+":"+port);	 
+			
+			node = getRMI(ip+":"+port);	 
 			if(node == null) {
 				log("Couldn't fetch the node. Please make sure the input is correct.");
 				continue;
 			}
 			try {
+				nameID = node.getNameID();
+				numID = node.getNumID();
 				data = node.getData();
 				lookup = node.getLookupTable();
 				if(data == null || lookup == null) {
@@ -51,8 +54,9 @@ public class RemoteAccessTool {
 					continue;
 				}
 				while(true) {
+					printMenu();
 					String input = get();
-					if(!input.matches("[1-7]")) {
+					if(!input.matches("[1-8]")) {
 						log("Invalid query. Please enter the number of one of the possible operations");
 						continue;
 					}
@@ -62,7 +66,7 @@ public class RemoteAccessTool {
 						String prev = get();
 						log("Enter cont of transaction");
 						String cont = get();
-						Transaction t = new Transaction(prev,Integer.parseInt(numID),cont);
+						Transaction t = new Transaction(prev,numID,cont);
 						node.put(t);
 					}else if (query == 2){ // insert block
 						log("Enter prev of block");
@@ -72,7 +76,7 @@ public class RemoteAccessTool {
 					}else if(query == 3) { // search by name ID
 						log("Please Enter the name ID to be searched");
 						String name = get();
-						while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
+						while(!name.matches("[0	-1]+")) {//Makes sure the name is a binary string
 							log("Name ID should be a binary string. Please enter a valid Name ID:");
 							name = get();
 						}
@@ -84,6 +88,7 @@ public class RemoteAccessTool {
 							log("Remote Exception in query.");
 						}
 						log("The result of search by name ID is: "+result.getAddress());
+						if(promptSwitch(result)) break;
 					}else if(query == 4) { // search by num ID
 						log("Please Enter the numeric ID to be searched");
 						String numInput = get();
@@ -92,19 +97,40 @@ public class RemoteAccessTool {
 							numInput = get();
 						}
 						int num = Integer.parseInt(numInput);
-						NodeInfo result = node.searchByNumID(num);
+						NodeInfo result = null;
+						try{
+							result = node.searchByNumID(num);
+						}catch(RemoteException e) {
+							e.printStackTrace();
+							log("Remote Exception in query.");
+						}
 						log("The result of search by numeric ID is: "+ result.getAddress());
+						if(promptSwitch(result)) break;
 					}else if(query == 5) { // print the lookup table of the current node
-						log("In case you want the lookup table of the original node enter 0.");
-						log("Otherwise, emter the index of the data node ");
-						int num = Integer.parseInt(get());
-						if(num < node.getDataNum())
-							printLookup(num);
-						else
-							log("Data node with given index does not exist");
+//						log("In case you want the lookup table of the original node enter 0.");
+//						log("Otherwise, enter the index of the data node ");
+//						int num = Integer.parseInt(get());
+						printLookup(0);
+//						if(num < node.getDataNum())
+//							printLookup(num);
+//						else
+//							log("Data node with given index does not exist");
 					}else if(query == 6) {
 						printData();
 					}else if(query == 7) {
+						log("This is the current lookup table: ");
+						printLookup(0);
+						log("Enter the number of the node you want to connect to: (invalid number to abort)");
+						String st = get();
+						try {
+							int inp = Integer.parseInt(st);
+							NodeInfo swtch = lookup[inp/2][inp%2][0];
+							if(swtch==null) inp/=0;
+							if(promptSwitch(swtch)) break;
+						}catch(Exception e){
+							log("Invalid number, aborting...");
+						}
+					}else if(query == 8) {
 						break;
 					}
 				}
@@ -127,7 +153,8 @@ public class RemoteAccessTool {
         log("4-Search By Number ID");
         log("5-Print the Lookup Table");
         log("6-Print data");
-        log("7-Exit");
+        log("7-Traverse");
+        log("8-Exit");
 	}
 
 	/*
@@ -135,16 +162,20 @@ public class RemoteAccessTool {
 	 */
 	
 	public static void printLookup(int num) {
-        System.out.println("\n");
+		try {
+			lookup = node.getLookupTable();
+		}catch(Exception e) {
+			log("Couldn't update the lookup table properly. Aborting...");
+			return;
+		}
+        int cnt = (lookup.length-1)*2;
         for(int i = lookup.length-2 ; i >= 0 ; i--)//double check the initial value of i
         {
-            for(int j = 0 ; j<2 ; j++)
-            	if(lookup[i][j][num] == null)
-            		log("null\t");
-            	else
-            		log(lookup[i][j][num].getAddress()+"\t");
-            log("\n\n");
+        		cnt-=2;
+            	log(cnt + " " + ((lookup[i][0][num] == null)?"null\t":(lookup[i][0][num].getAddress()+"\t"))
+               +(cnt+1) + " " + ((lookup[i][1][num] == null)?"null\t":(lookup[i][1][num].getAddress()+"\t")));
         }
+        
     }
 	public static void printData() {
 		for(int i=0 ; i<data.size(); ++i)
@@ -152,12 +183,26 @@ public class RemoteAccessTool {
 		log("");
 	}
 	
+	public static boolean promptSwitch(NodeInfo node) {
+		if(node == null) {
+			System.out.println("Can't switch to null node. Aborting...");
+			return false;
+		}
+		log("Would you like to switch the remote to node at address: " + node.getAddress() + " ?");
+		log("The node's name ID is: " + node.getNameID() + " and its num ID is: " + node.getNumID());
+		log("Enter 'Y' to confirm, anything else to abort.");
+		String inp = get();
+		if(inp.equalsIgnoreCase("Y")) {
+			ip = node.getAddress();
+		}
+		skipInit = true;
+		return true;
+	}
 	
 	/*
 	 * The following methods are taken from the other class. It might be a good idea to have a way to use them in both classes without having to 
 	 * copy paste it here again
 	 */
-
 
 	public static void log(String st) {
 		System.out.println(st);
