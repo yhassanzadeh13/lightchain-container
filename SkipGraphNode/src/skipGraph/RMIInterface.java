@@ -50,4 +50,5 @@ public interface RMIInterface extends Remote {
 	public NodeInfo[][][] getLookupTable() throws RemoteException;
 	public void put(Transaction t) throws RemoteException;
 	public void put(Block t) throws RemoteException;
+	public Configuration getConf() throws RemoteException;
 }

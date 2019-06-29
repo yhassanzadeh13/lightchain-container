@@ -45,24 +45,46 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static int valThreshold = 3;
 	private static HashMap<String,Integer> blkIdx = new HashMap<>();
 	private static HashMap<Integer,String> view = new HashMap<>();	
+	private static int testingMode = 2;/*
+										0 = normal functionality
+										1 = master: Gives out N configurations to first N nodes connecting to it
+										2 = Leech: opens local config file and connects to the master as its introducer
+										*/	
+
 	
 	public static void main(String args[]) {
 		
 		
 		lookup = new NodeInfo[maxLevels+1][2][maxData]; // Initialize size of lookup table
-		setInfo();		
-		
 		try {
+			
+			if(testingMode == 0) {
+				setInfo();	
+			}else if(testingMode == 1) {
+				Configuration cnf = new Configuration();
+				cnfs = cnf.parseConfigurations();
+				setInfo(cnfs.remove(0));
+				configurationsLeft = cnfs.size();
+			}else {
+				Configuration cnf = new Configuration();
+				cnf.parseIntroducer();
+				RMIInterface intro = getRMI(cnf.getIntroducer());
+				cnf = intro.getConf();
+				setInfo(cnf);
+			}
+			
 			SkipNode skipNode = new SkipNode();
+			if(testingMode == 2) skipNode.insert(new NodeInfo(address,numID,nameID));
+			
 			Registry reg = LocateRegistry.createRegistry(RMIPort);
 			reg.rebind("RMIImpl", skipNode);
 			log("Rebinding Successful");
-
+			
 			while(true) {
 				printMenu();
 				skipNode.ask();
 			}
-
+			
 		}catch(RemoteException e) {
 			System.out.println("Remote Exception in main method. Terminating.");
 			e.printStackTrace();
@@ -72,7 +94,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			e.printStackTrace();
 		}
 		in.close();
-
+		
 	}
 	/*
 	 * Constructor for SkipNode class needed for RMI setup
@@ -133,6 +155,26 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		log("Your INFO:\nnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
 	}
 	
+	public static void setInfo(Configuration conf) {
+		hasher = new HashingTools();
+		introducer = conf.getIntroducer();
+		nameID = conf.getNameID();
+		numID = Integer.parseInt(conf.getNumID());
+		RMIPort = Integer.parseInt(conf.getPort());
+		try { // Assign address and IP 
+			address = Inet4Address.getLocalHost().getHostAddress() +":"+ RMIPort; //Used to get the current node address.
+			IP = Inet4Address.getLocalHost().getHostAddress();
+			log("My Address is :" + address);
+		}catch(UnknownHostException e) {
+			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
+			System.exit(0);
+		}
+		if(introducer.equalsIgnoreCase("none")) {
+			data.add(new NodeInfo(address,numID,nameID));
+			dataID.put(numID, 0);
+			dataNum++;
+		}
+	}
 	
 	/*
 	 * This method prints the options for user controlling the node to choose.
@@ -778,6 +820,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	/*
 	 * Getters (For use in the remote testing)
 	 */
+	
+	public Configuration getConf() throws RemoteException{
+		if(configurationsLeft == 0 || cnfs == null) {
+			return null;
+		}
+		System.out.println("Configuration given out. Configurations left: " +(configurationsLeft-1));
+		return cnfs.get(cnfs.size() - (configurationsLeft--));
+	}
 	
 	public ArrayList<Transaction> getTransactions() throws RemoteException{
 		return transactions;
