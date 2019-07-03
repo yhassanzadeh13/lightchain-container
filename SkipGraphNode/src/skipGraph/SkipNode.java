@@ -1,6 +1,9 @@
 package skipGraph;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Inet4Address;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
@@ -12,12 +15,11 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.TreeMap;
 
-import remoteTest.Configuration;
-
 import blockchain.Block;
 import blockchain.Transaction;
 import hashing.Hasher;
 import hashing.HashingTools;
+import remoteTest.Configuration;
 import signature.DigitalSignature;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
@@ -45,7 +47,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static int valThreshold = 3;
 	private static HashMap<String,Integer> blkIdx = new HashMap<>();
 	private static HashMap<Integer,String> view = new HashMap<>();	
-	private static int testingMode = 2;/*
+	private static int testingMode = 0;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -102,11 +104,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	protected SkipNode() throws RemoteException{
 		super();
 		try {
-			String st = Inet4Address.getLocalHost().getHostAddress();
+			String st = grabIP();
 			System.setProperty("java.rmi.server.hostname",st);
 			System.out.println("RMI Server proptery set. Inet4Address: "+st);
-		}catch (UnknownHostException e) {
-			System.err.println("Unknown Host Exception in constructor. Please terminate the program and try again.");
+		}catch (Exception e) {
+			System.err.println("Exception in constructor. Please terminate the program and try again.");
 		}
 	}
 	/*
@@ -132,11 +134,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		RMIPort = Integer.parseInt(numInput);
 		
 		try { // Assign address and IP 
-			address = Inet4Address.getLocalHost().getHostAddress() +":"+ RMIPort; //Used to get the current node address.
-			IP = Inet4Address.getLocalHost().getHostAddress();
+			String grabbedIP = grabIP();
+			address = grabbedIP +":"+ RMIPort; //Used to get the current node address.
+			IP = grabbedIP;
 			log("My Address is :" + address);
-		}catch(UnknownHostException e) {
-			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
+		}catch(Exception e) {
+			System.out.println("Couldn't fetch address. Please restart.");
 			System.exit(0);
 		}
 		
@@ -162,11 +165,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		numID = Integer.parseInt(conf.getNumID());
 		RMIPort = Integer.parseInt(conf.getPort());
 		try { // Assign address and IP 
-			address = Inet4Address.getLocalHost().getHostAddress() +":"+ RMIPort; //Used to get the current node address.
-			IP = Inet4Address.getLocalHost().getHostAddress();
+			String grabbedIP = grabIP();
+			address = grabbedIP +":"+ RMIPort; //Used to get the current node address.
+			IP = grabbedIP;
 			log("My Address is :" + address);
-		}catch(UnknownHostException e) {
-			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
+		}catch(Exception e) {
+			System.out.println("Couldn't fetch address. Please restart.");
 			System.exit(0);
 		}
 		if(introducer.equalsIgnoreCase("none")) {
@@ -760,11 +764,37 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 		return null;
 	}
+	/*
+	 * This method grabs the public ip from an external server 
+	 */
+	
+	public static String grabIP() {
+		String result=null;
+		URL url;
+		String[] services = {"http://checkip.amazonaws.com/", "http://www.trackip.net/ip", "https://api.ipify.org/?format=text"};
+		BufferedReader in;
+		for(int i=0;i<services.length;i++) {
+			try {
+				url = new URL(services[i]);
+				in = new BufferedReader(new InputStreamReader(
+				        url.openStream()));
+				result = in.readLine();
+				in.close();
+			}catch(Exception e) {
+				System.out.println("Error grabbing IP from " + services[i] + ". Trying a different service.");
+			}
+			if(validateIP(result)) {
+				return result;
+			}
+		}
+		return result;
+	}
 	
 	/*
 	 * This method validates the ip and makes sure its of the form xxx.xxx.xxx.xxx
 	 */
 	private static boolean validateIP(String adrs) { 
+		if(adrs == null) return false;
 		int colonIndex = adrs.indexOf(':');
 		String ip = adrs;
 		if(colonIndex != -1) ip = adrs.substring(0,colonIndex);
