@@ -2,9 +2,7 @@ package skipGraph;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.Inet4Address;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -166,7 +164,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		RMIPort = Integer.parseInt(conf.getPort());
 		try { // Assign address and IP 
 			String grabbedIP = grabIP();
-			address = grabbedIP +":"+ RMIPort; //Used to get the current node address.
+			address = grabbedIP +":"+ RMIPort; //Used to get the current node address. 
 			IP = grabbedIP;
 			log("My Address is :" + address);
 		}catch(Exception e) {
