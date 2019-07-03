@@ -43,11 +43,11 @@ This option makes it very convenient to traverse through the skip graph. Upon ch
 This is the current lookup table: 
 
 
-10 xxx.xxx.xxx.xxx:xxxx	9 xxx.xxx.xxx.xxx:xxxx	
-8 xxx.xxx.xxx.xxx:xxxx	7 xxx.xxx.xxx.xxx:xxxx	
-6 xxx.xxx.xxx.xxx:xxxx	5 xxx.xxx.xxx.xxx:xxxx	
-4 xxx.xxx.xxx.xxx:xxxx	3 xxx.xxx.xxx.xxx:xxxx	
-2 xxx.xxx.xxx.xxx:xxxx	1 xxx.xxx.xxx.xxx:xxxx	
+8 xxxx	9 xxxx	
+6 xxxx	7 xxxx	
+4 xxxx	5 xxxx	
+2 xxxx	3 xxxx	
+0 xxxx	1 xxxx	
 Enter the number of the node you want to connect to: (invalid number to abort)
 ```
 This makes it very easy to switch control to any of the neighboring nodes. 
