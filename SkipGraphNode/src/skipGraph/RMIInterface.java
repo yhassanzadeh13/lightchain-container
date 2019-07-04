@@ -29,28 +29,13 @@ public interface RMIInterface extends Remote {
 	public int getRightNumID(int level,int num) throws RemoteException;
 	public String getLeftNameID(int level,int num) throws RemoteException;
 	public String getRightNameID(int level,int num) throws RemoteException;
-	public PublicKey getPublicKey() throws RemoteException ;
-	public int getBalance() throws RemoteException;
-	public String PoV(Transaction t, PublicKey ownerPublicKey) throws RemoteException;
-	/*
-	 * Skip Node with data nodes functions
-	 */
-	
 	public NodeInfo insertSearch(int level, int direction,int num, String target) throws RemoteException;
-	
-	/*
-	 * Skip Node with blockchain support
-	 */
-	
-	
-	
-	/*
-	 * For remote testing
-	 */
-	public int getDataNum() throws RemoteException;
-	public ArrayList<NodeInfo> getData() throws RemoteException;
-	public ArrayList<Transaction> getTransactions() throws RemoteException;
-	public NodeInfo[][][] getLookupTable() throws RemoteException;
+	public String PoV(Transaction t) throws RemoteException ;
+	public PublicKey getPublicKey() throws RemoteException ;
+	// Testing:
 	public void put(Transaction t) throws RemoteException;
 	public void put(Block t) throws RemoteException;
+	public ArrayList<NodeInfo> getData() throws RemoteException;
+	public NodeInfo[][][] getLookupTable() throws RemoteException;
+	
 }

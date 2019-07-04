@@ -14,16 +14,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.TreeMap;
-
 import remoteTest.Configuration;
-
-import blockchain.Block;
-import blockchain.Transaction;
 import hashing.Hasher;
 import hashing.HashingTools;
-import signature.DigitalSignature;
 
-public class SkipNode extends UnicastRemoteObject implements RMIInterface{
+public abstract class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 	
 	private static final long serialVersionUID = 1L;
@@ -32,62 +27,25 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static int numID;
 	private static String IP ;
 	private static NodeInfo[][][] lookup ;
-	private static int maxLevels = 5; 
-	private static int maxData = 100;
+	private static final int maxLevels = 5; 
+	private static final int maxData = 100;
 	private static int dataNum = 0 ; 
 	private static String introducer; 
 	private static int RMIPort = 1099;
-	private static Scanner in = new Scanner(System.in);
+	public static Scanner in = new Scanner(System.in);
 	private static TreeMap<Integer,Integer> dataID = new TreeMap<>();
-	private static ArrayList<NodeInfo> data = new ArrayList<>();
-	private static ArrayList<Transaction> transactions = new ArrayList<>();
-	private static ArrayList<Block> blocks = new ArrayList<>();
-	private static DigitalSignature digitalSignature;
+	protected static ArrayList<NodeInfo> data = new ArrayList<>();
 	private static Hasher hasher;
-	private static HashMap<String,Integer> blkIdx = new HashMap<>();
-	private static HashMap<Integer,String> view = new HashMap<>();
-	private static HashMap<Integer,Integer> viewBalance = new HashMap<>();
-	private static HashMap<Integer,Integer> viewMode = new HashMap<>();
-	private static int mode ; // 1: Honest, 0: Malicious
-	private static int balance = 20;
-	private static final int VALIDATION_FEES = 10;
-	private static int VAL_THRESHOLD = 2;
 	public static final int TRUNC = 6;
 	
-	public static void main(String args[]) {
-		
-		
-		lookup = new NodeInfo[maxLevels+1][2][maxData]; // Initialize size of lookup table
-		setInfo();		
-		
-		try {
-			SkipNode skipNode = new SkipNode();
-			Registry reg = LocateRegistry.createRegistry(RMIPort);
-			reg.rebind("RMIImpl", skipNode);
-			log("Rebinding Successful");
-
-			while(true) {
-				printMenu();
-				skipNode.ask();
-			}
-
-		}catch(RemoteException e) {
-			System.out.println("Remote Exception in main method. Terminating.");
-			e.printStackTrace();
-			System.exit(1);
-		}catch(IOException e){
-			log("Error in Rebinding");
-			e.printStackTrace();
-		}
-		in.close();
-
-	}
 	/*
 	 * Constructor for SkipNode class needed for RMI setup
 	 */
 	protected SkipNode() throws RemoteException{
 		super();
 		try {
+			lookup = new NodeInfo[maxLevels+1][2][maxData];
+			setInfo();
 			String st = Inet4Address.getLocalHost().getHostAddress();
 			System.setProperty("java.rmi.server.hostname",st);
 			System.out.println("RMI Server proptery set. Inet4Address: "+st);
@@ -101,7 +59,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public static void setInfo() {
 		hasher = new HashingTools();
-		digitalSignature = new DigitalSignature();
 		String numInput ;
 		log("Enter the address of the introducer:");
 		introducer = get();
@@ -130,12 +87,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		nameID = hasher.getHash(address,TRUNC);
 		numID = Integer.parseInt(nameID,2);
 		
-		log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-		mode = Integer.parseInt(get());
-		while(mode != 0 && mode != 1) {
-			log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-			mode = Integer.parseInt(get());
-		}
+		
 		// In case the introducer to this node is null, then the insert method
 		// will not be called on it, so we manually add it to the data list and 
 		// map index in the data array with its numID.
@@ -157,12 +109,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
         log("Name ID: "+ nameID +" Number ID: " + numID);
         log("Choose a query by entering it's code and then press Enter");
         log("1-Insert Node");
-        log("2-Insert Transaction");
-        log("3-Insert Block");
-        log("4-Search By Name ID");
-        log("5-Search By Number ID");
-        log("6-Validate a transaction");
-        log("7-Print the Lookup Table");
+        log("2-Search By Name ID");
+        log("3-Search By Number ID");
+        log("4-Print the Lookup Table");
 	}
 	
 	/*
@@ -171,33 +120,17 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public void ask() {
         String input = get();
-        if(!input.matches("[1-7]")) {
+        if(!input.matches("[1-4]")) {
         	log("Invalid query. Please enter the number of one of the possible operations");
         	return;
         }
 		int query = Integer.parseInt(input);
-		
 		if(query == 1) { // insert node
 			if(dataNum == 0) // if there are no inserted nodes yet then, then we insert the current node
 				insert(new NodeInfo(address,numID,nameID));
 			else
 				log("Already Inserted");
-		}else if (query == 2){ // insert transaction
-			log("Enter prev of transaction");
-			String prev = get();
-			log("Enter cont of transaction");
-			String cont = get();
-			Transaction t = new Transaction(prev,numID,cont);
-			t.setAddress(address);
-			transactions.add(t);
-			insert(t);
-		}else if (query == 3){ // insert block
-			log("Enter prev of block");
-			String prev = get();
-			Block b = new Block(address,prev);
-			blocks.add(b);
-			insert(b);
-		}else if (query == 4) {// search by name ID
+		}else if (query == 2) {// search by name ID
 			log("Please Enter the name ID to be searched");
 			String name = get();
 			while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
@@ -212,7 +145,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				log("Remote Exception in query.");
 			}
 			log("The result of search by name ID is: " + result.getAddress());
-		}else if(query == 5) { // search by num ID
+		}else if(query == 3) { // search by num ID
 			log("Please Enter the numeric ID to be searched");
 			String numInput = get();
 			while(!numInput.matches("0|[1-9][0-9]*")) {
@@ -222,15 +155,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			int num = Integer.parseInt(numInput);
 			NodeInfo result = searchByNumID(num);
 			log("The result of search by numberic ID is: "+ result.getAddress());
-		}else if(query == 6) {
-			log("Which transaction to validate, you have "+transactions.size()+ " option");
-			int num = Integer.parseInt(get());
-			try {
-				validate(transactions.get(num));
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-		}else if(query == 7) { // print the lookup table of the current node
+		}else if(query == 4) { // print the lookup table of the current node
 			log("In case you want the lookup table of the original node enter 0.");
 			log("Otherwise, enter the index of the data node ");
 			int num = Integer.parseInt(get());
@@ -240,120 +165,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				log("Data node with given index does not exist");
 		}
     }
-	
-	public void validate(Transaction t) throws RemoteException {
-		ArrayList<NodeInfo> validators = getValidators(t);
-		ArrayList<String> sigma = new ArrayList<>();
-		String mySign = digitalSignature.signString(t.getH());
-		sigma.add(mySign);
-		t.setSigma(sigma);
-		for(int i=0 ; i<validators.size(); ++i) {
-			RMIInterface node = getRMI(validators.get(i).getAddress());
-			String signature = node.PoV(t,getPublicKey());
-			if(signature == null) {
-				log("Validating Transaction failed.");
-				return;
-			}
-			sigma.add(signature);
-		}
-		t.setSigma(sigma);
-		log("Validation Successful");
-	}
-	/*
-	 * Checks the soundness, correctness and authenticity of a transaction using other methods.
-	 * Checks if the owner of the transaction has enough balance to cover validation fees.
-	 * returns null in case any of the tests fails, otherwise it signs the hashvalue of the transaction
-	 * and sends the signed value to the owner.
-	 */
-	public String PoV(Transaction t, PublicKey ownerPublicKey) {
-		boolean val = isAuthenticated(t,ownerPublicKey) && isCorrect(t) && isSound(t) && hasBalanceCompliance(t);
-		if(val == false)
-			return null;
-		String signedHash = digitalSignature.signString(t.getH());
-		return signedHash;
-	}
-	
-	/*
-	 * This method validated the soundness of a given transaction
-	 * It checks if the given transaction is associated with a block
-	 * which does not precede the block that contains the transaction's owner's 
-	 * last transaction.
-	 */
-	public boolean isSound(Transaction t) {
-		long start = System.currentTimeMillis();
-		// get the hash value of the block that contains the owner's latest transaction
-		String lastblk = view.get(t.getOwner());
-		// get the index of the block that the given transaction is linked to
-		int tIdx = blkIdx.get(t.getPrev());
-		// get the index of the block the contains the owner's latest transaction
-		int bIdx = blkIdx.get(lastblk);
-		long end = System.currentTimeMillis();
-		log("Time of Checking Soundness: " + (end-start));
-		return tIdx > bIdx ;
-	}
-	/*
-	 * Returns true if both nodes are of same type (HONEST,HONEST) or (MALICIOUS,MALICIOUS)
-	 * and returns false if both are of different types.
-	 */
-	public boolean isCorrect(Transaction t) {
-		int ownerMode = viewMode.get(t.getOwner());
-		return ownerMode == mode;
-	}
-	/*
-	 * This method receives a transaction and the public key of the owner and verifies two things:
-	 * 1- The hashvalue of the transaction was generated according to the correct equation
-	 * 2- The sigma of the transaction contains the transaction's owner signed value of the hashvalue
-	 */
-	public boolean isAuthenticated(Transaction t, PublicKey ownerPublicKey) {
-		// generate the hash using the equation to check if it was generated correctly
-		String hash = hasher.getHash(t.getPrev()+t.getOwner()+t.getCont(),TRUNC);
-		// return false if it was not generated properly
-		if(!hash.equals(t.getH()))
-			return false;
-		// now get the sigma array from transaction and iterate over signatures it contains
-		ArrayList<String> tSigma = t.getSigma();
-		boolean verified = false;
-		for(int i=0 ; i<tSigma.size(); ++i) {
-			// if we find one signature which belongs to the owner then we set verified to true
-			boolean is = digitalSignature.verifyString(hash, tSigma.get(i), ownerPublicKey);
-			if(is)
-				verified = true;
-		}
-		return verified;
-	}
-	/*
-	 * Checks if the owner of the transaction has enough balance to cover the fees
-	 * of validation
-	 */
-	public boolean hasBalanceCompliance(Transaction t) {
-		int ownerBalance = viewBalance.get(t.getOwner());
-		return ownerBalance >= VALIDATION_FEES;
-	}
-	/*
-	 * This method returns the validators of a given transaction
-	 */
-	public ArrayList<NodeInfo> getValidators(Transaction t){
-		// stores the validators to be returned
-		ArrayList<NodeInfo> validators = new ArrayList<>(); 
-		// used as a lookup to check if a node has been already added to the validators array
-		// because the search might return the same node more than once
-		// so in order to avoid this case, when we find an already added node, 
-		// we repeat the search
-		HashMap<String,Integer> taken = new HashMap<>(); 
-		
-		int count = 0 , i = 0;
-		while(count < VAL_THRESHOLD) { // terminates when we get the required number of validators
-			String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
-			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
-			NodeInfo node = searchByNumID(num);
-			i++;
-			if(taken.containsKey(node.getAddress()) || node.equals(data.get(0)))continue;
-			count++;
-			taken.put(node.getAddress(), 1);
-			validators.add(node);
-		}
-		return validators;
-	}
 	/*
 	 * This method is a helper method for insert() method
 	 * It is used to make the insert() operation recursive per level.
@@ -519,8 +330,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			log("Remote Exception thrown in insert function.");
 		}
 	}
-	
-	
 	
 	/*
 	 * This method receives a number, and returns the data node (or possibly the main node)
@@ -739,7 +548,21 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public String getNameID() {
 		return nameID ;
 	}
-	
+	protected static int getDataNum() {
+		return dataNum;
+	}
+	protected String getAddress() {
+		return address;
+	}
+	protected static int getRMIPort() {
+		return RMIPort;
+	}
+	protected void setNumID(int num) {
+		numID = num;
+	}
+	protected void setNameID(String s) {
+		nameID = s;
+	}
 	public int getLeftNumID(int level,int num) {
 		return lookup[level][0][dataID.get(num)].getNumID();
 	}
@@ -803,14 +626,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		log("Common Prefix for " + nameID + " and " + name + " is: " + i);
 		return i ;		
 	}
-	
-	public int getBalance() {
-		return balance;
-	}
-	
-	public PublicKey getPublicKey() {
-		return digitalSignature.getPublicKey();
-	}
 	/*
 	 * This method returns the length of the common prefix between two given strings
 	 */
@@ -857,39 +672,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		return response;
 	}
 	
-	// For Testing purposes
+	// For Testing:
 	private static int configurationsLeft = 0;
 	private static ArrayList<Configuration> cnfs; //0th = master nodeinfo
-
-	
-	// For Testing purposes
-	
-	/*
-	 * Getters (For use in the remote testing)
-	 */
-	
-	public ArrayList<Transaction> getTransactions() throws RemoteException{
-		return transactions;
-	}
-	
-	public int getDataNum() throws RemoteException{
-		return dataNum;
-	}
-	
 	public ArrayList<NodeInfo> getData() throws RemoteException{
 		return data;
 	}
 	public NodeInfo[][][] getLookupTable() throws RemoteException{
 		return lookup;
-	}
-	
-	public void put(Transaction t) throws RemoteException{
-		transactions.add(t);
-		insert(t);
-	}
-	public void put(Block t) throws RemoteException{
-		blocks.add(t);
-		insert(t);
 	}
 
 }

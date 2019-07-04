@@ -64,6 +64,9 @@ public class DigitalSignature {
 		}
 	}
 	
+	/*
+	 * A method that stores the public and private key on disk.
+	 */
 	private void storeKeyPair() {
 		
 		try {
@@ -82,6 +85,9 @@ public class DigitalSignature {
 		}
 	}
 	
+	/*
+	 * A method that loads public and private key from disk 
+	 */
 	public KeyPair loadKeyPair(String path, String algorithm) {
 		
 		try {
@@ -109,6 +115,9 @@ public class DigitalSignature {
 		return null;
 	}
 	
+	/*
+	 * A method to store a given public key on disk
+	 */
 	public void storeKey(String path, String name, PublicKey key) {
 		otherPubKeys.add(path + "\\" + name + ".key");
 		try {
@@ -121,6 +130,9 @@ public class DigitalSignature {
 		}
 	}
 	
+	/*
+	 * A method to lead a public key that is stored on disk
+	 */
 	public PublicKey loadKey(String path, String name, String algorithm) {
 		Path p = Paths.get(path + "\\" + name + ".key");
 		byte[] bytes;
