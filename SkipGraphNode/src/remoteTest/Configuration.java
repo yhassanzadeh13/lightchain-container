@@ -18,7 +18,7 @@ import java.util.Properties;
 public final class Configuration implements Serializable{
 
 
-	
+
 	private static final long serialVersionUID = 1L;
 	private String configPath;
 	Properties prop = new Properties();
@@ -57,12 +57,12 @@ public final class Configuration implements Serializable{
 		numID  = prop.getProperty("numID");
 		port   = prop.getProperty("port");
 	}
-	
+
 	public ArrayList<Configuration> parseConfigurations(){
 		ArrayList<Configuration> lst = new ArrayList<Configuration>();
 		BufferedReader in;
 		try {
-			in = new BufferedReader(new FileReader(System.getProperty("user.dir") + "/node.conf"));
+			in = new BufferedReader(new FileReader(configPath));
 			String input = in.readLine();
 			int n = Integer.parseInt(input);
 			for(int i = 0 ; i < n ; i++) {
@@ -78,12 +78,12 @@ public final class Configuration implements Serializable{
 			}
 			in.close();
 		} catch (Exception e) {
-			
+
 		}
-		
+
 		return lst;
 	}
-	
+
 	public void parseIntroducer() {
 		try {
 			prop.load(new FileInputStream(configPath));
