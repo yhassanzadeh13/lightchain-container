@@ -1,9 +1,13 @@
 package remoteTest;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 import blockchain.Block;
@@ -137,12 +141,14 @@ public class RemoteAccessTool {
 						try {
 							int inp = Integer.parseInt(st);
 							NodeInfo swtch = lookup[inp/2][inp%2][0];
-							if(swtch==null) inp/=0;
+							if(swtch==null) throw new Exception();
 							if(promptSwitch(swtch)) break;
 						}catch(Exception e){
 							log("Invalid number, aborting...");
 						}
 					}else if(query == 8) {
+						pingStats();
+					}else if(query == 9) {
 						break;
 					}
 				}
@@ -166,9 +172,57 @@ public class RemoteAccessTool {
         log("5-Print the Lookup Table");
         log("6-Print data");
         log("7-Traverse");
-        log("8-Exit");
+        log("8-Perform latency testing");
+        log("9-Exit");
 	}
 
+	
+	public static void pingStats() {
+		try {
+			ArrayList<NodeInfo> nodeList = new ArrayList<NodeInfo>();
+			NodeInfo curNode = node.searchByNumID(0);
+			while(curNode!=null) {
+				nodeList.add(curNode);
+				RMIInterface curRMI = getRMI(curNode.getAddress());
+				curNode = curRMI.getRightNode(0, curNode.getNumID());
+			}
+			HashMap<NodeInfo, ArrayList<PingLog>> res = new HashMap<NodeInfo, ArrayList<PingLog>>();
+			for(int i = 0 ; i < nodeList.size(); i++) {
+				for(int j=0; j<nodeList.size(); j++) {
+					if(i==j) continue;
+					RMIInterface curRMI = getRMI(nodeList.get(i).getAddress());								
+					PingLog curLog = curRMI.pingStart(nodeList.get(j), 1000);
+					if(res.containsKey(nodeList.get(i))) {
+						ArrayList<PingLog> tmp = res.get(nodeList.get(i));
+						tmp.add(curLog);
+						res.put(nodeList.get(i), tmp);	
+					}else {
+						ArrayList<PingLog> tmp = new ArrayList<PingLog>();
+						tmp.add(curLog);
+						res.put(nodeList.get(i), tmp);									
+					}
+				}
+			}
+			PrintWriter writer = new PrintWriter(new File("test" + System.currentTimeMillis()%20 + ".csv"));
+			StringBuilder sb = new StringBuilder();
+			
+			for(NodeInfo cur : res.keySet()) {
+				sb.append("Pinger," + cur.getNameID());
+				sb.append('\n');
+				sb.append("Pinged,Avg Ping");sb.append('\n');
+				for(int i=0;i<res.get(cur).size();i++) {
+					sb.append(res.get(cur).get(i).getPinged().getNameID() + "," + res.get(cur).get(i).getAvg());
+					sb.append('\n');
+				}
+				sb.append('\n');
+			}
+			writer.write(sb.toString());
+			writer.close();
+		}catch(Exception e) {
+			System.out.println("Exception in ping stats testing.");
+		}
+	}
+	
 	/*
 	 * Taken from SkipNode class. However, it needs to be implemented here so that println would print here rather than in the other node.
 	 */

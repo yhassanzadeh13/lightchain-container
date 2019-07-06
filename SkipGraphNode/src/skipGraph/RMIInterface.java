@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import blockchain.Block;
 import blockchain.Transaction;
 import remoteTest.Configuration;
+import remoteTest.PingLog;
 
 public interface RMIInterface extends Remote {
 	
@@ -14,8 +15,8 @@ public interface RMIInterface extends Remote {
 	 * Normal Skip Node functions
 	 */
 	
-	public String getLeftNode(int level,int num) throws RemoteException ;
-	public String getRightNode(int level,int num) throws RemoteException ;
+	public NodeInfo getLeftNode(int level,int num) throws RemoteException ;
+	public NodeInfo getRightNode(int level,int num) throws RemoteException ;
 	public void setLeftNode(int level, NodeInfo newNode,int num) throws RemoteException;
 	public void setRightNode(int level,NodeInfo newNode,int num) throws RemoteException;
 	public int getNumID() throws RemoteException;
@@ -53,4 +54,6 @@ public interface RMIInterface extends Remote {
 	public void put(Transaction t) throws RemoteException;
 	public void put(Block t) throws RemoteException;
 	public Configuration getConf() throws RemoteException;
+	public boolean ping() throws RemoteException;
+	public PingLog pingStart(NodeInfo node, int freq) throws RemoteException;
 }
