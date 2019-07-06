@@ -97,6 +97,10 @@ public final class Configuration implements Serializable{
 	public String getIntroducer() {
 		return introducer;
 	}
+	
+	public void setIntroducer(String introducer) {
+		this.introducer= introducer;
+	}
 
 	public String getNameID() {
 		return nameID;

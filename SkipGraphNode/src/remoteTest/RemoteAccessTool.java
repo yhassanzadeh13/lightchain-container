@@ -60,7 +60,7 @@ public class RemoteAccessTool {
 				while(true) {
 					printMenu();
 					String input = get();
-					if(!input.matches("[1-8]")) {
+					if(!input.matches("[1-9]")) {
 						log("Invalid query. Please enter the number of one of the possible operations");
 						continue;
 					}
@@ -191,7 +191,7 @@ public class RemoteAccessTool {
 				for(int j=0; j<nodeList.size(); j++) {
 					if(i==j) continue;
 					RMIInterface curRMI = getRMI(nodeList.get(i).getAddress());								
-					PingLog curLog = curRMI.pingStart(nodeList.get(j), 1000);
+					PingLog curLog = curRMI.pingStart(nodeList.get(j), 200);
 					if(res.containsKey(nodeList.get(i))) {
 						ArrayList<PingLog> tmp = res.get(nodeList.get(i));
 						tmp.add(curLog);
@@ -211,7 +211,11 @@ public class RemoteAccessTool {
 				sb.append('\n');
 				sb.append("Pinged,Avg Ping");sb.append('\n');
 				for(int i=0;i<res.get(cur).size();i++) {
-					sb.append(res.get(cur).get(i).getPinged().getNameID() + "," + res.get(cur).get(i).getAvg());
+					sb.append(res.get(cur).get(i).getPinged().getNameID());
+					ArrayList<Long> hm = res.get(cur).get(i).getRTTLog();
+					for(int j=0;j<hm.size();j++) {
+						sb.append("," + hm.get(j));
+					}
 					sb.append('\n');
 				}
 				sb.append('\n');

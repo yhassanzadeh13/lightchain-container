@@ -69,6 +69,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				cnfs = cnf.parseConfigurations();
 				setInfo(cnfs.remove(0));
 				configurationsLeft = cnfs.size();
+				for(int i = 0;i<cnfs.size();i++) {
+					Configuration tmp = cnfs.get(i);
+					tmp.setIntroducer(address);
+				}
 			}else {
 				Configuration cnf = new Configuration();
 				cnf.parseIntroducer();
@@ -780,28 +784,28 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		URL url;
 		String[] services = {"http://checkip.amazonaws.com/", "http://www.trackip.net/ip", "https://api.ipify.org/?format=text"};
 		BufferedReader in;
-//		for(int i=0;i<services.length;i++) {
-//			try {
-//				url = new URL(services[i]);
-//				in = new BufferedReader(new InputStreamReader(
-//				        url.openStream()));
-//				result = in.readLine();
-//				in.close();
-//			}catch(Exception e) {
-//				System.out.println("Error grabbing IP from " + services[i] + ". Trying a different service.");
-//			}
-//			if(validateIP(result)) {
-//				//return result;
-//			}
-//		}
-		//return result;
-		try {
-			return Inet4Address.getLocalHost().getHostAddress();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		for(int i=0;i<services.length;i++) {
+			try {
+				url = new URL(services[i]);
+				in = new BufferedReader(new InputStreamReader(
+				        url.openStream()));
+				result = in.readLine();
+				in.close();
+			}catch(Exception e) {
+				System.out.println("Error grabbing IP from " + services[i] + ". Trying a different service.");
+			}
+			if(validateIP(result)) {
+				//return result;
+			}
 		}
-		return null;
+		return result;
+//		try {
+//			return Inet4Address.getLocalHost().getHostAddress();
+//		} catch (UnknownHostException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return null;
 	}
 
 	/*

@@ -31,7 +31,7 @@ public class PingLog implements Serializable {
 	}
 	
 	public NodeInfo getPinger() {
-		return Pinger;
+		return Pinger; 
 	}
 
 	public NodeInfo getPinged() {
