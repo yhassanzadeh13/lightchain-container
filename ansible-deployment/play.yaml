@@ -1,0 +1,59 @@
+---
+- hosts: master
+  remote_user: ec2-user
+  become: yes
+  tasks:
+      - name: copying master.jar
+        become_user: ec2-user
+        copy:
+            src:  master.jar
+            dest: /home/ec2-user
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: copying node.conf
+        copy:
+            src:  node.conf-master
+            dest: /home/ec2-user/node.conf
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: install java jdk 8
+        yum:
+            name:  java-1.8.0-openjdk.x86_64
+            state: latest
+
+      - name: Start SkipNode
+        become_user: ec2-user
+        shell:  bash -c '((nohup java -cp master.jar skipGraph.SkipNode 2>&1 > lookhere.log) & )'
+
+- hosts: slaves
+  remote_user: ec2-user
+  tasks:
+      - name: copying slave.jar
+        copy:
+            src:  slave.jar
+            dest: /home/ec2-user
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: copying node.conf
+        copy:
+            src:  node.conf-slave
+            dest: /home/ec2-user/node.conf
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: install java jdk 8
+        yum:
+            name:  java-1.8.0-openjdk.x86_64
+            state: latest
+
+      - name: Start SkipNode
+        become_user: ec2-user
+        shell: bash -c '((nohup java -cp slave.jar skipGraph.SkipNode 2>&1 > lookhere.log) & )'
+
