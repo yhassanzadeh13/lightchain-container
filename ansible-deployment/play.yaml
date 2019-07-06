@@ -1,0 +1,59 @@
+---
+- hosts: master
+  remote_user: ec2-user
+  become: yes
+  tasks:
+      - name: copying master.jar
+        copy:
+            src:  slave.jar
+            dest: /home/ec2-user
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: copying node.conf
+        copy:
+            src:  node.conf-master
+            dest: /home/ec2-user/node.conf
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: install java jdk 11
+        yum:
+            name:  java-11-openjdk.x86_64
+            state: latest
+
+      - name: Start SkipNode
+        remote_user: ec2-user
+        shell: cd ~/ && java -cp master.jar skipGraph.SkipNode &
+
+- hosts: slaves
+  remote_user: ec2-user
+  become: yes
+  tasks:
+      - name: copying slave.jar
+        copy:
+            src:  slave.jar
+            dest: /home/ec2-user
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: copying node.conf
+        copy:
+            src:  node.conf-slave
+            dest: /home/ec2-user
+            owner: ec2-user
+            group: ec2-user
+            mode: 0644
+
+      - name: install java jdk 11
+        yum:
+            name:  java-11-openjdk.x86_64
+            state: latest
+
+      - name: Start SkipNode
+        remote_user: ec2-user
+        shell: cd ~/ && java -cp slave.jar skipGraph.SkipNode &
+

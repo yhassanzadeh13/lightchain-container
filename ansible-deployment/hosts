@@ -1,0 +1,5 @@
+[master]
+# put master IP here
+
+[slaves]
+# put slave IPs here (each one on a new line)
