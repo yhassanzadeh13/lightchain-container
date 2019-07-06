@@ -30,8 +30,17 @@ public class PingLog implements Serializable {
 		return sum/RTTLog.size();
 	}
 	
+	public double getStdDev() {
+		double mean = getAvg();
+		double result = 0;
+		for(int i=0;i<RTTLog.size();i++) {
+			result += Math.pow(RTTLog.get(i)-mean, 2);
+		}
+		return result/RTTLog.size();
+	}
+	
 	public NodeInfo getPinger() {
-		return Pinger; 
+		return Pinger;
 	}
 
 	public NodeInfo getPinged() {

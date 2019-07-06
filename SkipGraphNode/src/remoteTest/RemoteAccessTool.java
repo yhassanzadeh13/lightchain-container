@@ -207,12 +207,13 @@ public class RemoteAccessTool {
 			StringBuilder sb = new StringBuilder();
 			
 			for(NodeInfo cur : res.keySet()) {
-				sb.append("Pinger," + cur.getNameID());
+				sb.append("Pinger," + cur.getNumID());
 				sb.append('\n');
-				sb.append("Pinged,Avg Ping");sb.append('\n');
+				sb.append("Pinged,Avg Ping,StdDev,Individual Results");sb.append('\n');
 				for(int i=0;i<res.get(cur).size();i++) {
-					sb.append(res.get(cur).get(i).getPinged().getNameID());
+					sb.append(res.get(cur).get(i).getPinged().getNumID());
 					ArrayList<Long> hm = res.get(cur).get(i).getRTTLog();
+					sb.append(","+res.get(cur).get(i).getAvg()+","+res.get(cur).get(i).getStdDev());
 					for(int j=0;j<hm.size();j++) {
 						sb.append("," + hm.get(j));
 					}
