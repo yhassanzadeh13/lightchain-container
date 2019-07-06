@@ -2,7 +2,10 @@ package skipGraph;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -18,6 +21,7 @@ import blockchain.Transaction;
 import hashing.Hasher;
 import hashing.HashingTools;
 import remoteTest.Configuration;
+import remoteTest.PingLog;
 import signature.DigitalSignature;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
@@ -45,7 +49,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static int valThreshold = 3;
 	private static HashMap<String,Integer> blkIdx = new HashMap<>();
 	private static HashMap<Integer,String> view = new HashMap<>();
-	private static int testingMode = 0;/*
+	private static int testingMode = 2;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -65,6 +69,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				cnfs = cnf.parseConfigurations();
 				setInfo(cnfs.remove(0));
 				configurationsLeft = cnfs.size();
+				for(int i = 0;i<cnfs.size();i++) {
+					Configuration tmp = cnfs.get(i);
+					tmp.setIntroducer(address);
+				}
 			}else {
 				Configuration cnf = new Configuration();
 				cnf.parseIntroducer();
@@ -358,7 +366,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		try {
 			String left = null;
 			String right = null;
-
+			NodeInfo cur = null;
 			// We search through the introducer node to find the node with
 			// the closest num ID
 			NodeInfo position ;
@@ -391,9 +399,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			int rightNum = -1 ; // numID of right node
 
 			if(posNum > node.getNumID()) { // if the closest node is to the right
+				cur = posRMI.getLeftNode(0,posNum);
+				if(cur != null) {
+					left = cur.getAddress();// the left of my right will be my left
+				}else left = null;
 
 				right = position.getAddress();
-				left = posRMI.getLeftNode(0,posNum); // the left of my right will be my left
 				rightNum = position.getNumID(); // we need the numID to be able to access it
 
 				if(left != null) { // insert the current node in the lookup table of my left node if it exists
@@ -407,8 +418,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				posRMI.setLeftNode(0, node, posNum); // insert the current node in the lookup table of its right neighbor
 
 			}else{ // if the closest node is to the left
-
-				right  = posRMI.getRightNode(0,posNum); // the right of my left is my right
+				cur = posRMI.getRightNode(0,posNum);
+				if(cur != null) {
+					right  = cur.getAddress(); // the right of my left is my right
+				}else right = null;
 				left = position.getAddress() ;
 				leftNum = position.getNumID(); // we need the numID to be able to access it
 
@@ -707,16 +720,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * getters and setters for lookup table and numID and nameID
 	 *
 	 */
-	public String getLeftNode(int level,int num) throws RemoteException {
+	public NodeInfo getLeftNode(int level,int num) throws RemoteException {
 		if(lookup[level][0][dataID.get(num)] == null)
 			return null;
-		return lookup[level][0][dataID.get(num)].getAddress();
+		return lookup[level][0][dataID.get(num)];
 	}
 
-	public String getRightNode(int level, int num) throws RemoteException {
+	public NodeInfo getRightNode(int level, int num) throws RemoteException {
 		if(lookup[level][1][dataID.get(num)] == null)
 			return null;
-		return lookup[level][1][dataID.get(num)].getAddress();
+		return lookup[level][1][dataID.get(num)];
 	}
 	public void setLeftNode(int level,NodeInfo newNode, int num) throws RemoteException{
 		log("LeftNode at level "+level+" set to: "+newNode.getAddress());
@@ -782,10 +795,17 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				System.out.println("Error grabbing IP from " + services[i] + ". Trying a different service.");
 			}
 			if(validateIP(result)) {
-				return result;
+				//return result;
 			}
 		}
 		return result;
+//		try {
+//			return Inet4Address.getLocalHost().getHostAddress();
+//		} catch (UnknownHostException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return null;
 	}
 
 	/*
@@ -876,9 +896,34 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
 	// For Testing purposes
 
+
+
 	/*
 	 * Getters (For use in the remote testing)
 	 */
+
+	public PingLog pingStart(NodeInfo node, int freq) throws RemoteException{
+		PingLog lg = new PingLog(new NodeInfo(address, numID, nameID), node);
+		RMIInterface nodeToPing = getRMI(node.getAddress());
+		long befTime;
+		long afrTime;
+		while(freq-->0) {
+			try {
+				befTime = System.currentTimeMillis();
+				nodeToPing.ping();
+				afrTime = System.currentTimeMillis();
+				lg.Log(afrTime-befTime);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+
+		}
+		return lg;
+	}
+
+	public boolean ping() throws RemoteException{
+		return true;
+	}
 
 	public Configuration getConf() throws RemoteException{
 		if(configurationsLeft == 0 || cnfs == null) {

@@ -56,4 +56,3 @@
       - name: Start SkipNode
         become_user: ec2-user
         shell: bash -c '((nohup java -cp slave.jar skipGraph.SkipNode 2>&1 > lookhere.log) & )'
-
