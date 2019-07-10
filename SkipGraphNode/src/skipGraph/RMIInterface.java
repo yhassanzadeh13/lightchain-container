@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import blockchain.Block;
 import blockchain.Transaction;
-import remoteTest.Configuration;
 
 public interface RMIInterface extends Remote {
 	
@@ -21,6 +20,8 @@ public interface RMIInterface extends Remote {
 	public void setRightNode(int level,NodeInfo newNode,int num) throws RemoteException;
 	public int getNumID() throws RemoteException;
 	public String getNameID() throws RemoteException;
+	public String getAddress() throws RemoteException ;
+	public NodeInfo getNode(int num) throws RemoteException ;
 	public NodeInfo searchByNameID(String targetString) throws RemoteException;
 	public NodeInfo searchByNumID(int targetNum) throws RemoteException;
 	public NodeInfo searchName(String searchTarget,int level,int direction) throws RemoteException;
@@ -31,6 +32,7 @@ public interface RMIInterface extends Remote {
 	public String getRightNameID(int level,int num) throws RemoteException;
 	public NodeInfo insertSearch(int level, int direction,int num, String target) throws RemoteException;
 	public String PoV(Transaction t) throws RemoteException ;
+	public String PoV(Block blk) throws RemoteException ;
 	public PublicKey getPublicKey() throws RemoteException ;
 	// Testing:
 	public void put(Transaction t) throws RemoteException;

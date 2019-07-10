@@ -1,5 +1,4 @@
 package skipGraph;
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
@@ -7,13 +6,9 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
-import java.util.TreeMap;
 import remoteTest.Configuration;
 import hashing.Hasher;
 import hashing.HashingTools;
@@ -22,33 +17,39 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	
 	
 	private static final long serialVersionUID = 1L;
-	private static String address;
-	private static String nameID;
-	private static int numID;
+	protected static String address;
+	protected static String nameID;
+	protected static int numID;
 	private static String IP ;
 	private static NodeInfo[][][] lookup ;
-	private static final int maxLevels = 5; 
-	private static final int maxData = 100;
+	protected static int maxLevels = 10; 
+	private static int maxData = 100;
 	private static int dataNum = 0 ; 
 	private static String introducer; 
-	private static int RMIPort = 1099;
+	protected static int RMIPort = 1099;
 	public static Scanner in = new Scanner(System.in);
-	private static TreeMap<Integer,Integer> dataID = new TreeMap<>();
-	protected static ArrayList<NodeInfo> data = new ArrayList<>();
+	private static HashMap<Integer,Integer> dataID;
+	protected static ArrayList<NodeInfo> data;
 	private static Hasher hasher;
-	public static final int TRUNC = 6;
+	public static final int TRUNC = 10;
 	
 	/*
-	 * Constructor for SkipNode class needed for RMI setup
+	 * Constructor for SkipNode class
 	 */
 	protected SkipNode() throws RemoteException{
 		super();
 		try {
+			maxLevels = TRUNC;
 			lookup = new NodeInfo[maxLevels+1][2][maxData];
+			hasher = new HashingTools();
+			dataID = new HashMap<>();
+			data = new ArrayList<>();
 			setInfo();
+			Registry reg = LocateRegistry.createRegistry(RMIPort);
+			reg.rebind("RMIImpl", this);
+			log("Rebinding Successful");
 			String st = Inet4Address.getLocalHost().getHostAddress();
 			System.setProperty("java.rmi.server.hostname",st);
-			System.out.println("RMI Server proptery set. Inet4Address: "+st);
 		}catch (UnknownHostException e) {
 			System.err.println("Unknown Host Exception in constructor. Please terminate the program and try again.");
 		}
@@ -58,14 +59,15 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	 * and prints them to console
 	 */
 	public static void setInfo() {
-		hasher = new HashingTools();
 		String numInput ;
+		// get introducer information
 		log("Enter the address of the introducer:");
 		introducer = get();
 		while(!(introducer.equalsIgnoreCase("None") || validateIP(introducer))) {
 			log("Invalid IP. Please enter a valid IP address ('none' if original node): ");
 			introducer = get();
 		}
+		// get Port number
 		log("Enter RMI port: ");
 		numInput = get();
 		while(!numInput.matches("0|[1-9][0-9]*")) {
@@ -87,7 +89,6 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 		nameID = hasher.getHash(address,TRUNC);
 		numID = Integer.parseInt(nameID,2);
 		
-		
 		// In case the introducer to this node is null, then the insert method
 		// will not be called on it, so we manually add it to the data list and 
 		// map index in the data array with its numID.
@@ -98,73 +99,7 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 		}
 		log("Your INFO:\nnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
 	}
-	
-	
-	/*
-	 * This method prints the options for user controlling the node to choose.
-	 * More options can be appended but require the modification of ask() method
-	 */
-	public static void printMenu() throws IOException{
-        log("Node at the address: " + address);
-        log("Name ID: "+ nameID +" Number ID: " + numID);
-        log("Choose a query by entering it's code and then press Enter");
-        log("1-Insert Node");
-        log("2-Search By Name ID");
-        log("3-Search By Number ID");
-        log("4-Print the Lookup Table");
-	}
-	
-	/*
-	 * Gets the type of operation to be executed from the user
-	 * and executes the corresponding operation.
-	 */
-	public void ask() {
-        String input = get();
-        if(!input.matches("[1-4]")) {
-        	log("Invalid query. Please enter the number of one of the possible operations");
-        	return;
-        }
-		int query = Integer.parseInt(input);
-		if(query == 1) { // insert node
-			if(dataNum == 0) // if there are no inserted nodes yet then, then we insert the current node
-				insert(new NodeInfo(address,numID,nameID));
-			else
-				log("Already Inserted");
-		}else if (query == 2) {// search by name ID
-			log("Please Enter the name ID to be searched");
-			String name = get();
-			while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
-				log("Name ID should be a binary string. Please enter a valid Name ID:");
-				name = get();
-			}
-			NodeInfo result = null;
-			try{
-				result = searchByNameID(name);
-			}catch(RemoteException e) {
-				e.printStackTrace();
-				log("Remote Exception in query.");
-			}
-			log("The result of search by name ID is: " + result.getAddress());
-		}else if(query == 3) { // search by num ID
-			log("Please Enter the numeric ID to be searched");
-			String numInput = get();
-			while(!numInput.matches("0|[1-9][0-9]*")) {
-				log("Invalid number entered. Please enter a valid number");
-				numInput = get();
-			}
-			int num = Integer.parseInt(numInput);
-			NodeInfo result = searchByNumID(num);
-			log("The result of search by numberic ID is: "+ result.getAddress());
-		}else if(query == 4) { // print the lookup table of the current node
-			log("In case you want the lookup table of the original node enter 0.");
-			log("Otherwise, enter the index of the data node ");
-			int num = Integer.parseInt(get());
-			if(num < dataNum)
-				printLookup(num);
-			else
-				log("Data node with given index does not exist");
-		}
-    }
+
 	/*
 	 * This method is a helper method for insert() method
 	 * It is used to make the insert() operation recursive per level.
@@ -541,7 +476,6 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 		log("RightNode at level "+level+" set to: "+newNode.getAddress());
 		lookup[level][1][dataID.get(num)] = newNode ;
 	}
-	
 	public int getNumID(){
 		return numID;
 	}
@@ -551,7 +485,7 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	protected static int getDataNum() {
 		return dataNum;
 	}
-	protected String getAddress() {
+	public String getAddress() {
 		return address;
 	}
 	protected static int getRMIPort() {
@@ -574,6 +508,9 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	}
 	public String getRightNameID(int level,int num) {
 		return lookup[level][1][dataID.get(num)].getNameID();
+	}
+	public NodeInfo getNode(int num) {
+		return data.get(dataID.get(num));
 	}
 	
 	/*

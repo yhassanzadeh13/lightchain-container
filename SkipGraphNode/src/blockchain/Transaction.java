@@ -16,8 +16,10 @@ public class Transaction extends NodeInfo{
 	private ArrayList<String> sigma;
 	private Hasher hasher;
 	
-	public Transaction(String prev, int owner, String cont){
-		super("",0,prev);
+	// need to add address to transaction
+	
+	public Transaction(String prev, int owner, String cont,String address){
+		super(address,0,prev);
 		this.prev = prev;
 		this.owner = owner;
 		this.cont = cont;
@@ -37,15 +39,12 @@ public class Transaction extends NodeInfo{
 	public int getOwner() {
 		return owner;
 	}
-	
 	public String getCont() {
 		return cont;
 	}
-	
 	public String getH() {
 		return h;
 	}
-	
 	public void setSigma(ArrayList<String> s) {
 		sigma = s;
 	}

@@ -66,12 +66,12 @@ public class RemoteAccessTool {
 						String prev = get();
 						log("Enter cont of transaction");
 						String cont = get();
-						Transaction t = new Transaction(prev,numID,cont);
+						Transaction t = new Transaction(prev,numID,cont,ip+":"+port);
 						node.put(t);
 					}else if (query == 2){ // insert block
 						log("Enter prev of block");
 						String prev = get();
-						Block b = new Block(ip+":"+port,prev);
+						Block b = new Block(prev,numID,ip+":"+port);
 						node.put(b);
 					}else if(query == 3) { // search by name ID
 						log("Please Enter the name ID to be searched");
