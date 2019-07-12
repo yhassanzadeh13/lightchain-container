@@ -34,3 +34,11 @@ Installation
 
 Running Tests
 --------------
+
+* **In Master Branch:** All the blockchain related methods and functionalities are in the blockchain package. You should run the LightChainNode class in order to test these implementations. In the LightChainNode class there is a method names ask(), which can be used to control the node and perfrom queries such as searching and insertion of blocks and transactions. It can me modified to do more queries depending on what functionalities you would like to test.  Essentially, when you run the LightChainNode class, it will first ask you to enter the following:  
+   - Address of introducer. If this is the first node you can simply enter "none".  
+   - RMI Port. The port to which the RMI registry will be bound.  
+   - Name of Private Key, which is the name of the file in which you would like to store your private key on disk.  
+   - Name of Public Key, which is the name of the file in which you would like to store your public key on disk.  
+   - Mode of Node. You will choose whether the node you are running is malicious or honest.  
+ After that, you will have the information of the node printed, and you will also see the menu of queries that you would like to test.
