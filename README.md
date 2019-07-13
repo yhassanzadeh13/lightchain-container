@@ -6,7 +6,7 @@ Current Branches
 
 * **Mass_Deployment:** The Mass_Deployment branch includes additional features that make it convenient to test the SkipGraph, like the ability to use config files to set up nodes and a master-slave feature which allows for convenient deployment of a large number of nodes.  
 
-* **testing:**  
+* **testing:** A branch that contains integration tests for the SkipGraph implementation.  
 --- 
 Installation
 ---------------
