@@ -176,33 +176,70 @@ public class RemoteAccessTool {
         log("9-Exit");
 	}
 
+	private static int numPings = 1;//Total number of pinging attempts
+	private static int numAtts = 1;//How many different pinging sessions to divide the attempts into
 	
 	public static void pingStats() {
+		NodeInfo curNode = null;
+		ArrayList<NodeInfo> nodeList = new ArrayList<NodeInfo>();
+		log("Enter the total number of ping attempts per node pair:");
+		String inp = get();
+		while(!inp.matches("0|[1-9][0-9]*")) {
+			log("Enter a valid number");
+		}
+		numPings = Integer.parseInt(inp);
+		log("Enter the total number of sessions to divide the attempts into:");
+		inp = get();
+		while(!inp.matches("0|[1-9][0-9]*")) {
+			log("Enter a valid number");
+		}
+		numAtts = Integer.parseInt(inp);
 		try {
-			ArrayList<NodeInfo> nodeList = new ArrayList<NodeInfo>();
-			NodeInfo curNode = node.searchByNumID(0);
+			curNode = node.searchByNumID(0);
 			while(curNode!=null) {
 				nodeList.add(curNode);
 				RMIInterface curRMI = getRMI(curNode.getAddress());
 				curNode = curRMI.getRightNode(0, curNode.getNumID());
 			}
-			HashMap<NodeInfo, ArrayList<PingLog>> res = new HashMap<NodeInfo, ArrayList<PingLog>>();
-			for(int i = 0 ; i < nodeList.size(); i++) {
-				for(int j=0; j<nodeList.size(); j++) {
-					if(i==j) continue;
-					RMIInterface curRMI = getRMI(nodeList.get(i).getAddress());								
-					PingLog curLog = curRMI.pingStart(nodeList.get(j), 200);
-					if(res.containsKey(nodeList.get(i))) {
-						ArrayList<PingLog> tmp = res.get(nodeList.get(i));
-						tmp.add(curLog);
-						res.put(nodeList.get(i), tmp);	
-					}else {
-						ArrayList<PingLog> tmp = new ArrayList<PingLog>();
-						tmp.add(curLog);
-						res.put(nodeList.get(i), tmp);									
+		}catch(RemoteException e) {
+			e.printStackTrace();
+			return;
+		}
+		System.out.println("Total number of nodes: " + nodeList.size());
+		HashMap<NodeInfo, ArrayList<PingLog>> res = new HashMap<NodeInfo, ArrayList<PingLog>>();
+		int sz = nodeList.size();
+		for(int k=0;k<numAtts;k++) {
+			for(int i = 0 ; i < sz; i++) {
+				for(int j = 0 ; j < sz; j++) {
+					System.out.println("Current k:= " + k + " and i:= " + i + " and j:= " + j);
+					System.out.println("Percentage done: " + 100*(k*sz*sz + i*sz + j)*1.0/(numAtts*sz*sz));
+					try {
+						if(i==j) continue;
+						RMIInterface curRMI = getRMI(nodeList.get(i).getAddress());								
+						PingLog curLog = curRMI.pingStart(nodeList.get(j), numPings/numAtts);
+						if(k==0) {//first time testing, the arraylists need to initialized.
+							if(res.containsKey(nodeList.get(i))) {
+								ArrayList<PingLog> tmp = res.get(nodeList.get(i));
+								tmp.add(curLog);
+								res.put(nodeList.get(i), tmp);	
+							}else {
+								ArrayList<PingLog> tmp = new ArrayList<PingLog>();
+								tmp.add(curLog);
+								res.put(nodeList.get(i), tmp);									
+							}
+						}else {
+							ArrayList<PingLog> tmp = res.get(nodeList.get(i));
+							tmp.get(j>i?j-1:j).append(curLog);
+							res.put(nodeList.get(i), tmp);
+						}
+					}catch(RemoteException e) {
+						System.err.println("Remote exception inside for loop.");
+						e.printStackTrace();
 					}
 				}
 			}
+		}
+		try {
 			PrintWriter writer = new PrintWriter(new File("test" + System.currentTimeMillis()%20 + ".csv"));
 			StringBuilder sb = new StringBuilder();
 			
@@ -221,10 +258,16 @@ public class RemoteAccessTool {
 				}
 				sb.append('\n');
 			}
+			sb.append('\n');
+			sb.append("Information regarding the nodes in the current graph:\n");
+			sb.append("IP,NameID,NumID");
+			for(NodeInfo cur : nodeList) {
+				sb.append(cur.getAddress()+","+cur.getNameID()+","+cur.getNumID()+"\n");
+			}
 			writer.write(sb.toString());
 			writer.close();
-		}catch(Exception e) {
-			System.out.println("Exception in ping stats testing.");
+		}catch(IOException e) {
+			e.printStackTrace();
 		}
 	}
 	

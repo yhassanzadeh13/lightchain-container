@@ -36,7 +36,7 @@ public class PingLog implements Serializable {
 		for(int i=0;i<RTTLog.size();i++) {
 			result += Math.pow(RTTLog.get(i)-mean, 2);
 		}
-		return result/RTTLog.size();
+		return Math.sqrt(result/RTTLog.size());
 	}
 	
 	public NodeInfo getPinger() {
@@ -51,5 +51,19 @@ public class PingLog implements Serializable {
 		return RTTLog;
 	}
 	
+	/*
+	 * Appends two logs with the same Pinger and Pinged. This can be useful if you want to split the pinging sessions
+	 * into smaller sessions.
+	 */
+	
+	public boolean append(PingLog newlog) {
+		if(newlog.getPinged().equals(this.Pinged) && newlog.getPinger().equals(this.Pinger)) {
+			RTTLog.addAll(newlog.getRTTLog());
+			return true;
+		}else {
+			System.err.println("Error. Can't append pinging log of different pinger and pinged.");
+			return false;
+		}
+	}
 	
 }
