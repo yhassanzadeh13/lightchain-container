@@ -58,17 +58,18 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
 	public static void main(String args[]) {
 
-
 		lookup = new NodeInfo[maxLevels+1][2][maxData]; // Initialize size of lookup table
 		try {
-
+			IP = grabIP();
 			if(testingMode == 0) {
 				setInfo();
+				init();//Initialize IP and address + system properties
 			}else if(testingMode == 1) {
 				Configuration cnf = new Configuration();
 				cnfs = cnf.parseConfigurations();
 				setInfo(cnfs.remove(0));
 				configurationsLeft = cnfs.size();
+				init();//Initialize IP and address + system properties
 				for(int i = 0;i<cnfs.size();i++) {
 					Configuration tmp = cnfs.get(i);
 					tmp.setIntroducer(address);
@@ -79,15 +80,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				RMIInterface intro = getRMI(cnf.getIntroducer());
 				cnf = intro.getConf();
 				setInfo(cnf);
+				init();//Initialize IP and address + system properties
 			}
-
+			
 			SkipNode skipNode = new SkipNode();
 			if(testingMode == 2) skipNode.insert(new NodeInfo(address,numID,nameID));
 
 			Registry reg = LocateRegistry.createRegistry(RMIPort);
 			reg.rebind("RMIImpl", skipNode);
 			log("Rebinding Successful");
-
 			while(true) {
 				printMenu();
 				skipNode.ask();
@@ -108,14 +109,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * Constructor for SkipNode class needed for RMI setup
 	 */
 	protected SkipNode() throws RemoteException{
-		super();
-		try {
-			String st = grabIP();
-			System.setProperty("java.rmi.server.hostname",st);
-			System.out.println("RMI Server proptery set. Inet4Address: "+st);
-		}catch (Exception e) {
-			System.err.println("Exception in constructor. Please terminate the program and try again.");
-		}
+		super(RMIPort);
 	}
 	/*
 	 * This method initializes the information of the current node
@@ -138,17 +132,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			numInput = get();
 		}
 		RMIPort = Integer.parseInt(numInput);
-
-		try { // Assign address and IP
-			String grabbedIP = grabIP();
-			address = grabbedIP +":"+ RMIPort; //Used to get the current node address.
-			IP = grabbedIP;
-			log("My Address is :" + address);
-		}catch(Exception e) {
-			System.out.println("Couldn't fetch address. Please restart.");
-			System.exit(0);
-		}
-
+		address = IP + ":" + RMIPort;
 		// The nameID and numID are hash values of the address
 		nameID = hasher.getHash(address,TRUNC);
 		numID = Integer.parseInt(nameID,2);
@@ -170,15 +154,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		nameID = conf.getNameID();
 		numID = Integer.parseInt(conf.getNumID());
 		RMIPort = Integer.parseInt(conf.getPort());
-		try { // Assign address and IP
-			String grabbedIP = grabIP();
-			address = grabbedIP +":"+ RMIPort; //Used to get the current node address.
-			IP = grabbedIP;
-			log("My Address is :" + address);
-		}catch(Exception e) {
-			System.out.println("Couldn't fetch address. Please restart.");
-			System.exit(0);
-		}
+		address = IP + ":" + RMIPort;
 		if(introducer.equalsIgnoreCase("none")) {
 			data.add(new NodeInfo(address,numID,nameID));
 			dataID.put(numID, 0);
@@ -186,6 +162,23 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 	}
 
+	/*
+	 * Initialize system properties and current node's IP address.
+	 */
+	
+	public static void init() {
+		try {
+			System.setProperty("java.rmi.server.hostname",IP);
+			System.setProperty("java.rmi.server.useLocalHostname", "false");
+			System.out.println("RMI Server proptery set. Inet4Address: "+IP);
+			log("My Address is :" + address);
+		}catch (Exception e) {
+			System.err.println("Exception in initialization. Please try running the program again.");
+			System.exit(0);
+		}
+
+	}
+	
 	/*
 	 * This method prints the options for user controlling the node to choose.
 	 * More options can be appended but require the modification of ask() method
@@ -387,7 +380,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
 			RMIInterface posRMI = getRMI(position.getAddress());
 			if(posRMI == null) {
-				log("RMI registry lookup at address: "+position+" failed. Insert operation stopped.");
+				log("RMI registry lookup at address: "+position.getAddress()+" failed. Insert operation stopped.");
 				return;
 			}
 
@@ -576,7 +569,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public NodeInfo searchByNumID(int searchTarget){
 		ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
 		lst = searchByNumID(searchTarget,lst);
-		if(lst == null) return null;
+		if(lst == null) {
+			return null;
+		}
 		else {
 			return lst.get(lst.size()-1);
 		}
@@ -769,6 +764,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				return (RMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
 			}catch(Exception e) {
 				log("Exception while attempting to lookup RMI located at address: "+adrs);
+				e.printStackTrace();
 			}
 		else {
 			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
@@ -782,7 +778,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public static String grabIP() {
 		String result=null;
 		URL url;
-		String[] services = {"http://checkip.amazonaws.com/", "http://www.trackip.net/ip", "https://api.ipify.org/?format=text"};
+		String[] services = {"http://checkip.amazonaws.com/",  "https://api.ipify.org/?format=text", "https://ip.seeip.org/", };
 		BufferedReader in;
 		for(int i=0;i<services.length;i++) {
 			try {
@@ -795,17 +791,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				System.out.println("Error grabbing IP from " + services[i] + ". Trying a different service.");
 			}
 			if(validateIP(result)) {
-				//return result;
+				break;
 			}
 		}
-		return result;
-//		try {
+//		try { //To return the local address incase you want to test locally.
 //			return Inet4Address.getLocalHost().getHostAddress();
 //		} catch (UnknownHostException e) {
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
-//		return null;
+		return result;
 	}
 
 	/*
@@ -928,6 +923,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public Configuration getConf() throws RemoteException{
 		if(configurationsLeft == 0 || cnfs == null) {
 			return null;
+		}
+		try {
+			Thread.sleep(8000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		System.out.println("Configuration given out. Configurations left: " +(configurationsLeft-1));
 		return cnfs.get(cnfs.size() - (configurationsLeft--));
