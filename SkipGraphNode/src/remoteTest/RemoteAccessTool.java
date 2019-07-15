@@ -211,7 +211,6 @@ public class RemoteAccessTool {
 		for(int k=0;k<numAtts;k++) {
 			for(int i = 0 ; i < sz; i++) {
 				for(int j = 0 ; j < sz; j++) {
-					System.out.println("Current k:= " + k + " and i:= " + i + " and j:= " + j);
 					System.out.println("Percentage done: " + 100*(k*sz*sz + i*sz + j)*1.0/(numAtts*sz*sz));
 					try {
 						if(i==j) continue;
