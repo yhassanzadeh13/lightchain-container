@@ -36,6 +36,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	 */
 	public static void main(String args[]) {				
 		try {
+			init();
 			LightChainNode node = new LightChainNode();
 			while(true) {
 				printMenu();
@@ -500,6 +501,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		}
 		return pk;
 	}
+	
 	
 	public PublicKey getPublicKey() throws RemoteException {
 		return digitalSignature.getPublicKey();

@@ -1,5 +1,9 @@
 package skipGraph;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.Inet4Address;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
@@ -9,7 +13,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
-import remoteTest.Configuration;
 import hashing.Hasher;
 import hashing.HashingTools;
 
@@ -38,21 +41,16 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	 */
 	protected SkipNode() throws RemoteException{
 		super();
-		try {
-			maxLevels = TRUNC;
-			lookup = new NodeInfo[maxLevels+1][2][maxData];
-			hasher = new HashingTools();
-			dataID = new HashMap<>();
-			data = new ArrayList<>();
-			setInfo();
-			Registry reg = LocateRegistry.createRegistry(RMIPort);
-			reg.rebind("RMIImpl", this);
-			log("Rebinding Successful");
-			String st = Inet4Address.getLocalHost().getHostAddress();
-			System.setProperty("java.rmi.server.hostname",st);
-		}catch (UnknownHostException e) {
-			System.err.println("Unknown Host Exception in constructor. Please terminate the program and try again.");
-		}
+		maxLevels = TRUNC;
+		lookup = new NodeInfo[maxLevels+1][2][maxData];
+		hasher = new HashingTools();
+		dataID = new HashMap<>();
+		data = new ArrayList<>();
+		setInfo();
+		Registry reg = LocateRegistry.createRegistry(RMIPort);
+		reg.rebind("RMIImpl", this);
+		log("Rebinding Successful");
+		
 	}
 	/*
 	 * This method initializes the information of the current node
@@ -530,9 +528,65 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	}
 	
 	/*
+	 * This method initializes all the RMI system properties required for proper functionality
+	 */
+	
+	protected static void init() {
+		IP = grabIP();
+		try {
+			System.setProperty("java.rmi.server.hostname",IP);
+			System.setProperty("java.rmi.server.useLocalHostname", "false");
+			System.out.println("RMI Server proptery set. Inet4Address: "+IP);
+			log("My Address is :" + address);
+		}catch (Exception e) {
+			System.err.println("Exception in initialization. Please try running the program again.");
+			System.exit(0);
+		}
+	}
+	
+	
+	/*
+	 * This method grabs the public ip from an external server
+	 */
+
+	public static String grabIP() {
+		boolean localIP = true; //set to true if testing locally.
+		if(localIP) {
+			try { //To return the local address in case you want to test locally.
+				return Inet4Address.getLocalHost().getHostAddress();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+		
+		String result=null;
+		URL url;
+		String[] services = {"http://checkip.amazonaws.com/",  
+							 "https://api.ipify.org/?format=text", 
+							 "https://ip.seeip.org/"};
+		BufferedReader in;
+		for(int i=0;i<services.length;i++) {
+			try {
+				url = new URL(services[i]);
+				in = new BufferedReader(new InputStreamReader(
+				        url.openStream()));
+				result = in.readLine();
+				in.close();
+			}catch(Exception e) {
+				System.out.println("Error grabbing IP from " + services[i] + ". Trying a different service.");
+			}
+			if(validateIP(result)) {
+				break;
+			}
+		}
+		return result;
+	}
+	
+	/*
 	 * This method validates the ip and makes sure its of the form xxx.xxx.xxx.xxx
 	 */
-	private static boolean validateIP(String adrs) { 
+	protected static boolean validateIP(String adrs) { 
 		int colonIndex = adrs.indexOf(':');
 		String ip = adrs;
 		if(colonIndex != -1) ip = adrs.substring(0,colonIndex);
@@ -610,8 +664,6 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	}
 	
 	// For Testing:
-	private static int configurationsLeft = 0;
-	private static ArrayList<Configuration> cnfs; //0th = master nodeinfo
 	public ArrayList<NodeInfo> getData() throws RemoteException{
 		return data;
 	}
