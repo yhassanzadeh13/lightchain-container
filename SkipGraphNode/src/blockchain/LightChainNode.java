@@ -177,7 +177,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	 */
 	public void viewUpdate(Block blk) throws RemoteException {
 		// Change numID to a nameID string
-		String name = Integer.toString(blk.getNumID());
+		String name = Integer.toString(Integer.parseInt(Integer.toString(blk.getNumID()),2));
 		// Get all transaction with this nameID
 		ArrayList<Transaction> tList = getTransactionsWithNameID(name);
 		// If number of transactions obtained is less than TX_MIN then we terminate the process
