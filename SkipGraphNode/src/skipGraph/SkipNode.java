@@ -34,7 +34,7 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 	private static HashMap<Integer,Integer> dataID;
 	protected static ArrayList<NodeInfo> data;
 	private static Hasher hasher;
-	public static final int TRUNC = 10;
+	public static final int TRUNC = 6;
 	
 	/*
 	 * Constructor for SkipNode class
@@ -96,6 +96,50 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 			dataNum++;
 		}
 		log("Your INFO:\nnameID: "+nameID+"\nnumID: "+numID+"\nintroducer: "+introducer);
+	}
+	
+	/*
+	 * This method deletes a data node with a given numID.
+	 * Currently, the deletion is done by updating the lookup table of the deleted node
+	 * and its neighbors, in addition to setting the information of this node in
+	 * the data array to be the information of the main node, because otherwise it will
+	 * still be usable in search routing. Another approach to fix this problem might be deleting
+	 * it completely from data array, but this approach will have us updating the positions of all
+	 * the data nodes that are placed after the deleted node in data array.
+	 */
+	public void delete(int num) throws RemoteException {
+		
+		for(int i=1 ; i<data.size(); ++i) {
+			// if we find the node with numID we follow the following steps to delete it
+			if(num == data.get(i).getNumID()) {
+				for(int j=0 ; j <= maxLevels ; ++j) {
+					// if there are no neighbors at level j, just move on
+					if(lookup[j][0][i] == null && lookup[j][1][i] == null)
+						continue;
+					// if left is null, then update right
+					else if (lookup[j][0][i] == null) {
+						RMIInterface rightRMI = getRMI(lookup[j][1][i].getAddress());
+						rightRMI.setLeftNode(j, null, lookup[j][1][i].getNumID());
+					// if right is null, update left
+					}else if (lookup[j][1][i] == null) {
+						RMIInterface leftRMI = getRMI(lookup[j][0][i].getAddress());
+						leftRMI.setRightNode(j, null, lookup[j][0][i].getNumID());
+					// otherwise update both sides and connect them to each other.
+					}else {
+						RMIInterface rightRMI = getRMI(lookup[j][1][i].getAddress());
+						RMIInterface leftRMI = getRMI(lookup[j][0][i].getAddress());
+						rightRMI.setLeftNode(j, lookup[j][0][i], lookup[j][1][i].getNumID());
+						leftRMI.setRightNode(j, lookup[j][1][i], lookup[j][0][i].getNumID());
+					}
+					// delete neighbors
+					lookup[j][1][i] = null;
+					lookup[j][0][i] = null;
+				}
+				// assign the main node in place of this data node in data array
+				data.set(i, data.get(0));
+				break;
+			}
+		}
 	}
 
 	/*
@@ -467,10 +511,18 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 		return lookup[level][1][dataID.get(num)].getAddress();
 	}
 	public void setLeftNode(int level,NodeInfo newNode, int num) throws RemoteException{
+		if(newNode == null) {
+			lookup[level][0][dataID.get(num)] = null;
+			return;
+		}
 		log("LeftNode at level "+level+" set to: "+newNode.getAddress());
 		lookup[level][0][dataID.get(num)] = newNode;
 	}
 	public void setRightNode(int level,NodeInfo newNode, int num) throws RemoteException {
+		if(newNode == null) {
+			lookup[level][1][dataID.get(num)] = null;
+			return ;
+		}
 		log("RightNode at level "+level+" set to: "+newNode.getAddress());
 		lookup[level][1][dataID.get(num)] = newNode ;
 	}

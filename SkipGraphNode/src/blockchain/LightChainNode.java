@@ -30,6 +30,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	private static int VAL_THRESHOLD = 2;
 	public static final int TRUNC = 6;
 	public static final int TX_MIN = 2;
+	public static final int ZERO_ID = 0;
 	
 	/*
 	 * Main method is for Running the tests on the node
@@ -85,8 +86,8 @@ public class LightChainNode extends SkipNode implements RMIInterface{
         log("3-Insert Block");
         log("4-Search By Name ID");
         log("5-Search By Numeric ID");
-        log("6-Validate Transaction");
-        log("7-Print the Lookup Table");
+        log("6-Print the Lookup Table");
+        log("7-Delete node");
 	}
 	
 	/*
@@ -120,6 +121,10 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 			log("Enter prev of block");
 			String prev = get();
 			Block b = new Block(prev,getNumID(),getAddress());
+			log("Enter Testing numID");
+			int num = Integer.parseInt(get());
+			b.setNumID(num);
+			insert(new NodeInfo(getAddress(),ZERO_ID,Integer.toBinaryString(num)));
 			blocks.add(b);
 			insert(b);
 		}else if (query == 4) {// search by name ID
@@ -147,15 +152,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 			int num = Integer.parseInt(numInput);
 			NodeInfo result = searchByNumID(num);
 			log("The result of search by numberic ID is: "+ result.getAddress());
-		}else if(query == 6) {
-			log("Which transaction to validate, you have "+transactions.size()+ " option");
-			int num = Integer.parseInt(get());
-			try {
-				validate(transactions.get(num));
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
-		}else if(query == 7) { // print the lookup table of the current node
+		}else if(query == 6) { // print the lookup table of the current node
 			log("In case you want the lookup table of the original node enter 0.");
 			log("Otherwise, enter the index of the data node ");
 			int num = Integer.parseInt(get());
@@ -163,11 +160,19 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 				printLookup(num);
 			else
 				log("Data node with given index does not exist");
+		}else if(query == 7) {
+			log("Enter the numID of the data node to be deleted.");
+			int num = Integer.parseInt(get());
+			try {
+				delete(num);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
 		}
     }
 	
 	/*
-	 * This method receives the latest block on the blockchain and takes its numID
+	 * This method finds the latest block on the blockchain and takes its numID
 	 * and uses it to find all transactions that have this numID as nameID and uses
 	 * getTransactionsWithNameID() method to get such transactions, and if the number
 	 * of found transactions if at least TX_MIN, the transactions are casted into a block
@@ -176,7 +181,9 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	 * NOTE for improvement:
 	 * 	make it first search for the latest block and then search for transactions
 	 */
-	public void viewUpdate(Block blk) throws RemoteException {
+	public void viewUpdate() throws RemoteException {
+		
+		Block blk = getLatestBlock();
 		// Change numID to a nameID string
 		String name = Integer.toString(Integer.parseInt(Integer.toString(blk.getNumID()),2));
 		// Get all transaction with this nameID
@@ -190,6 +197,15 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		Block newBlk = new Block(blk.getH(),getNumID(),tList);
 		// send the new block for PoV validation
 		validate(newBlk);
+	}
+	
+	/*
+	 * This method finds the latest block on the blockchain.
+	 */
+	public Block getLatestBlock() throws RemoteException {
+		NodeInfo flag = searchByNumID(ZERO_ID);
+		Block blk = (Block)searchByNameID(flag.getNameID());
+		return blk;
 	}
 	
 	/*
@@ -256,7 +272,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	 * their signatures of the hash value of the block if the validation was successful
 	 * and gets null otherwise.
 	 */
-	public void validate(Block blk) throws RemoteException {
+	public boolean validate(Block blk) throws RemoteException {
 		ArrayList<NodeInfo> validators = getValidators(blk);
 		ArrayList<String> sigma = new ArrayList<>();
 		// add the owner's signature to the block
@@ -270,13 +286,14 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 			// if one validator returns null, then validation has failed
 			if(signature == null) {
 				log("Validating Block failed.");
-				return;
+				return false;
 			}
 			sigma.add(signature);
 		}
 		// update the sigma array of the block with all the signatures
 		blk.setSigma(sigma);
 		log("Validation of block is successful");
+		return true;
 	}
 	
 	/*
@@ -284,7 +301,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	 * First it gets the validators of the transaction, and then contacts each of them 
 	 * to get their signatures and stores their signatures in the sigma array.
 	 */
-	public void validate(Transaction t) throws RemoteException {
+	public boolean validate(Transaction t) throws RemoteException {
 		// obtain validators
 		ArrayList<NodeInfo> validators = getValidators(t);
 		// define an empty list
@@ -301,12 +318,13 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 			// if a validators returns null that means the validation has failed
 			if(signature == null) {
 				log("Validating Transaction failed.");
-				return;
+				return false;
 			}
 			sigma.add(signature);
 		}
 		t.setSigma(sigma);
 		log("Validation Successful");
+		return true;
 	}
 	/*
 	 * This method is used to validate a block. It checks :
