@@ -217,8 +217,8 @@ public class RemoteAccessTool {
 		int sz = nodeList.size();
 		for(int k=0;k<numAtts;k++) {
 			try{
-				CountDownLatch ltch = new CountDownLatch(nodeList.size());
-				for(int i=0;i<nodeList.size();i++) {
+				CountDownLatch ltch = new CountDownLatch(sz);
+				for(int i=0;i<sz;i++) {
 					PingingThread cur = new PingingThread(i,ltch, numPings/numAtts);
 					cur.start();
 				}
@@ -226,7 +226,7 @@ public class RemoteAccessTool {
 			}catch(InterruptedException e) {
 				e.printStackTrace();
 			}
-			System.out.println("Percentage done: " + 100.0*k/numAtts + "%");
+			if(printProgress) System.out.println("Percentage done: " + 100.0*k/numAtts + "%");
 		}
 		try {
 			PrintWriter writer = new PrintWriter(new File("test" + System.currentTimeMillis()%20 + ".csv"));
