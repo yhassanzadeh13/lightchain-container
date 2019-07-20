@@ -9,6 +9,8 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 import blockchain.Block;
 import blockchain.Transaction;
@@ -176,12 +178,17 @@ public class RemoteAccessTool {
         log("9-Exit");
 	}
 
-	private static int numPings = 1;//Total number of pinging attempts
+	private static int numPings = 10;//Total number of pinging attempts
 	private static int numAtts = 1;//How many different pinging sessions to divide the attempts into
+	private static boolean printProgress = true;//Whether you want the pingstats function to print % done while called or not.
+	private static ArrayList<PingLog>logs; 
+	private static ArrayList<NodeInfo> nodeList;
+	private static ConcurrentHashMap<NodeInfo, ArrayList<PingLog>> res;
 	
 	public static void pingStats() {
 		NodeInfo curNode = null;
-		ArrayList<NodeInfo> nodeList = new ArrayList<NodeInfo>();
+		nodeList = new ArrayList<NodeInfo>();
+		res = new ConcurrentHashMap<NodeInfo, ArrayList<PingLog>>();
 		log("Enter the total number of ping attempts per node pair:");
 		String inp = get();
 		while(!inp.matches("0|[1-9][0-9]*")) {
@@ -206,37 +213,20 @@ public class RemoteAccessTool {
 			return;
 		}
 		System.out.println("Total number of nodes: " + nodeList.size());
-		HashMap<NodeInfo, ArrayList<PingLog>> res = new HashMap<NodeInfo, ArrayList<PingLog>>();
+		
 		int sz = nodeList.size();
 		for(int k=0;k<numAtts;k++) {
-			for(int i = 0 ; i < sz; i++) {
-				for(int j = 0 ; j < sz; j++) {
-					System.out.println("Percentage done: " + 100*(k*sz*sz + i*sz + j)*1.0/(numAtts*sz*sz));
-					try {
-						if(i==j) continue;
-						RMIInterface curRMI = getRMI(nodeList.get(i).getAddress());								
-						PingLog curLog = curRMI.pingStart(nodeList.get(j), numPings/numAtts);
-						if(k==0) {//first time testing, the arraylists need to initialized.
-							if(res.containsKey(nodeList.get(i))) {
-								ArrayList<PingLog> tmp = res.get(nodeList.get(i));
-								tmp.add(curLog);
-								res.put(nodeList.get(i), tmp);	
-							}else {
-								ArrayList<PingLog> tmp = new ArrayList<PingLog>();
-								tmp.add(curLog);
-								res.put(nodeList.get(i), tmp);									
-							}
-						}else {
-							ArrayList<PingLog> tmp = res.get(nodeList.get(i));
-							tmp.get(j>i?j-1:j).append(curLog);
-							res.put(nodeList.get(i), tmp);
-						}
-					}catch(RemoteException e) {
-						System.err.println("Remote exception inside for loop.");
-						e.printStackTrace();
-					}
+			try{
+				CountDownLatch ltch = new CountDownLatch(nodeList.size());
+				for(int i=0;i<nodeList.size();i++) {
+					PingingThread cur = new PingingThread(i,ltch, numPings/numAtts);
+					cur.start();
 				}
+				ltch.await();
+			}catch(InterruptedException e) {
+				e.printStackTrace();
 			}
+			System.out.println("Percentage done: " + 100.0*k/numAtts + "%");
 		}
 		try {
 			PrintWriter writer = new PrintWriter(new File("test" + System.currentTimeMillis()%20 + ".csv"));
@@ -259,7 +249,7 @@ public class RemoteAccessTool {
 			}
 			sb.append('\n');
 			sb.append("Information regarding the nodes in the current graph:\n");
-			sb.append("IP,NameID,NumID");
+			sb.append("IP,NameID,NumID\n");
 			for(NodeInfo cur : nodeList) {
 				sb.append(cur.getAddress()+","+cur.getNameID()+","+cur.getNumID()+"\n");
 			}
@@ -360,4 +350,57 @@ public class RemoteAccessTool {
 		}
 		return null;
 	}	
+	
+	/*
+	 * Thread class for multithreading
+	 */
+	static class PingingThread extends Thread{
+		Thread t;
+		String threadname;
+		String pinger;
+		CountDownLatch latch;
+		int count;
+		int index;
+		
+		public PingingThread(int ind, CountDownLatch ltch, int count) {
+			this.pinger = nodeList.get(ind).getAddress();
+			this.latch = ltch;
+			this.index=ind;
+			this.count = count;
+		}
+		
+		
+		public void run() {
+			RMIInterface curRMI = getRMI(pinger);
+			for(int i = 0;i< nodeList.size();i++) {
+				if(i == index) continue;
+				PingLog current;
+				try {
+					current = curRMI.pingStart(nodeList.get(i), count);
+					if(res.containsKey(nodeList.get(index))) {
+						ArrayList<PingLog> cur = res.get(nodeList.get(index));
+						if(cur.size()>(i<index?i:i-1)) {
+							cur.get(i<index?i:i-1).append(current);
+							res.put(nodeList.get(index), cur);
+						}else {
+							cur.add(current);
+							res.put(nodeList.get(index), cur);
+						}
+					}else {
+						ArrayList<PingLog> cur = new ArrayList<PingLog>();
+						cur.add(current);
+						res.put(nodeList.get(index), cur);
+					}
+				}catch (Exception e) {
+					System.err.println("Exception thrown in pinging thread.");
+					e.printStackTrace();
+				}
+			}
+			latch.countDown();
+		}
+		
+	}
+	
+	
 }
+
