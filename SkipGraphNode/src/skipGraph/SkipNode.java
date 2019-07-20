@@ -49,7 +49,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static int valThreshold = 3;
 	private static HashMap<String,Integer> blkIdx = new HashMap<>();
 	private static HashMap<Integer,String> view = new HashMap<>();
-	private static int testingMode = 2;/*
+	private static int testingMode = 0;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -776,9 +776,21 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 
 	public static String grabIP() {
+		boolean localIP = false; //set to true if testing locally.
+		if(localIP) {
+			try { //To return the local address in case you want to test locally.
+				return Inet4Address.getLocalHost().getHostAddress();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+
 		String result=null;
 		URL url;
-		String[] services = {"http://checkip.amazonaws.com/",  "https://api.ipify.org/?format=text", "https://ip.seeip.org/", };
+		String[] services = {"http://checkip.amazonaws.com/",  
+							 "https://api.ipify.org/?format=text", 
+							 "https://ip.seeip.org/"};
 		BufferedReader in;
 		for(int i=0;i<services.length;i++) {
 			try {
@@ -794,12 +806,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				break;
 			}
 		}
-//		try { //To return the local address incase you want to test locally.
-//			return Inet4Address.getLocalHost().getHostAddress();
-//		} catch (UnknownHostException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 		return result;
 	}
 
@@ -892,11 +898,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	// For Testing purposes
 
 
-
 	/*
-	 * Getters (For use in the remote testing)
+	 * Method which pings a specific node a freq number of times using the function ping().
 	 */
-
 	public PingLog pingStart(NodeInfo node, int freq) throws RemoteException{
 		PingLog lg = new PingLog(new NodeInfo(address, numID, nameID), node);
 		RMIInterface nodeToPing = getRMI(node.getAddress());
@@ -915,20 +919,20 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		}
 		return lg;
 	}
-
+	/*
+	 * Ping function. Simply returns true. 	 
+	 */
 	public boolean ping() throws RemoteException{
 		return true;
 	}
 
+	/*
+	 * Getters (For use in the remote testing)
+	 */
+	
 	public Configuration getConf() throws RemoteException{
 		if(configurationsLeft == 0 || cnfs == null) {
 			return null;
-		}
-		try {
-			Thread.sleep(8000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		System.out.println("Configuration given out. Configurations left: " +(configurationsLeft-1));
 		return cnfs.get(cnfs.size() - (configurationsLeft--));
