@@ -204,7 +204,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	 */
 	public Block getLatestBlock() throws RemoteException {
 		NodeInfo flag = searchByNumID(ZERO_ID);
-		Block blk = (Block)searchByNameID(flag.getNameID());
+		Block blk = (Block)searchByNumID(Integer.parseInt(flag.getNameID(),2));
 		return blk;
 	}
 	
