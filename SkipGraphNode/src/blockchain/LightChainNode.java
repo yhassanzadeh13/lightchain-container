@@ -1,6 +1,7 @@
 package blockchain;
 
 import java.io.IOException;
+import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -10,10 +11,9 @@ import hashing.Hasher;
 import hashing.HashingTools;
 import signature.DigitalSignature;
 import skipGraph.NodeInfo;
-import skipGraph.RMIInterface;
 import skipGraph.SkipNode;
 
-public class LightChainNode extends SkipNode implements RMIInterface{
+public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	
 	private static final long serialVersionUID = 1L;
 	private static ArrayList<Transaction> transactions = new ArrayList<>();
@@ -71,6 +71,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		}
 		setNameID(hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC));
 		setNumID(Integer.parseInt(getNameID(),2));
+		setInfo();
 	}
 	
 	/*
@@ -178,8 +179,6 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 	 * of found transactions if at least TX_MIN, the transactions are casted into a block
 	 * and the block is sent for validation.
 	 * 
-	 * NOTE for improvement:
-	 * 	make it first search for the latest block and then search for transactions
 	 */
 	public void viewUpdate() throws RemoteException {
 		
@@ -196,7 +195,12 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		// If there are TX_MIN transaction then add them into a new block
 		Block newBlk = new Block(blk.getH(),getNumID(),tList);
 		// send the new block for PoV validation
-		validate(newBlk);
+		boolean isValidated = validate(newBlk);
+		if(!isValidated)return;
+		insert(newBlk);
+		for(int i=0 ; i<tList.size(); ++i) {
+			insert(new NodeInfo(getAddress(),newBlk.getNumID(),Integer.toBinaryString(tList.get(i).getOwner())));
+		}
 	}
 	
 	/*
@@ -206,6 +210,14 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		NodeInfo flag = searchByNumID(ZERO_ID);
 		Block blk = (Block)searchByNumID(Integer.parseInt(flag.getNameID(),2));
 		return blk;
+	}
+	
+	/*
+	 * This method gets the numID of a peer and returns its latest transactions.
+	 */
+	public Transaction getLatestTransaction(int num) throws RemoteException {
+		Transaction t = (Transaction)searchByNameID(Integer.toBinaryString(num));
+		return t;
 	}
 	
 	/*
@@ -225,7 +237,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		// leftNum and rightNum will store numIDs of left and right nodes, used to correctly access nodes (data nodes functionality)
 		int leftNum = -1, rightNum = -1;
 		// thisRMI is just used to extract information of neighbors
-		RMIInterface thisRMI = getRMI(t.getAddress());
+		LightChainRMIInterface thisRMI = getLightChainRMI(t.getAddress());
 		
 		// get addresses of left and right nodes, as well as their numIDs
 		left = thisRMI.getLeftNode(maxLevels,t.getNumID());
@@ -237,7 +249,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		
 		// now in the last level of the skip graph, we go left and right
 		while(left != null) {
-			RMIInterface leftRMI = getRMI(left);
+			LightChainRMIInterface leftRMI = getLightChainRMI(left);
 			NodeInfo node = leftRMI.getNode(leftNum);
 			// if this node is a transaction add it to the list
 			if(node instanceof Transaction)
@@ -250,7 +262,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 			leftNum = leftRMI.getLeftNumID(maxLevels,leftNum);
 		}
 		while(right != null) {
-			RMIInterface rightRMI = getRMI(right);
+			LightChainRMIInterface rightRMI = getLightChainRMI(right);
 			NodeInfo node = rightRMI.getNode(rightNum);
 			// if this node is a transaction add it to the list
 			if(node instanceof Transaction)
@@ -281,7 +293,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		blk.setSigma(sigma);
 		// iterate over validators and ask them to validate the block
 		for(int i=0 ; i<validators.size() ; ++i) {
-			RMIInterface node = getRMI(validators.get(i).getAddress());
+			LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
 			String signature = node.PoV(blk);
 			// if one validator returns null, then validation has failed
 			if(signature == null) {
@@ -313,7 +325,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		
 		// iterate over validators and use RMI to ask them to validate the transaction
 		for(int i=0 ; i<validators.size(); ++i) {
-			RMIInterface node = getRMI(validators.get(i).getAddress());
+			LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
 			String signature = node.PoV(t);
 			// if a validators returns null that means the validation has failed
 			if(signature == null) {
@@ -506,7 +518,7 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		// find owner from the network
 		NodeInfo owner = searchByNumID(num);
 		// Contact the owner through RMI
-		RMIInterface ownerRMI = getRMI(owner.getAddress());
+		LightChainRMIInterface ownerRMI = getLightChainRMI(owner.getAddress());
 		// get the owner'r Public key through RMI
 		PublicKey pk = ownerRMI.getPublicKey();
 		// Hash the public key and store the hash value as int
@@ -520,6 +532,18 @@ public class LightChainNode extends SkipNode implements RMIInterface{
 		return pk;
 	}
 	
+	public LightChainRMIInterface getLightChainRMI(String adrs) {
+		if(validateIP(adrs))
+			try {
+				return (LightChainRMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
+			}catch(Exception e) {
+				log("Exception while attempting to lookup RMI located at address: "+adrs);
+			}
+		else {
+			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
+		}
+		return null;
+	}
 	
 	public PublicKey getPublicKey() throws RemoteException {
 		return digitalSignature.getPublicKey();

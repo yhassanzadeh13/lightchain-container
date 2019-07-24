@@ -16,25 +16,27 @@ import java.util.Scanner;
 import hashing.Hasher;
 import hashing.HashingTools;
 
-public abstract class SkipNode extends UnicastRemoteObject implements RMIInterface{
+public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 	
 	private static final long serialVersionUID = 1L;
 	protected static String address;
 	protected static String nameID;
 	protected static int numID;
-	private static String IP ;
-	private static NodeInfo[][][] lookup ;
-	protected static int maxLevels = 10; 
-	private static int maxData = 100;
-	private static int dataNum = 0 ; 
+	protected static String IP ;
+	protected static NodeInfo[][][] lookup ;
+	protected static int maxLevels; 
 	private static String introducer; 
-	protected static int RMIPort = 1099;
-	public static Scanner in = new Scanner(System.in);
+	protected static int RMIPort ;
+	protected static Scanner in = new Scanner(System.in);
 	private static HashMap<Integer,Integer> dataID;
 	protected static ArrayList<NodeInfo> data;
 	private static Hasher hasher;
-	public static final int TRUNC = 6;
+	public static final int TRUNC = 5;
+	protected static int maxData = 100;
+	private static int dataNum = 0 ; 
+	private static final int RIGHT = 1;
+	private static final int LEFT = 0;
 	
 	/*
 	 * Constructor for SkipNode class
@@ -43,14 +45,11 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 		super();
 		maxLevels = TRUNC;
 		lookup = new NodeInfo[maxLevels+1][2][maxData];
-		hasher = new HashingTools();
 		dataID = new HashMap<>();
 		data = new ArrayList<>();
-		setInfo();
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", this);
 		log("Rebinding Successful");
-		
 	}
 	/*
 	 * This method initializes the information of the current node
@@ -82,11 +81,6 @@ public abstract class SkipNode extends UnicastRemoteObject implements RMIInterfa
 			System.out.println("Couldn't fetch local Inet4Address. Please restart.");
 			System.exit(0);
 		}
-		
-		// The nameID and numID are hash values of the address
-		nameID = hasher.getHash(address,TRUNC);
-		numID = Integer.parseInt(nameID,2);
-		
 		// In case the introducer to this node is null, then the insert method
 		// will not be called on it, so we manually add it to the data list and 
 		// map index in the data array with its numID.
