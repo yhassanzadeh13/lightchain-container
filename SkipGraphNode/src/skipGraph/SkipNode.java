@@ -13,30 +13,33 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
-import hashing.Hasher;
-import hashing.HashingTools;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 	
-	private static final long serialVersionUID = 1L;
+	
 	protected static String address;
 	protected static String nameID;
 	protected static int numID;
 	protected static String IP ;
 	protected static NodeInfo[][][] lookup ;
-	protected static int maxLevels; 
 	private static String introducer; 
 	protected static int RMIPort ;
 	protected static Scanner in = new Scanner(System.in);
 	private static HashMap<Integer,Integer> dataID;
 	protected static ArrayList<NodeInfo> data;
-	private static Hasher hasher;
-	public static final int TRUNC = 5;
-	protected static int maxData = 100;
 	private static int dataNum = 0 ; 
+	/*
+	 * Constants
+	 */
+	private static final long serialVersionUID = 1L;
+	protected static int maxLevels;
+	protected static int MAX_DATA = 100;
 	private static final int RIGHT = 1;
 	private static final int LEFT = 0;
+	private static final int ZERO_LEVEL = 0;
+	private static final int UNASSIGNED = -1;
+	public static final int TRUNC = 5;
 	
 	/*
 	 * Constructor for SkipNode class
@@ -44,7 +47,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	protected SkipNode() throws RemoteException{
 		super();
 		maxLevels = TRUNC;
-		lookup = new NodeInfo[maxLevels+1][2][maxData];
+		lookup = new NodeInfo[maxLevels+1][2][MAX_DATA];
 		dataID = new HashMap<>();
 		data = new ArrayList<>();
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
@@ -108,26 +111,26 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			if(num == data.get(i).getNumID()) {
 				for(int j=0 ; j <= maxLevels ; ++j) {
 					// if there are no neighbors at level j, just move on
-					if(lookup[j][0][i] == null && lookup[j][1][i] == null)
+					if(lookup[j][LEFT][i] == null && lookup[j][RIGHT][i] == null)
 						continue;
 					// if left is null, then update right
-					else if (lookup[j][0][i] == null) {
-						RMIInterface rightRMI = getRMI(lookup[j][1][i].getAddress());
-						rightRMI.setLeftNode(j, null, lookup[j][1][i].getNumID());
+					else if (lookup[j][LEFT][i] == null) {
+						RMIInterface rightRMI = getRMI(lookup[j][RIGHT][i].getAddress());
+						rightRMI.setLeftNode(j, null, lookup[j][RIGHT][i].getNumID());
 					// if right is null, update left
-					}else if (lookup[j][1][i] == null) {
-						RMIInterface leftRMI = getRMI(lookup[j][0][i].getAddress());
-						leftRMI.setRightNode(j, null, lookup[j][0][i].getNumID());
+					}else if (lookup[j][RIGHT][i] == null) {
+						RMIInterface leftRMI = getRMI(lookup[j][LEFT][i].getAddress());
+						leftRMI.setRightNode(j, null, lookup[j][LEFT][i].getNumID());
 					// otherwise update both sides and connect them to each other.
 					}else {
-						RMIInterface rightRMI = getRMI(lookup[j][1][i].getAddress());
-						RMIInterface leftRMI = getRMI(lookup[j][0][i].getAddress());
-						rightRMI.setLeftNode(j, lookup[j][0][i], lookup[j][1][i].getNumID());
-						leftRMI.setRightNode(j, lookup[j][1][i], lookup[j][0][i].getNumID());
+						RMIInterface rightRMI = getRMI(lookup[j][RIGHT][i].getAddress());
+						RMIInterface leftRMI = getRMI(lookup[j][LEFT][i].getAddress());
+						rightRMI.setLeftNode(j, lookup[j][LEFT][i], lookup[j][RIGHT][i].getNumID());
+						leftRMI.setRightNode(j, lookup[j][RIGHT][i], lookup[j][LEFT][i].getNumID());
 					}
 					// delete neighbors
-					lookup[j][1][i] = null;
-					lookup[j][0][i] = null;
+					lookup[j][RIGHT][i] = null;
+					lookup[j][LEFT][i] = null;
 				}
 				// assign the main node in place of this data node in data array
 				data.set(i, data.get(0));
@@ -141,7 +144,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * It is used to make the insert() operation recursive per level.
 	 * It receives the level of insertion and the direction of search
 	 * if direction == 1, then the search is to the right, and the method returns the right neighbor
-	 * if direction != 1, then the search is to the left, and the method returns the left neighbor
+	 * if direction == 0, then the search is to the left, and the method returns the left neighbor
 	 * This method is also directly accessed by other nodes using RMI if a search should pass through it
 	 * @see RMIInterface#insertSearch(int, int, int, java.lang.String)
 	 */
@@ -154,18 +157,18 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			return data.get(dataIdx);
 		// If search is to the right then delegate the search to right neighbor if it exists
 		// If the right neighbor is null then at this level the right neighbor of the inserted node is null
-		if(direction == 1) {
-			if(lookup[level][1][dataIdx] == null)
+		if(direction == RIGHT) {
+			if(lookup[level][RIGHT][dataIdx] == null)
 				return null;
-			RMIInterface rRMI = getRMI(lookup[level][1][dataIdx].getAddress());
-			return rRMI.insertSearch(level,direction,lookup[level][1][dataIdx].getNumID(),target);
+			RMIInterface rRMI = getRMI(lookup[level][RIGHT][dataIdx].getAddress());
+			return rRMI.insertSearch(level,direction,lookup[level][RIGHT][dataIdx].getNumID(),target);
 		} else {
 			// If search is to the left then delegate the search to the left neighbor if it exists
 			// If the left neighbor is null, then the left neighbor of the inserted node at this level is null.
-			if(lookup[level][0][dataIdx] == null)
+			if(lookup[level][LEFT][dataIdx] == null)
 				return null;
-			RMIInterface lRMI = getRMI(lookup[level][0][dataIdx].getAddress());
-			return lRMI.insertSearch(level,direction,lookup[level][0][dataIdx].getNumID(),target);
+			RMIInterface lRMI = getRMI(lookup[level][LEFT][dataIdx].getAddress());
+			return lRMI.insertSearch(level,direction,lookup[level][LEFT][dataIdx].getNumID(),target);
 		}
 	}
 	
@@ -206,40 +209,40 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			
 			int posNum = position.getNumID(); // numID of the closest node
 			String posName = position.getNameID(); // nameID of the closest node
-			int leftNum = -1 ; // numID of left node
-			int rightNum = -1 ; // numID of right node
+			int leftNum = UNASSIGNED ; // numID of left node
+			int rightNum = UNASSIGNED ; // numID of right node
 			
 			if(posNum > node.getNumID()) { // if the closest node is to the right
 				
 				right = position.getAddress();
-				left = posRMI.getLeftNode(0,posNum); // the left of my right will be my left
+				left = posRMI.getLeftNode(ZERO_LEVEL,posNum); // the left of my right will be my left
 				rightNum = position.getNumID(); // we need the numID to be able to access it
 				
 				if(left != null) { // insert the current node in the lookup table of my left node if it exists
 					RMIInterface leftRMI = getRMI(left);
 					leftNum = posRMI.getLeftNumID(0,posNum);
-					lookup[0][0][dataNum] = new NodeInfo(left,leftNum,posRMI.getLeftNameID(0,posNum));
-					leftRMI.setRightNode(0, node,leftNum);
+					lookup[ZERO_LEVEL][LEFT][dataNum] = new NodeInfo(left,leftNum,posRMI.getLeftNameID(ZERO_LEVEL,posNum));
+					leftRMI.setRightNode(ZERO_LEVEL, node,leftNum);
 				}
 				
-				lookup[0][1][dataNum] = new NodeInfo(right,posNum,posName);
-				posRMI.setLeftNode(0, node, posNum); // insert the current node in the lookup table of its right neighbor
+				lookup[ZERO_LEVEL][RIGHT][dataNum] = new NodeInfo(right,posNum,posName);
+				posRMI.setLeftNode(ZERO_LEVEL, node, posNum); // insert the current node in the lookup table of its right neighbor
 			
 			}else{ // if the closest node is to the left
 				
-				right  = posRMI.getRightNode(0,posNum); // the right of my left is my right
+				right  = posRMI.getRightNode(ZERO_LEVEL,posNum); // the right of my left is my right
 				left = position.getAddress() ; 
 				leftNum = position.getNumID(); // we need the numID to be able to access it
 				
 				if(right != null) { // insert current node in the lookup table of its right neighbor if it exists
 					RMIInterface rightRMI = getRMI(right);
-					rightNum = posRMI.getRightNumID(0, posNum);
-					lookup[0][1][dataNum] = new NodeInfo(right,rightNum,posRMI.getRightNameID(0,posNum)) ;
-					rightRMI.setLeftNode(0,node,rightNum);
+					rightNum = posRMI.getRightNumID(ZERO_LEVEL, posNum);
+					lookup[ZERO_LEVEL][RIGHT][dataNum] = new NodeInfo(right,rightNum,posRMI.getRightNameID(ZERO_LEVEL,posNum)) ;
+					rightRMI.setLeftNode(ZERO_LEVEL,node,rightNum);
 				}
 				
-				lookup[0][0][dataNum] = new NodeInfo(left,posNum,posName);
-				posRMI.setRightNode(0, node,posNum);
+				lookup[ZERO_LEVEL][LEFT][dataNum] = new NodeInfo(left,posNum,posName);
+				posRMI.setRightNode(ZERO_LEVEL, node,posNum);
 				
 			}
 			
@@ -247,20 +250,20 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// In level i , we make a recursive search for the nodes that will be
 			// the neighbors of the inserted nodes at level i+1
 			
-			int level = 0;
+			int level = ZERO_LEVEL;
 			while(level < maxLevels) {
 				
 				if(left != null) {
 					
 					RMIInterface leftRMI = getRMI(left);
-					NodeInfo lft = leftRMI.insertSearch(level,-1,leftNum,node.getNameID()); // start search left
-					lookup[level+1][0][dataNum] = lft ; 
+					NodeInfo lft = leftRMI.insertSearch(level,LEFT,leftNum,node.getNameID()); // start search left
+					lookup[level+1][LEFT][dataNum] = lft ; 
 					
 					// set left and leftNum to default values (null,-1)
 					// so that if the left neighbor is null then we no longer need
 					// to search in higher levels to the left
 					left = null;
-					leftNum = -1;
+					leftNum = UNASSIGNED;
 					
 					if(lft != null) {
 						RMIInterface lftRMI = getRMI(lft.getAddress());
@@ -272,14 +275,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				if(right != null) {
 					
 					RMIInterface rightRMI = getRMI(right);
-					NodeInfo rit = rightRMI.insertSearch(level, 1, rightNum, node.getNameID()); // start search right
-					lookup[level+1][1][dataNum] = rit;
+					NodeInfo rit = rightRMI.insertSearch(level, RIGHT, rightNum, node.getNameID()); // start search right
+					lookup[level+1][RIGHT][dataNum] = rit;
 					
 					// set right and rightNum to default values (null,-1)
 					// so that if the right neighbor is null then we no longer need
 					// to search in higher levels to the right
 					right = null;
-					rightNum = -1;
+					rightNum = UNASSIGNED;
 					
 					if(rit != null) {
 						RMIInterface ritRMI = getRMI(rit.getAddress());
@@ -337,13 +340,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			
 			// Keep going down levels as long as there is either no right neighbor
 			// or the right neighbor has a numID greater than the target
-			while(level >= 0 && (lookup[level][1][dataIdx] == null || lookup[level][1][dataIdx].getNumID() > targetInt))
+			while(level >= ZERO_LEVEL && (lookup[level][RIGHT][dataIdx] == null || lookup[level][RIGHT][dataIdx].getNumID() > targetInt))
 				level--;
 			// If there are no more levels to go down to return the current node
-			if(level < 0) 			
+			if(level < ZERO_LEVEL) 			
 				return data.get(dataIdx);
 			// delegate the search to the right neighbor
-			RMIInterface rightRMI = getRMI(lookup[level][1][dataIdx].getAddress());
+			RMIInterface rightRMI = getRMI(lookup[level][RIGHT][dataIdx].getAddress());
 			try{
 				return rightRMI.searchNum(targetInt,level);
 			}catch(Exception e) {
@@ -353,13 +356,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		else { // If the target is less than the current node then we should search left 
 			// Keep going down levels as long as there is either no right neighbor
 			// or the left neighbor has a numID greater than the target
-			while(level >= 0 && (lookup[level][0][dataIdx] == null || lookup[level][0][dataIdx].getNumID() < targetInt))
+			while(level >= ZERO_LEVEL && (lookup[level][LEFT][dataIdx] == null || lookup[level][LEFT][dataIdx].getNumID() < targetInt))
 				level--;
 			// If there are no more levels to go down to return the current node
-			if(level < 0)
+			if(level < ZERO_LEVEL)
 				return data.get(dataIdx);
 			// delegate the search to the left neighbor
-			RMIInterface leftRMI = getRMI(lookup[level][0][dataIdx].getAddress());
+			RMIInterface leftRMI = getRMI(lookup[level][LEFT][dataIdx].getAddress());
 			try{
 				return leftRMI.searchNum(targetInt, level);
 			}catch(Exception e) {
@@ -379,7 +382,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 		int level = maxLevels;
 		int dataIdx = getBestNum(searchTarget); // route search to closest data node
-		if(lookup[0][0][dataIdx] == null && lookup[0][1][dataIdx] == null)
+		if(lookup[ZERO_LEVEL][LEFT][dataIdx] == null && lookup[ZERO_LEVEL][RIGHT][dataIdx] == null)
 			return data.get(dataIdx);
 		return searchNum(searchTarget,level);	
 	}
@@ -469,9 +472,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		NodeInfo result = data.get(dataIdx);
 		
 		// First execute the search in the right direction and see the result it returns
-		if(lookup[newLevel][1][dataIdx] != null) {
-			RMIInterface rightRMI = getRMI(lookup[newLevel][1][dataIdx].getAddress());
-			result = rightRMI.searchName(searchTarget,newLevel,1);
+		if(lookup[newLevel][RIGHT][dataIdx] != null) {
+			RMIInterface rightRMI = getRMI(lookup[newLevel][RIGHT][dataIdx].getAddress());
+			result = rightRMI.searchName(searchTarget,newLevel,RIGHT);
 		}
 		// If the result is not null and is different from the default value we check it
 		if(result != null && !result.equals(data.get(dataIdx))) {
@@ -481,9 +484,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				return result;
 		}
 		// If the desired result was not found try to search to the left
-		if(lookup[newLevel][0][dataIdx] != null) {
-			RMIInterface leftRMI = getRMI(lookup[newLevel][0][dataIdx].getAddress());
-			NodeInfo k = leftRMI.searchName(searchTarget, newLevel, 0);
+		if(lookup[newLevel][LEFT][dataIdx] != null) {
+			RMIInterface leftRMI = getRMI(lookup[newLevel][LEFT][dataIdx].getAddress());
+			NodeInfo k = leftRMI.searchName(searchTarget, newLevel, LEFT);
 			if(commonBits(k.getNameID(),data.get(dataIdx).getNameID()) > commonBits(result.getNameID(),data.get(dataIdx).getNameID()))
 				result = k;
 		}
@@ -494,31 +497,31 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * 
 	 */
 	public String getLeftNode(int level,int num) throws RemoteException {
-		if(lookup[level][0][dataID.get(num)] == null)
+		if(lookup[level][LEFT][dataID.get(num)] == null)
 			return null;
-		return lookup[level][0][dataID.get(num)].getAddress();
+		return lookup[level][LEFT][dataID.get(num)].getAddress();
 	}
 	
 	public String getRightNode(int level, int num) throws RemoteException {
-		if(lookup[level][1][dataID.get(num)] == null)
+		if(lookup[level][RIGHT][dataID.get(num)] == null)
 			return null;
-		return lookup[level][1][dataID.get(num)].getAddress();
+		return lookup[level][RIGHT][dataID.get(num)].getAddress();
 	}
 	public void setLeftNode(int level,NodeInfo newNode, int num) throws RemoteException{
 		if(newNode == null) {
-			lookup[level][0][dataID.get(num)] = null;
+			lookup[level][LEFT][dataID.get(num)] = null;
 			return;
 		}
 		log("LeftNode at level "+level+" set to: "+newNode.getAddress());
-		lookup[level][0][dataID.get(num)] = newNode;
+		lookup[level][LEFT][dataID.get(num)] = newNode;
 	}
 	public void setRightNode(int level,NodeInfo newNode, int num) throws RemoteException {
 		if(newNode == null) {
-			lookup[level][1][dataID.get(num)] = null;
+			lookup[level][RIGHT][dataID.get(num)] = null;
 			return ;
 		}
 		log("RightNode at level "+level+" set to: "+newNode.getAddress());
-		lookup[level][1][dataID.get(num)] = newNode ;
+		lookup[level][RIGHT][dataID.get(num)] = newNode ;
 	}
 	public int getNumID(){
 		return numID;
@@ -542,16 +545,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		nameID = s;
 	}
 	public int getLeftNumID(int level,int num) {
-		return lookup[level][0][dataID.get(num)].getNumID();
+		return lookup[level][LEFT][dataID.get(num)].getNumID();
 	}
 	public int getRightNumID(int level, int num) {
-		return lookup[level][1][dataID.get(num)].getNumID();
+		return lookup[level][RIGHT][dataID.get(num)].getNumID();
 	}
 	public String getLeftNameID(int level,int num) {
-		return lookup[level][0][dataID.get(num)].getNameID();
+		return lookup[level][LEFT][dataID.get(num)].getNameID();
 	}
 	public String getRightNameID(int level,int num) {
-		return lookup[level][1][dataID.get(num)].getNameID();
+		return lookup[level][RIGHT][dataID.get(num)].getNameID();
 	}
 	public NodeInfo getNode(int num) {
 		return data.get(dataID.get(num));
@@ -660,7 +663,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			return -1;
 		int i = 0 ;
 		for(i = 0 ; i < name.length() && name.charAt(i) == nameID.charAt(i);i++);
-		log("Common Prefix for " + nameID + " and " + name + " is: " + i);
 		return i ;		
 	}
 	/*
@@ -674,7 +676,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			return -1;
 		int i = 0;
 		for(i = 0; i < name1.length() && name1.charAt(i) == name2.charAt(i) ; ++i);
-		log("Common Prefix for " + name1 + " and " + name2 + " is: " + i);
 			return i;		
 		}
 	/*
