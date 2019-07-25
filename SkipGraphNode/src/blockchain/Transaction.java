@@ -1,7 +1,6 @@
 package blockchain;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import hashing.Hasher;
 import hashing.HashingTools;
@@ -9,6 +8,8 @@ import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 
 public class Transaction extends NodeInfo{
+	
+	private static final long serialVersionUID = 1L;
 	private final String prev;
 	private final int owner;
 	private final String cont;//Use random string for this

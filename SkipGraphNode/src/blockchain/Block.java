@@ -1,8 +1,6 @@
 package blockchain;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 import hashing.Hasher;
 import hashing.HashingTools;
@@ -11,15 +9,14 @@ import skipGraph.SkipNode;
 
 
 public class Block extends NodeInfo{
+	
+	private static final long serialVersionUID = 1L;
 	private final String prev;
 	private final int owner;
 	private ArrayList<Transaction> S;
 	private final String h;
 	private ArrayList<String> sigma;
 	private Hasher hasher ;
-	
-	
-	// need to add address to block
 	
 	/*
 	 * @param prev the address of the previous block
@@ -34,8 +31,8 @@ public class Block extends NodeInfo{
 		this.h = hasher.getHash(prev + owner,SkipNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
-	public Block(String prev, int owner, ArrayList<Transaction> tList) {
-		super("",0,prev);
+	public Block(String prev, int owner,String address ,ArrayList<Transaction> tList) {
+		super(address,0,prev);
 		this.prev = prev;
 		this.owner = owner;
 		this.S = tList;
@@ -50,7 +47,7 @@ public class Block extends NodeInfo{
 	public int getOwner() {
 		return owner;
 	}
-	public ArrayList<Transaction> getTransactions(){
+	public ArrayList<Transaction> getS(){
 		return S;
 	}
 	public String getH() {

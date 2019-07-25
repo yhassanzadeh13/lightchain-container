@@ -34,7 +34,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	private static final long serialVersionUID = 1L;
 	protected static int maxLevels;
-	protected static int MAX_DATA = 100;
+	private static int MAX_DATA = 100;
 	private static final int RIGHT = 1;
 	private static final int LEFT = 0;
 	private static final int ZERO_LEVEL = 0;

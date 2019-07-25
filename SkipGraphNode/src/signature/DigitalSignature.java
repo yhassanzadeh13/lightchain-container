@@ -29,7 +29,7 @@ public class DigitalSignature {
 	
 	private static String genAlgorithm = "RSA";
 	private static String signAlgorithm = "SHA256withRSA";
-		 
+	
 	private PrivateKey privateKey;
 	private PublicKey publicKey;
 	private String privateKeyName;
@@ -52,11 +52,8 @@ public class DigitalSignature {
 			privateKey = keyPair.getPrivate();
 			publicKey = keyPair.getPublic();
 			otherPubKeys = new ArrayList<>();
-			log("Enter the name of the private key.");
-			privateKeyName = get();
-			log("Enter the name of the public key.");
-			publicKeyName = get();
-			//log("Enter the storage path of the key pair.");
+			privateKeyName = "privateKey";
+			publicKeyName = "publicKey";
 			keysPath = "C:\\Users\\USER\\Documents\\Research\\TestKeys";
 			storeKeyPair();
 		} catch (NoSuchAlgorithmException e) {
