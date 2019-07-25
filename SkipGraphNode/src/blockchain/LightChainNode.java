@@ -416,7 +416,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
 			NodeInfo node = searchByNumID(num);
 			i++;
-			// if already taken or equals the owner's node, then keep iterating.
+			// if already taken or equals the owner's 			node, then keep iterating.
 			if(taken.containsKey(node.getAddress()) || node.equals(data.get(0)))continue;
 			count++;
 			taken.put(node.getAddress(), 1);
