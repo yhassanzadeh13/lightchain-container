@@ -30,7 +30,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * Constants
 	 */
 	private static final int VALIDATION_FEES = 10;
-	private static int VAL_THRESHOLD = 2;
+	private static int SIGNATURES_THRESHOLD = 2;
 	private static final int TRUNC = 6;
 	private static final int TX_MIN = 2;
 	private static final int ZERO_ID = 0;
@@ -397,8 +397,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * to the tail of the blockchain, or otherwise if the tail was updated is should terminate
 	 * the validation process.
 	 */
-	public boolean isConsistent(Block blk) {
-		return true;
+	public boolean isConsistent(Block blk) throws RemoteException {
+		Block lstBlk = getLatestBlock();		
+		return blk.getPrev().equals(lstBlk.getH());
 	}
 	
 	/*
@@ -410,8 +411,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		// stores the address of the taken nodes so that we make sure we do not take a node twice
 		HashMap<String,Integer> taken = new HashMap<>();   
 		int count = 0, i = 0;
-		// keep iterating until we get VAL_THRESHOLD number of validators
-		while(count < VAL_THRESHOLD) {
+		// keep iterating until we get SIGNATURES_THRESHOLD number of validators
+		while(count < SIGNATURES_THRESHOLD) {
 			String hash = blk.getPrev() + blk.getOwner() + blk.getS().toString() + i;
 			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
 			NodeInfo node = searchByNumID(num);
@@ -514,7 +515,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		HashMap<String,Integer> taken = new HashMap<>(); 
 		
 		int count = 0 , i = 0;
-		while(count < VAL_THRESHOLD) { // terminates when we get the required number of validators
+		while(count < SIGNATURES_THRESHOLD) { // terminates when we get the required number of validators
 			String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
 			int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
 			NodeInfo node = searchByNumID(num);
