@@ -24,6 +24,7 @@ public interface RMIInterface extends Remote {
 	public int getNumID() throws RemoteException;
 	public int getLeftNumID(int level,int num) throws RemoteException;
 	public int getRightNumID(int level,int num) throws RemoteException;
+	public void delete(int num) throws RemoteException;
 	
 	/*
 	 * Setters

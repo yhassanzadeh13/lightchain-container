@@ -29,10 +29,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * Constants
 	 */
-	private static final int VALIDATION_FEES = 10;
-	private static int SIGNATURES_THRESHOLD = 2;
+	private static final int VALIDATION_FEES = 1;
+	private static int SIGNATURES_THRESHOLD = 3;
 	private static final int TRUNC = 6;
-	private static final int TX_MIN = 2;
+	private static final int TX_MIN = 3;
 	private static final int ZERO_ID = 0;
 	private static final int HONEST = 1;
 	private static final int MALICIOUS = 0;
@@ -101,6 +101,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         log("5-Search By Numeric ID");
         log("6-Print the Lookup Table");
         log("7-Delete node");
+        log("8-Update view");
 	}
 	
 	/*
@@ -108,9 +109,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * It can be modified according to what method one would like to test.
 	 * Of course do not forget to modify printMenu() when modifying this method
 	 */
-	public void ask() {
+	public void ask() throws RemoteException {
         String input = get();
-        if(!input.matches("[1-7]")) {
+        if(!input.matches("[1-8]")) {
         	log("Invalid query. Please enter the number of one of the possible operations");
         	return;
         }
@@ -122,22 +123,27 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			else
 				log("Already Inserted");
 		}else if (query == 2){ // insert transaction
-			log("Enter prev of transaction");
-			String prev = get();
 			log("Enter cont of transaction");
 			String cont = get();
-			Transaction t = new Transaction(prev, getNumID() ,cont, getAddress());
+			Block lstBlk = getLatestBlock();
+			log("The prev found is : " + lstBlk.getNumID());
+			Transaction t = new Transaction(lstBlk.getH(), getNumID() ,cont, getAddress());
+			log("Added transaction with nameID " + lstBlk.getH());
 			t.setAddress(getAddress());
 			transactions.add(t);
 			insert(t);
 		}else if (query == 3){ // insert block
-			log("Enter prev of block");
-			String prev = get();
-			Block b = new Block(prev,getNumID(),getAddress());
-			log("Enter Testing numID");
+			log("If the inserted block is genesis enter 0, otherwise enter 1");
 			int num = Integer.parseInt(get());
-			b.setNumID(num);
-			insert(new NodeInfo(getAddress(),ZERO_ID,Integer.toBinaryString(num)));
+			String prev ;
+			if(num == 1) {
+				Block lstBlk = getLatestBlock();
+				prev = lstBlk.getH();
+			}else
+				prev = "000000";
+			Block b = new Block(prev,getNumID(),getAddress());
+			log("Block inserted with " + b.getNumID() + " numID");
+			insert(new NodeInfo(getAddress(),ZERO_ID,b.getH()));
 			blocks.add(b);
 			insert(b);
 		}else if (query == 4) {// search by name ID
@@ -154,7 +160,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				e.printStackTrace();
 				log("Remote Exception in query.");
 			}
-			log("The result of search by name ID is: " + result.getAddress());
+			log("SearchByNameID result: ");
+			log("Address: " + result.getAddress());
+			log("numID: " + result.getNumID());
+			log("nameID: " + result.getNameID());
 		}else if(query == 5) { // search by num ID
 			log("Please Enter the numeric ID to be searched");
 			String numInput = get();
@@ -164,7 +173,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 			int num = Integer.parseInt(numInput);
 			NodeInfo result = searchByNumID(num);
-			log("The result of search by numberic ID is: "+ result.getAddress());
+			log("SearchByNumID result: ");
+			log("Address: " + result.getAddress());
+			log("numID: " + result.getNumID());
+			log("nameID: " + result.getNameID());
 		}else if(query == 6) { // print the lookup table of the current node
 			log("In case you want the lookup table of the original node enter 0.");
 			log("Otherwise, enter the index of the data node ");
@@ -173,7 +185,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				printLookup(num);
 			else
 				log("Data node with given index does not exist");
-		}else if(query == 7) {
+		}else if(query == 7) { // delete dataNode
 			log("Enter the numID of the data node to be deleted.");
 			int num = Integer.parseInt(get());
 			try {
@@ -181,6 +193,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
+		}else if (query == 8) { // viewUpdate
+			viewUpdate();
 		}
     }
 	
@@ -196,11 +210,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		
 		Block blk = getLatestBlock();
 		// Change numID to a nameID string
-		String name = Integer.toBinaryString(blk.getNumID());
+		String name = numToName(blk.getNumID());
+		
+		log("Searching for " + name + " in viewUpdate()");
+		
 		// Get all transaction with this nameID
 		ArrayList<Transaction> tList = getTransactionsWithNameID(name);
 		// If number of transactions obtained is less than TX_MIN then we terminate the process
 		if(tList.size() < TX_MIN) {
+			log("Found " + tList.size() + " transaction");
 			log("Cannot find TX_MIN number of transactions.");
 			return;
 		}
@@ -209,9 +227,20 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		// send the new block for PoV validation
 		boolean isValidated = validate(newBlk);
 		if(!isValidated)return;
+		// insert new block after it was validated
 		insert(newBlk);
+		// contact the owner of the previous block and let him withdraw his flag data node.
+		NodeInfo prevOwner = searchByNumID(blk.getOwner());
+		LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevOwner.getAddress());
+		prevOwnerRMI.delete(ZERO_ID);
+		// insert flag node for this block
+		insert(new NodeInfo(getAddress(),ZERO_ID,newBlk.getH()));
+		// iterate over transaction of this block and insert a transaction pointer corresponding to
+		// each of the pointers, and then asks every owner to delete this node from the overlay
 		for(int i=0 ; i<tList.size(); ++i) {
-			insert(new NodeInfo(getAddress(),newBlk.getNumID(),Integer.toBinaryString(tList.get(i).getOwner())));
+			insert(new NodeInfo(getAddress(),newBlk.getNumID(),numToName(tList.get(i).getOwner())));
+			LightChainRMIInterface tRMI = getLightChainRMI(tList.get(i).getAddress());
+			tRMI.delete(tList.get(i).getNumID());
 		}
 	}
 	
@@ -228,7 +257,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * This method gets the numID of a peer and returns its latest transactions.
 	 */
 	public Transaction getLatestTransaction(int num) throws RemoteException {
-		Transaction t = (Transaction)searchByNameID(Integer.toBinaryString(num));
+		Transaction t = (Transaction)searchByNameID(numToName(num));
 		return t;
 	}
 	
@@ -244,6 +273,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		NodeInfo t = searchByNameID(name);
 		// an empty list to add transaction to it and return it
 		ArrayList<Transaction> tList = new ArrayList<>();
+		
+		if(!t.getNameID().equals(name)) {
+			log("No transaction was found with the given nameID");
+			return tList;
+		}
 		// if the found node is a transaction then, add it to the list
 		if(t instanceof Transaction)
 			tList.add((Transaction)t);
@@ -266,6 +300,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		while(left != null) {
 			LightChainRMIInterface leftRMI = getLightChainRMI(left);
 			NodeInfo node = leftRMI.getNode(leftNum);
+			log("Found left transaction at : " + node.getAddress());
+			
 			// if this node is a transaction add it to the list
 			if(node instanceof Transaction)
 				tList.add((Transaction)node);
@@ -279,6 +315,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		while(right != null) {
 			LightChainRMIInterface rightRMI = getLightChainRMI(right);
 			NodeInfo node = rightRMI.getNode(rightNum);
+			log("Found left transaction at : " + node.getAddress());
+			
 			// if this node is a transaction add it to the list
 			if(node instanceof Transaction)
 				tList.add((Transaction)node);
@@ -434,7 +472,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * and sends the signed value to the owner.
 	 */
 	public String PoV(Transaction t) throws RemoteException {
-		boolean val = isAuthenticated(t) && isCorrect(t) && isSound(t) && hasBalanceCompliance(t);
+		boolean val = isAuthenticated(t) && isCorrect(t) /*&& isSound(t) && hasBalanceCompliance(t)*/;
 		if(val == false)
 			return null;
 		String signedHash = digitalSignature.signString(t.getH());
@@ -576,6 +614,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	
 	public int getBalance() {
 		return balance;
+	}
+	
+	public String numToName(int num) {
+		String name = Integer.toBinaryString(num);
+		while(name.length() < TRUNC) {
+			name = "0" + name;
+		}
+		return name;
 	}
 	
 	// for Testing:

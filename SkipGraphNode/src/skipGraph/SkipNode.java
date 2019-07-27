@@ -39,7 +39,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static final int LEFT = 0;
 	private static final int ZERO_LEVEL = 0;
 	private static final int UNASSIGNED = -1;
-	public static final int TRUNC = 5;
+	public static final int TRUNC = 6;
 	
 	/*
 	 * Constructor for SkipNode class
@@ -50,6 +50,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		lookup = new NodeInfo[maxLevels+1][2][MAX_DATA];
 		dataID = new HashMap<>();
 		data = new ArrayList<>();
+		// get Port number
+		log("Enter RMI port: ");
+		String numInput = get();
+		while(!numInput.matches("0|[1-9][0-9]*")) {
+			log("Invalid port. Enter a valid port number for RMI:");
+			numInput = get();			
+		}
+		RMIPort = Integer.parseInt(numInput);
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", this);
 		log("Rebinding Successful");
@@ -59,7 +67,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * and prints them to console
 	 */
 	public static void setInfo() {
-		String numInput ;
 		// get introducer information
 		log("Enter the address of the introducer:");
 		introducer = get();
@@ -67,15 +74,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			log("Invalid IP. Please enter a valid IP address ('none' if original node): ");
 			introducer = get();
 		}
-		// get Port number
-		log("Enter RMI port: ");
-		numInput = get();
-		while(!numInput.matches("0|[1-9][0-9]*")) {
-			log("Invalid port. Enter a valid port number for RMI:");
-			numInput = get();			
-		}
-		RMIPort = Integer.parseInt(numInput);
-		
 		try { // Assign address and IP 
 			address = Inet4Address.getLocalHost().getHostAddress() +":"+ RMIPort; //Used to get the current node address.
 			IP = Inet4Address.getLocalHost().getHostAddress();
@@ -180,14 +178,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		try {
 			String left = null;
 			String right = null;
-
 			// We search through the introducer node to find the node with 
 			// the closest num ID
 			NodeInfo position ;
 			if(introducer.equalsIgnoreCase("none")) {
 				position = searchByNumID(node.getNumID());
 			}else {
-				RMIInterface introRMI = getRMI(introducer);		
+				RMIInterface introRMI = getRMI(introducer);
 				position = introRMI.searchByNumID(node.getNumID());
 			}
 			
@@ -328,8 +325,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public NodeInfo searchNum(int targetInt,int level){
 		
-		log("Search at: "+address); // we use this to see when a search has passed through this node
-		
 		int dataIdx = getBestNum(targetInt);// get the data node (or main node) that is closest to the target search
 		int num = data.get(dataIdx).getNumID();
 		if(num == targetInt) 
@@ -449,7 +444,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				return result;
 		}
 		// Continue the search on the opposite direction
-		if(lookup[newLevel][1-direction] != null) {
+		if(lookup[newLevel][1-direction][dataIdx] != null) {
 			RMIInterface leftRMI = getRMI(lookup[newLevel][1-direction][dataIdx].getAddress());
 			NodeInfo k = leftRMI.searchName(searchTarget, newLevel, 1-direction);
 			if(result == null || commonBits(k.getNameID(),data.get(dataIdx).getNameID()) > commonBits(result.getNameID(),data.get(dataIdx).getNameID()))
@@ -586,7 +581,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			System.setProperty("java.rmi.server.hostname",IP);
 			System.setProperty("java.rmi.server.useLocalHostname", "false");
 			System.out.println("RMI Server proptery set. Inet4Address: "+IP);
-			log("My Address is :" + address);
 		}catch (Exception e) {
 			System.err.println("Exception in initialization. Please try running the program again.");
 			System.exit(0);
