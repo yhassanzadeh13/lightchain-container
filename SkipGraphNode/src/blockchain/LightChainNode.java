@@ -102,6 +102,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         log("6-Print the Lookup Table");
         log("7-Delete node");
         log("8-Update view");
+        log("9-Print Level");
 	}
 	
 	/*
@@ -111,7 +112,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public void ask() throws RemoteException {
         String input = get();
-        if(!input.matches("[1-8]")) {
+        if(!input.matches("[1-9]")) {
         	log("Invalid query. Please enter the number of one of the possible operations");
         	return;
         }
@@ -195,6 +196,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 		}else if (query == 8) { // viewUpdate
 			viewUpdate();
+		}else if (query == 9) {
+			log("Which level");
+			int num = Integer.parseInt(get());
+			printLevel(num);
 		}
     }
 	
@@ -219,7 +224,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		// If number of transactions obtained is less than TX_MIN then we terminate the process
 		if(tList.size() < TX_MIN) {
 			log("Found " + tList.size() + " transaction");
-			log("Cannot find TX_MIN number of transactions.");
+			if(tList.size() > 0)
+				log("Cannot find TX_MIN number of transactions.");
 			return;
 		}
 		// If there are TX_MIN transaction then add them into a new block
@@ -300,8 +306,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		while(left != null) {
 			LightChainRMIInterface leftRMI = getLightChainRMI(left);
 			NodeInfo node = leftRMI.getNode(leftNum);
-			log("Found left transaction at : " + node.getAddress());
-			
 			// if this node is a transaction add it to the list
 			if(node instanceof Transaction)
 				tList.add((Transaction)node);
@@ -310,13 +314,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return tList;
 			// now go to the left node again
 			left = leftRMI.getLeftNode(maxLevels, leftNum);
+			if(left != null)
 			leftNum = leftRMI.getLeftNumID(maxLevels,leftNum);
 		}
 		while(right != null) {
 			LightChainRMIInterface rightRMI = getLightChainRMI(right);
 			NodeInfo node = rightRMI.getNode(rightNum);
-			log("Found left transaction at : " + node.getAddress());
-			
 			// if this node is a transaction add it to the list
 			if(node instanceof Transaction)
 				tList.add((Transaction)node);
@@ -325,6 +328,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return tList;
 			// now go to the right node again
 			right = rightRMI.getRightNode(maxLevels, rightNum);
+			if(right != null)
 			rightNum = rightRMI.getRightNumID(maxLevels, rightNum);
 		}
 		return tList;
@@ -415,9 +419,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * This method recieves a block 
 	 */
 	public boolean isAuthenticated(Block blk) throws RemoteException {
-		String hash = hasher.getHash(blk.getPrev()+blk.getOwner()+blk.getS().toString(),TRUNC);
-		if(!hash.equals(blk.getH()))
+		String hash = hasher.getHash(blk.getPrev() + blk.getOwner() + blk.getS().toString(),TRUNC);
+		if(!hash.equals(blk.getH())) {
+			log(hash + " " + blk.getH());
+			log("Hash value of block not generated properly");
 			return false;
+		}
 		ArrayList<String> blkSigma = blk.getSigma();
 		PublicKey ownerPublicKey = getOwnerPublicKey(blk.getOwner());
 		boolean verified = false;
@@ -426,6 +433,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		for(int i=0 ; i<blkSigma.size(); ++i) {
 			boolean is = digitalSignature.verifyString(hash, blkSigma.get(i), ownerPublicKey);
 			if(is) verified = true;
+		}
+		if(verified == false) {
+			log("Block does not contain signature of Owner");
 		}
 		return verified;
 	}
@@ -436,8 +446,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * the validation process.
 	 */
 	public boolean isConsistent(Block blk) throws RemoteException {
-		Block lstBlk = getLatestBlock();		
-		return blk.getPrev().equals(lstBlk.getH());
+		Block lstBlk = getLatestBlock();	
+		boolean res = blk.getPrev().equals(lstBlk.getH());
+		if(res == false) {
+			log("Block not consistent");
+		}
+		return res ;
 	}
 	
 	/*
