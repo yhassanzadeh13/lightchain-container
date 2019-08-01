@@ -53,3 +53,6 @@ Enter the number of the node you want to connect to: (invalid number to abort)
 ```
 This makes it very easy to switch control to any of the neighboring nodes. 
 
+### Perform latency testing
+This option will prompt the user to input the number of pinging attempts to perform and how many chunks to split the attempts to. The method will contact all the nodes and have them ping each other. The results will be outputed as a CSV file in the source folder.
+
