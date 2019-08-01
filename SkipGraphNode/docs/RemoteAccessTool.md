@@ -23,7 +23,8 @@ Choose a query by entering it's code and then press Enter
 5-Print the Lookup Table
 6-Print data
 7-Traverse
-8-Exit
+8-Perform latency testing
+9-Exit
 ```
 
 ## Functions
