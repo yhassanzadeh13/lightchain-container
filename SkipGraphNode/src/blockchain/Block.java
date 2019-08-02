@@ -37,7 +37,10 @@ public class Block extends NodeInfo{
 		this.owner = owner;
 		this.S = tList;
 		hasher = new HashingTools();
-		this.h = hasher.getHash(prev + owner + S.toString(),SkipNode.TRUNC);
+		StringBuilder sb = new StringBuilder();
+		for(int i=0 ; i < tList.size(); ++i)
+			sb.append(tList.get(i).toString());
+		this.h = hasher.getHash(prev + owner + sb.toString(),SkipNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	

@@ -255,8 +255,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public Block getLatestBlock() throws RemoteException {
 		NodeInfo flag = searchByNumID(ZERO_ID);
-		Block blk = (Block)searchByNumID(Integer.parseInt(flag.getNameID(),2));
-		return blk;
+		NodeInfo blk = searchByNumID(Integer.parseInt(flag.getNameID(),2));
+		if(blk instanceof Block)
+			return (Block)blk;
+		else {
+			log(blk.getNumID() + " we returned as latest block");
+			log("Error in getLatestBlock(): instance returned is not a block");
+			return null;
+		}
 	}
 	
 	/*
@@ -408,8 +414,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		// iterate over transactions and check them one by one
 		ArrayList<Transaction> ts = blk.getS();
 		for(int i=0 ; i<ts.size() ; ++i) {
-			if(!isAuthenticated(ts.get(i)) || !isSound(ts.get(i)))
-				return null;
+//			if(!isAuthenticated(ts.get(i)) || !isSound(ts.get(i)))
+//				return null;
 		}
 		String signedHash = digitalSignature.signString(blk.getH());
 		return signedHash;
@@ -419,9 +425,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * This method recieves a block 
 	 */
 	public boolean isAuthenticated(Block blk) throws RemoteException {
-		String hash = hasher.getHash(blk.getPrev() + blk.getOwner() + blk.getS().toString(),TRUNC);
+		StringBuilder sb = new StringBuilder();
+		for(int i=0 ; i<blk.getS().size(); ++i) {
+			sb.append(blk.getS().get(i).toString());
+		}
+		String hash = hasher.getHash(blk.getPrev() + blk.getOwner() + sb.toString(),TRUNC);
 		if(!hash.equals(blk.getH())) {
-			log(hash + " " + blk.getH());
 			log("Hash value of block not generated properly");
 			return false;
 		}
@@ -595,7 +604,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		// get the owner'r Public key through RMI
 		PublicKey pk = ownerRMI.getPublicKey();
 		// Hash the public key and store the hash value as int
-		int hashedKey = Integer.parseInt(hasher.getHash(pk.getEncoded()),2);
+		int hashedKey = Integer.parseInt(hasher.getHash(pk.getEncoded(),TRUNC),2);
 		// if hashedKey is not equal to the provided numID, then there is a problem
 		// and it is printed to the console
 		if(hashedKey != num) {

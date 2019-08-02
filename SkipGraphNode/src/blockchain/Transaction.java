@@ -49,6 +49,9 @@ public class Transaction extends NodeInfo{
 	public void setSigma(ArrayList<String> s) {
 		sigma = s;
 	}
+	public String toString() {
+		return prev + owner + cont + getAddress();
+	}
 	
 		
 }
