@@ -71,7 +71,7 @@ public class RemoteAccessTool {
 					}else if (query == 2){ // insert block
 						log("Enter prev of block");
 						String prev = get();
-						Block b = new Block(prev,numID,ip+":"+port);
+						Block b = new Block(prev,numID,ip+":"+port,-1);
 						//node.put(b);
 					}else if(query == 3) { // search by name ID
 						log("Please Enter the name ID to be searched");

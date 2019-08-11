@@ -17,13 +17,15 @@ public class Block extends NodeInfo{
 	private final String h;
 	private ArrayList<String> sigma;
 	private Hasher hasher ;
+	private final int index;
 	
 	/*
 	 * @param prev the address of the previous block
 	 * @param owner the address of the owner of the block
 	 */
-	public Block(String prev, int owner, String address) {
+	public Block(String prev, int owner, String address,int idx) {
 		super(address,0,prev);
+		this.index = idx;
 		this.prev = prev;
 		this.owner = owner;
 		S = new ArrayList<Transaction>();
@@ -31,8 +33,9 @@ public class Block extends NodeInfo{
 		this.h = hasher.getHash(prev + owner,SkipNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
-	public Block(String prev, int owner,String address ,ArrayList<Transaction> tList) {
+	public Block(String prev, int owner,String address ,ArrayList<Transaction> tList,int idx) {
 		super(address,0,prev);
+		this.index = idx;
 		this.prev = prev;
 		this.owner = owner;
 		this.S = tList;
@@ -65,6 +68,8 @@ public class Block extends NodeInfo{
 	public void addTransactions(ArrayList<Transaction> tList) {
 		S = tList;
 	}
-	
+	public int getIndex() {
+		return index;
+	}
 	
 }
