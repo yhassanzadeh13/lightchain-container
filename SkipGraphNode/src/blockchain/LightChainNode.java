@@ -127,6 +127,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			Block lstBlk = getLatestBlock();
 			log("The prev found is : " + lstBlk.getNumID());
 			Transaction t = new Transaction(lstBlk.getH(), getNumID() ,cont, getAddress());
+			boolean verified = validate(t);
+			if(verified == false) {
+				log("Transaction validation Failed");
+				return ;
+			}
 			log("Added transaction with nameID " + lstBlk.getH());
 			t.setAddress(getAddress());
 			transactions.add(t);
@@ -224,11 +229,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				view.put(owner, blk.getNumID());
 			}
 			// iterate over transactions inside the block
-			tList = blk.getS();
-			for(int i=0 ; i<tList.size() ; ++i) {
-				int owner = tList.get(i).getOwner();
-				view.put(owner, blk.getNumID());
-			}
+//			tList = blk.getS();
+//			for(int i=0 ; i<tList.size() ; ++i) {
+//				int owner = tList.get(i).getOwner();
+//				view.put(owner, blk.getNumID());
+//			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -472,7 +477,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// iterate over transactions and check them one by one
 			ArrayList<Transaction> ts = blk.getS();
 			for(int i=0 ; i<ts.size() ; ++i) {
-				if(!isAuthenticated(ts.get(i)) || !isSound(ts.get(i)))
+				if(!isAuthenticated(ts.get(i)) /*|| !isSound(ts.get(i))*/)
 					return null;
 			}
 			String signedHash = digitalSignature.signString(blk.getH());
@@ -621,6 +626,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			
 			long end = System.currentTimeMillis();
 			log("Time of Checking Soundness: " + (end-start));
+			if(tIdx <= bIdx) {
+				log("Transaction not sound");
+				log("Index of prev: " + tIdx);
+				log("Index of latest: " + bIdx);
+			}
 			return tIdx > bIdx ;
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -641,6 +651,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return ownerMode == mode;
 			}
 			int ownerMode = viewMode.get(t.getOwner());
+			if(ownerMode != mode) {
+				log("Transaction not correct");
+			}
 			return ownerMode == mode;
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -658,8 +671,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// generate the hash using the equation to check if it was generated correctly
 			String hash = hasher.getHash(t.getPrev()+t.getOwner()+t.getCont(),TRUNC);
 			// return false if it was not generated properly
-			if(!hash.equals(t.getH()))
+			if(!hash.equals(t.getH())) {
+				log("Transaction hash value not generated properly");
 				return false;
+			}
 			// now get the sigma array from transaction and iterate over signatures it contains
 			ArrayList<String> tSigma = t.getSigma();
 			PublicKey ownerPublicKey = getOwnerPublicKey(t.getOwner());
@@ -670,6 +685,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				// if we find one signature which belongs to the owner then we set verified to true
 				boolean is = digitalSignature.verifyString(hash, tSigma.get(i), ownerPublicKey);
 				if(is) verified = true;
+			}
+			if(verified == false) {
+				log("Transaction does not contain signature of owner");
 			}
 			return verified;
 		} catch (Exception e) {
