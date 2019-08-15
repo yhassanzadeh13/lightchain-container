@@ -3,7 +3,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
@@ -13,6 +12,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 import java.util.TreeMap;
 
@@ -49,12 +49,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static int valThreshold = 3;
 	private static HashMap<String,Integer> blkIdx = new HashMap<>();
 	private static HashMap<Integer,String> view = new HashMap<>();
-	private static int testingMode = 0;/*
+	private static int testingMode = 2;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
 										*/
-
+	public static final boolean local = false;//If set to true, it would work fine on local networks without having to go through the hassle of 
 
 	public static void main(String args[]) {
 
@@ -776,7 +776,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 
 	public static String grabIP() {
-		boolean localIP = false; //set to true if testing locally.
+		boolean localIP = local; //set to true if testing locally.
 		if(localIP) {
 			try { //To return the local address in case you want to test locally.
 				return Inet4Address.getLocalHost().getHostAddress();
@@ -897,7 +897,71 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
 	// For Testing purposes
 
+	/*
+	 * Retro ping function does not test latency using RMI calls but rather through the command line 
+	 */
+	
+	public PingLog retroPingStart(NodeInfo node, int freq) {
+		PingLog lg = new PingLog(new NodeInfo(address, numID, nameID), node);
+		
+		//The commands to put in the commandline
+		List<String> commands = new ArrayList<String>();
+		commands.add("ping");
 
+		//-n if windows, -c if other OS
+		String osname = System.getProperty("os.name");
+		if(osname.contains("Win")) {
+			commands.add("-n");
+		}else {
+			commands.add("-c");
+		}
+		
+		//The number of times to ping
+		commands.add(freq+"");
+		
+		//The address of the node
+		commands.add(node.getAddress().split(":")[0]);//Just the address without the port
+		
+	    try {
+	    	ProcessBuilder pb = new ProcessBuilder(commands);
+		    Process process = pb.start();
+		    
+		    BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream())); //to read the output
+		    String cur;
+		    
+		    int timeIndex = -1; //The index of the token containing time, in order to not repeat many calculations
+		    while((cur=br.readLine())!=null) {
+		    	System.out.println(cur);
+		    	if(cur.length()>5 && (cur.substring(0, 5).equalsIgnoreCase("reply") || cur.substring(0, 2).equalsIgnoreCase("64"))) {
+		    		String[] arr = cur.split(" ");
+		    		if(timeIndex==-1) {
+		    			for(int i=0;i<arr.length;i++) {
+		    				String tok = arr[i];
+		    				if(tok.length()>4 && tok.substring(0,4).equalsIgnoreCase("time")) {
+		    					timeIndex = i;
+		    					break;
+		    				}
+		    			}
+		    		}
+		    		lg.Log(parseTime(arr[timeIndex]));
+		    	}
+		    }
+	    }catch(IOException e) {
+	    	System.out.println("Exception in retro pinging");
+	    	e.printStackTrace();
+	    	return lg;
+	    }
+		return lg;
+	}
+	
+	private double parseTime(String st) { //Gets the time from the string
+		st = st.replace("time=", "");
+		st = st.replace("time<", "");
+		st = st.replace("ms", "");
+		return Double.parseDouble(st); 
+	}
+	
+	
 	/*
 	 * Method which pings a specific node a freq number of times using the function ping().
 	 */
@@ -911,7 +975,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				befTime = System.currentTimeMillis();
 				nodeToPing.ping();
 				afrTime = System.currentTimeMillis();
-				lg.Log(afrTime-befTime);
+				lg.Log((double) afrTime-befTime);
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}

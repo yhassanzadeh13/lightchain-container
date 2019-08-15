@@ -1,3 +1,6 @@
 /bin/
 node.conf
 /ansible-deployment/
+/test3.csv
+node.conf
+.gitignore

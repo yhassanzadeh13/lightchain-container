@@ -2,7 +2,6 @@ package remoteTest;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,6 +19,7 @@ public final class Configuration implements Serializable{
 
 
 	private static final long serialVersionUID = 1L;
+	private static final String defaultPath = System.getProperty("user.dir") + "/node.conf"; 
 	private String configPath;
 	Properties prop = new Properties();
 
@@ -42,7 +42,7 @@ public final class Configuration implements Serializable{
 	}
 
 	public Configuration() {
-		this.configPath = System.getProperty("user.dir") + "/node.conf";
+		this.configPath = defaultPath;
 	}
 
 	public void parseConfig() {
@@ -58,11 +58,11 @@ public final class Configuration implements Serializable{
 		port   = prop.getProperty("port");
 	}
 
-	public ArrayList<Configuration> parseConfigurations(){
+	public static ArrayList<Configuration> parseConfigurations(){
 		ArrayList<Configuration> lst = new ArrayList<Configuration>();
 		BufferedReader in;
 		try {
-			in = new BufferedReader(new FileReader(configPath));
+			in = new BufferedReader(new FileReader(defaultPath));
 			String input = in.readLine();
 			int n = Integer.parseInt(input);
 			for(int i = 0 ; i < n ; i++) {

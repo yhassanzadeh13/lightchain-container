@@ -56,4 +56,5 @@ public interface RMIInterface extends Remote {
 	public Configuration getConf() throws RemoteException;
 	public boolean ping() throws RemoteException;
 	public PingLog pingStart(NodeInfo node, int freq) throws RemoteException;
+	public PingLog retroPingStart(NodeInfo node, int freq) throws RemoteException;
 }

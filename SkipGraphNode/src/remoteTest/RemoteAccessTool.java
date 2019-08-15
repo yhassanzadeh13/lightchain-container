@@ -189,16 +189,28 @@ public class RemoteAccessTool {
 		NodeInfo curNode = null;
 		nodeList = new ArrayList<NodeInfo>();
 		res = new ConcurrentHashMap<NodeInfo, ArrayList<PingLog>>();
+		String inp;
+
+		log("Choose type of testing\n1- Retro testing (Using commandline 'ping')\n2- RMI testing (Calls an RMI function)");
+		inp = get();
+		while(!inp.matches("1|2")) {
+			log("Choose a valid option");
+			inp = get();
+		}
+		int choice = Integer.parseInt(inp);
+
 		log("Enter the total number of ping attempts per node pair:");
-		String inp = get();
+		inp = get();
 		while(!inp.matches("0|[1-9][0-9]*")) {
 			log("Enter a valid number");
+			inp = get();
 		}
 		numPings = Integer.parseInt(inp);
 		log("Enter the total number of sessions to divide the attempts into:");
 		inp = get();
 		while(!inp.matches("0|[1-9][0-9]*")) {
 			log("Enter a valid number");
+			inp = get();
 		}
 		numAtts = Integer.parseInt(inp);
 		try {
@@ -219,9 +231,10 @@ public class RemoteAccessTool {
 			try{
 				CountDownLatch ltch = new CountDownLatch(sz);
 				for(int i=0;i<sz;i++) {
-					PingingThread cur = new PingingThread(i,ltch, numPings/numAtts);
+					PingingThread cur = new PingingThread(i,ltch, numPings/numAtts,choice);
 					cur.start();
 				}
+				
 				ltch.await();
 			}catch(InterruptedException e) {
 				e.printStackTrace();
@@ -238,7 +251,7 @@ public class RemoteAccessTool {
 				sb.append("Pinged,Avg Ping,StdDev,Individual Results");sb.append('\n');
 				for(int i=0;i<res.get(cur).size();i++) {
 					sb.append(res.get(cur).get(i).getPinged().getNumID());
-					ArrayList<Long> hm = res.get(cur).get(i).getRTTLog();
+					ArrayList<Double> hm = res.get(cur).get(i).getRTTLog();
 					sb.append(","+res.get(cur).get(i).getAvg()+","+res.get(cur).get(i).getStdDev());
 					for(int j=0;j<hm.size();j++) {
 						sb.append("," + hm.get(j));
@@ -361,12 +374,14 @@ public class RemoteAccessTool {
 		CountDownLatch latch;
 		int count;
 		int index;
+		int choice;
 		
-		public PingingThread(int ind, CountDownLatch ltch, int count) {
+		public PingingThread(int ind, CountDownLatch ltch, int count, int choice) {
 			this.pinger = nodeList.get(ind).getAddress();
 			this.latch = ltch;
 			this.index=ind;
 			this.count = count;
+			this.choice = choice;
 		}
 		
 		
@@ -376,7 +391,11 @@ public class RemoteAccessTool {
 				if(i == index) continue;
 				PingLog current;
 				try {
-					current = curRMI.pingStart(nodeList.get(i), count);
+					if(choice == 2) {
+						current = curRMI.pingStart(nodeList.get(i), count);
+					}else {
+						current = curRMI.retroPingStart(nodeList.get(i),count);
+					}
 					if(res.containsKey(nodeList.get(index))) {
 						ArrayList<PingLog> cur = res.get(nodeList.get(index));
 						if(cur.size()>(i<index?i:i-1)) {

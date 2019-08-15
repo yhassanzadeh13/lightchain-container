@@ -9,15 +9,15 @@ public class PingLog implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private NodeInfo Pinger;
 	private NodeInfo Pinged;
-	private ArrayList<Long> RTTLog;
+	private ArrayList<Double> RTTLog;
 	
 	public PingLog(NodeInfo Pinger, NodeInfo Pinged) {
 		this.Pinger = Pinger;
 		this.Pinged = Pinged;
-		RTTLog = new ArrayList<Long>();
+		RTTLog = new ArrayList<Double>();
 	}
 	
-	public void Log(Long time) {
+	public void Log(Double time) {
 		RTTLog.add(time);
 	}
 
@@ -47,7 +47,7 @@ public class PingLog implements Serializable {
 		return Pinged;
 	}
 
-	public ArrayList<Long> getRTTLog() {
+	public ArrayList<Double> getRTTLog() {
 		return RTTLog;
 	}
 	
