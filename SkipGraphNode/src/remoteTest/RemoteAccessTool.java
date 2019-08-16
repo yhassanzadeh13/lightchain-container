@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import blockchain.Block;
+import blockchain.LightChainRMIInterface;
 import blockchain.Transaction;
 import skipGraph.NodeInfo;
 import skipGraph.RMIInterface;
@@ -72,13 +73,13 @@ public class RemoteAccessTool {
 						String prev = get();
 						log("Enter cont of transaction");
 						String cont = get();
-						Transaction t = new Transaction(prev,numID,cont);
-						node.put(t);
+						Transaction t = new Transaction(prev,numID,cont,ip+":"+port);
+						//node.put(t);
 					}else if (query == 2){ // insert block
 						log("Enter prev of block");
 						String prev = get();
-						Block b = new Block(ip+":"+port,prev);
-						node.put(b);
+						Block b = new Block(prev,numID,ip+":"+port,-1);
+						//node.put(b);
 					}else if(query == 3) { // search by name ID
 						log("Please Enter the name ID to be searched");
 						String name = get();
@@ -86,18 +87,12 @@ public class RemoteAccessTool {
 							log("Name ID should be a binary string. Please enter a valid Name ID:");
 							name = get();
 						}
-						ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
 						NodeInfo result = null;
 						try{
-							lst = node.searchByNameID(name,lst);
-							result = lst.get(lst.size()-1);
+							result = node.searchByNameID(name);
 						}catch(RemoteException e) {
 							e.printStackTrace();
 							log("Remote Exception in query.");
-						}
-						log("The search path is: ");
-						for(int i=0;i<lst.size();i++) {
-							log(i+") " + lst.get(i).getNameID());
 						}
 						log("The result of search by name ID is: "+result.getAddress());
 						if(promptSwitch(result)) break;
@@ -351,10 +346,10 @@ public class RemoteAccessTool {
 		return true;
 	}
 
-	public static RMIInterface getRMI(String adrs) {		
+	public static LightChainRMIInterface getRMI(String adrs) {		
 		if(validateIP(adrs))
 			try {
-				return (RMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
+				return (LightChainRMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
 			}catch(Exception e) {
 				log("Exception while attempting to lookup RMI located at address: "+adrs);
 			}

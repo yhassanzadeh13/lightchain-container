@@ -1,22 +1,23 @@
 package skipGraph;
 import java.io.Serializable;
 
-public class NodeInfo implements Serializable{
+public class NodeInfo implements Serializable {
 	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private String address;
 	private int numID;
 	private String nameID;
-	
+	/*
+	 * Constructor for NodeInfo
+	 */
 	public NodeInfo(String adrs, int num, String name) {
 		this.address = adrs;
 		this.numID = num;
 		this.nameID = name;
 	}
-	
+	/*
+	 * Getters and Setters for NodeInfo entries.
+	 */
 	public String getAddress() {
 		return address;
 	}

@@ -27,16 +27,9 @@ import java.util.Scanner;
 
 public class DigitalSignature {
 	
+	private static String genAlgorithm = "RSA";
+	private static String signAlgorithm = "SHA256withRSA";
 	
-	public static void main(String args[]) {
-		String pth = "C:\\Users\\USER\\Documents\\Research\\TestKeys";
-		DigitalSignature sign = new DigitalSignature("RSA");
-		PublicKey otherKey = sign.loadKey(pth, "publicTest", "RSA");
-		sign.storeKey(pth, "otherKey", otherKey);
-	}
-	
-	// investigate using SecureRandom
-	 
 	private PrivateKey privateKey;
 	private PublicKey publicKey;
 	private String privateKeyName;
@@ -51,7 +44,7 @@ public class DigitalSignature {
 	 * Once we declare a digital signature for a node
 	 * we generate a public-private key pair for the node given a certain algorithm
 	 */
-	public DigitalSignature(String genAlgorithm) {
+	public DigitalSignature() {
 		try {
 			KeyPairGenerator gen = KeyPairGenerator.getInstance(genAlgorithm);
 			gen.initialize(2048);
@@ -59,11 +52,8 @@ public class DigitalSignature {
 			privateKey = keyPair.getPrivate();
 			publicKey = keyPair.getPublic();
 			otherPubKeys = new ArrayList<>();
-			log("Enter the name of the private key.");
-			privateKeyName = get();
-			log("Enter the name of the public key.");
-			publicKeyName = get();
-			//log("Enter the storage path of the key pair.");
+			privateKeyName = "privateKey";
+			publicKeyName = "publicKey";
 			keysPath = "C:\\Users\\USER\\Documents\\Research\\TestKeys";
 			storeKeyPair();
 		} catch (NoSuchAlgorithmException e) {
@@ -71,6 +61,9 @@ public class DigitalSignature {
 		}
 	}
 	
+	/*
+	 * A method that stores the public and private key on disk.
+	 */
 	private void storeKeyPair() {
 		
 		try {
@@ -89,6 +82,9 @@ public class DigitalSignature {
 		}
 	}
 	
+	/*
+	 * A method that loads public and private key from disk 
+	 */
 	public KeyPair loadKeyPair(String path, String algorithm) {
 		
 		try {
@@ -116,6 +112,9 @@ public class DigitalSignature {
 		return null;
 	}
 	
+	/*
+	 * A method to store a given public key on disk
+	 */
 	public void storeKey(String path, String name, PublicKey key) {
 		otherPubKeys.add(path + "\\" + name + ".key");
 		try {
@@ -128,6 +127,9 @@ public class DigitalSignature {
 		}
 	}
 	
+	/*
+	 * A method to lead a public key that is stored on disk
+	 */
 	public PublicKey loadKey(String path, String name, String algorithm) {
 		Path p = Paths.get(path + "\\" + name + ".key");
 		byte[] bytes;
@@ -150,7 +152,7 @@ public class DigitalSignature {
 	/*
 	 * This method takes a string, signs it, and then returns the signed string
 	 */
-	public String signString(String text, String signAlgorithm) {
+	public String signString(String text) {
 		
 		Signature signature;
 		try {	
@@ -172,7 +174,7 @@ public class DigitalSignature {
 	 * in the same path of the of the given file
 	 * and returns true if the signing operation was successful and false otherwise
 	 */
-	public boolean signFile(String filePath, String signAlgorithm) {
+	public boolean signFile(String filePath) {
 		
 		Signature signature;
 		try {
@@ -200,7 +202,7 @@ public class DigitalSignature {
 	 * This methods receives a string and the signed data and verifies it
 	 * It returns true if the operation is successful and false otherwise
 	 */
-	public boolean verifyString(String data, String signedData,String signAlgorithm, PublicKey pKey) {
+	public boolean verifyString(String data, String signedData, PublicKey pKey) {
 			
 		Signature signature ;
 		try {
@@ -220,7 +222,7 @@ public class DigitalSignature {
 	 * This method receives that paths of a data file and a signed file and verifies the data file
 	 * It return true if the operation is successful and false otherise.
 	 */
-	public boolean verifyFile(String filePath, String signedPath,String signAlgorithm, PublicKey pKey) {
+	public boolean verifyFile(String filePath, String signedPath, PublicKey pKey) {
 		
 		Signature signature;
 		try {
