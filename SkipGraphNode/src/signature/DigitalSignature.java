@@ -54,7 +54,7 @@ public class DigitalSignature {
 			otherPubKeys = new ArrayList<>();
 			privateKeyName = "privateKey";
 			publicKeyName = "publicKey";
-			keysPath = "C:\\Users\\USER\\Documents\\Research\\TestKeys";
+			keysPath = "";
 			storeKeyPair();
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
@@ -67,10 +67,10 @@ public class DigitalSignature {
 	private void storeKeyPair() {
 		
 		try {
-			FileOutputStream out = new FileOutputStream(keysPath + "\\" + privateKeyName + ".key");
+			FileOutputStream out = new FileOutputStream(privateKeyName + ".key");
 			out.write(privateKey.getEncoded());
 			out.close();
-			out = new FileOutputStream(keysPath + "\\" + publicKeyName + ".key");
+			out = new FileOutputStream(publicKeyName + ".key");
 			out.write(publicKey.getEncoded());
 			out.close();
 			
