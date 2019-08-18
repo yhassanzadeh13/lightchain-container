@@ -28,15 +28,22 @@ public final class Configuration implements Serializable{
 	private String nameID      = "nameID";
 	private String numID       = "0";
 	private String port        = "1099";
+	private boolean malicious  = false;
 
-
-	public Configuration(String introducer, String nameID, String numID, String port) {
+	public Configuration(String introducer, String nameID, String numID, String port, boolean malicious) {
 		this.introducer = introducer;
 		this.nameID     = nameID;
 		this.numID      = numID;
 		this.port       = port;
+		this.malicious  = malicious;
 	}
 
+	public Configuration(String introducer, String port, boolean malicious) {
+		this.introducer = introducer;
+		this.port       = port;
+		this.malicious  = malicious;
+	}
+	
 	public Configuration(String configPath) {
 		this.configPath = configPath;
 	}
@@ -66,15 +73,17 @@ public final class Configuration implements Serializable{
 			String input = in.readLine();
 			int n = Integer.parseInt(input);
 			for(int i = 0 ; i < n ; i++) {
-				String introducer;
-				String nameID;
-				String numID;
-				String port;
+				String introducer="none";
+				String nameID="1111";
+				String numID="1";
+				String port="1099";
+				boolean malicious;
 				introducer = in.readLine().split("=")[1];
-				nameID = in.readLine().split("=")[1];
-				numID = in.readLine().split("=")[1];
+				//nameID = in.readLine().split("=")[1];
+				//numID = in.readLine().split("=")[1];
 				port = in.readLine().split("=")[1];
-				lst.add(new Configuration(introducer,nameID,numID,port));
+				malicious = Boolean.parseBoolean(in.readLine().split("=")[1]);
+				lst.add(new Configuration(introducer,nameID,numID,port,malicious));
 			}
 			in.close();
 		} catch (Exception e) {
@@ -112,5 +121,9 @@ public final class Configuration implements Serializable{
 
 	public String getPort() {
 		return port;
+	}
+	
+	public boolean isMalicious() {
+		return malicious;
 	}
 }

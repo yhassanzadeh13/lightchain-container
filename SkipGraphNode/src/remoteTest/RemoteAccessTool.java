@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,13 +24,15 @@ public class RemoteAccessTool {
 	static String port;
 	static Scanner in = new Scanner(System.in);
 	static ArrayList<NodeInfo> data;
-	private static ArrayList<Transaction> transactions;
+//	private static ArrayList<Transaction> transactions;
 	static NodeInfo[][][] lookup;
 	static String nameID;
 	static int numID;
 	static boolean skipInit = false;
-	static RMIInterface node;
+	static LightChainRMIInterface node;
 
+	private static ArrayList<TestingLog> TestLogs;
+	
 	public static void main(String[] args) {
 		while(true) {
 			if(!skipInit) {
@@ -63,12 +66,14 @@ public class RemoteAccessTool {
 				while(true) {
 					printMenu();
 					String input = get();
-					if(!input.matches("[1-9]")) {
+					if(!input.matches("[0-9]")) {
 						log("Invalid query. Please enter the number of one of the possible operations");
 						continue;
 					}
 					int query = Integer.parseInt(input);
-					if(query == 1) {
+					if(query == 0) {
+						startSim();
+					}else if(query == 1) {
 						log("Enter prev of transaction");
 						String prev = get();
 						log("Enter cont of transaction");
@@ -162,6 +167,7 @@ public class RemoteAccessTool {
         log("Address of node being controlled: " + ip + ":" + port);
         log("Name ID: "+ nameID +" Number ID: " + numID);
         log("Choose a query by entering it's code and then press Enter");
+        log("0-Start a simulation");
         log("1-Insert Transaction");
         log("2-Insert Block");
         log("3-Search By Name ID");
@@ -172,17 +178,98 @@ public class RemoteAccessTool {
         log("8-Perform latency testing");
         log("9-Exit");
 	}
+	
+	/*
+	 * Start Simulation
+	 */
+	private static ConcurrentHashMap<NodeInfo, TestingLog> TestingLogMap;
+	
+	public static void startSim() {
+		TestingLogMap = new ConcurrentHashMap<>();
+		
+		//Grab all the nodes so we can communicate with them
+		grabAllNodes();
+		
+		//Simulation variables
+		int numTransactions; //Number of transactions to insert per node
+		int averagePace; //Every how many seconds on average should a node insert a transaction
+		
+		
+		
+		//Getting input from user
+		
+		String inp;
+		log("How many transactions to insert: (per node)");
+		inp = get();
+		while(!inp.matches("[1-9][0-9]*")) {
+			log("Enter a valid number:");
+			inp = get();
+		}
+		numTransactions = Integer.parseInt(inp);
 
+		
+		log("How often should a node insert a transaction in seconds? (60 means 1 transaction every 60 seconds)");
+		inp = get();
+		while(!inp.matches("[1-9][0-9]*")) {
+			log("Enter a valid number:");
+			inp = get();
+		}
+		averagePace = Integer.parseInt(inp);
+		
+		//Making threads to get the nodes to start functioning at the same time:
+		int sz = nodeList.size();
+		try{
+			CountDownLatch ltch = new CountDownLatch(sz);
+			for(int i=0;i<sz;i++) {
+				SimThread cur = new SimThread(i,ltch,numTransactions,averagePace);
+				cur.start();
+			}	
+			ltch.await();
+		}catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+	
+		try {
+			PrintWriter writer = new PrintWriter(new File("TestingLog" + System.currentTimeMillis()%200 + ".csv"));
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append("NumID,Malicious,Transaction Attempts,Transaction Success,Transaction time(per),Success?,View Update Time (per),"
+					+ ",TX>TXMIN?,Validate Block time,Validate success\n");
+			
+			for(NodeInfo cur : nodeList) {
+				TestingLog lg = TestingLogMap.get(cur);
+				ArrayList<TransactionLog> transactions = lg.getTransactionAttempts();
+				Collections.sort(transactions);
+				ArrayList<ViewUpdateLog> viewUpdates = lg.getViewUpdateLog();
+				Collections.sort(viewUpdates);
+				sb.append(cur.getNumID()+","+lg.isMalicious()+","+lg.getAttempts()+","+lg.getSuccess());
+				for(int i=0;i<transactions.size();i++) {
+					sb.append(transactions.get(i));
+					if(i<viewUpdates.size()) {
+						sb.append(","+viewUpdates.get(i));
+					}
+					sb.append("\n");
+				}
+				sb.append('\n');
+			}
+			writer.write(sb.toString());
+			writer.close();
+		}catch(IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
+	
+	
 	private static int numPings = 10;//Total number of pinging attempts
 	private static int numAtts = 1;//How many different pinging sessions to divide the attempts into
 	private static boolean printProgress = true;//Whether you want the pingstats function to print % done while called or not.
-	private static ArrayList<PingLog>logs; 
 	private static ArrayList<NodeInfo> nodeList;
 	private static ConcurrentHashMap<NodeInfo, ArrayList<PingLog>> res;
 	
 	public static void pingStats() {
-		NodeInfo curNode = null;
-		nodeList = new ArrayList<NodeInfo>();
 		res = new ConcurrentHashMap<NodeInfo, ArrayList<PingLog>>();
 		String inp;
 
@@ -196,7 +283,7 @@ public class RemoteAccessTool {
 
 		log("Enter the total number of ping attempts per node pair:");
 		inp = get();
-		while(!inp.matches("0|[1-9][0-9]*")) {
+		while(!inp.matches("[1-9][0-9]*")) {
 			log("Enter a valid number");
 			inp = get();
 		}
@@ -208,24 +295,14 @@ public class RemoteAccessTool {
 			inp = get();
 		}
 		numAtts = Integer.parseInt(inp);
-		try {
-			curNode = node.searchByNumID(0);
-			while(curNode!=null) {
-				nodeList.add(curNode);
-				RMIInterface curRMI = getRMI(curNode.getAddress());
-				curNode = curRMI.getRightNode(0, curNode.getNumID());
-			}
-		}catch(RemoteException e) {
-			e.printStackTrace();
-			return;
-		}
-		System.out.println("Total number of nodes: " + nodeList.size());
+		grabAllNodes();
 		
-		int sz = nodeList.size();
+		int sz = 1;//nodeList.size();
 		for(int k=0;k<numAtts;k++) {
 			try{
 				CountDownLatch ltch = new CountDownLatch(sz);
 				for(int i=0;i<sz;i++) {
+					
 					PingingThread cur = new PingingThread(i,ltch, numPings/numAtts,choice);
 					cur.start();
 				}
@@ -267,6 +344,29 @@ public class RemoteAccessTool {
 			e.printStackTrace();
 		}
 	}
+	
+	/*
+	 * Traverse Skip Graph and populate nodeList with all the nodes in the graph
+	 */
+	public static void grabAllNodes(){
+		NodeInfo curNode = null;
+		nodeList = new ArrayList<NodeInfo>();
+		try {
+			curNode = node.searchByNumID(0);
+			while(curNode!=null) {
+				nodeList.add(curNode);
+				RMIInterface curRMI = getRMI(curNode.getAddress());
+				curNode = curRMI.getRightNode(0, curNode.getNumID());
+			}
+		}catch(RemoteException e) {
+			e.printStackTrace();
+			return;
+		}
+		System.out.println("Total number of nodes: " + nodeList.size());
+		return;
+	}
+	
+	
 	
 	/*
 	 * Taken from SkipNode class. However, it needs to be implemented here so that println would print here rather than in the other node.
@@ -360,11 +460,10 @@ public class RemoteAccessTool {
 	}	
 	
 	/*
-	 * Thread class for multithreading
+	 * Thread classes for multithreading
 	 */
 	static class PingingThread extends Thread{
 		Thread t;
-		String threadname;
 		String pinger;
 		CountDownLatch latch;
 		int count;
@@ -409,6 +508,37 @@ public class RemoteAccessTool {
 					System.err.println("Exception thrown in pinging thread.");
 					e.printStackTrace();
 				}
+			}
+			latch.countDown();
+		}
+		
+	}
+	
+	static class SimThread extends Thread{
+		Thread t;
+		CountDownLatch latch;
+		int count;
+		int pace;
+		int ind;
+		
+		public SimThread(int ind, CountDownLatch ltch, int count, int pace) {
+			this.latch = ltch;
+			this.pace=pace;
+			this.count = count;
+			this.ind = ind;
+		}
+		
+		
+		public void run() {
+			LightChainRMIInterface curRMI = getRMI(nodeList.get(ind).getAddress());
+			try {
+				if(ind == 0) {
+					curRMI.insertGen();
+				}
+				TestingLog lg = curRMI.startSim(count, pace);
+				TestingLogMap.put(nodeList.get(ind), lg);
+			} catch (RemoteException e) {
+				e.printStackTrace();
 			}
 			latch.countDown();
 		}

@@ -4,8 +4,7 @@ import java.rmi.RemoteException;
 import java.security.PublicKey;
 
 import remoteTest.Configuration;
-import remoteTest.PingLog;
-import skipGraph.NodeInfo;
+import remoteTest.TestingLog;
 import skipGraph.RMIInterface;
 
 public interface LightChainRMIInterface extends RMIInterface {
@@ -18,5 +17,6 @@ public interface LightChainRMIInterface extends RMIInterface {
 	public void put(Transaction t) throws RemoteException;
 	public void put(Block t) throws RemoteException;
 	public Configuration getConf() throws RemoteException;
-
+	public TestingLog startSim(int numTransactions, int pace) throws RemoteException;
+	public void insertGen() throws RemoteException;
 }

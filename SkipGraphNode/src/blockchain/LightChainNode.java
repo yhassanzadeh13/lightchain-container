@@ -8,13 +8,13 @@ import java.rmi.registry.Registry;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 import hashing.Hasher;
-import hashing.HashingTools;
 import remoteTest.Configuration;
+import remoteTest.TestingLog;
 import signature.DigitalSignature;
 import skipGraph.NodeInfo;
-import skipGraph.RMIInterface;
 import skipGraph.SkipNode;
 
 public class LightChainNode extends SkipNode implements LightChainRMIInterface {
@@ -23,7 +23,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private static ArrayList<Transaction> transactions;
 	private static ArrayList<Block> blocks;
 	private static DigitalSignature digitalSignature;
-	private static Hasher hasher;
 	private static HashMap<Integer,Integer> view;
 	private static HashMap<Integer,Integer> viewBalance;
 	private static HashMap<Integer,Integer> viewMode;
@@ -33,9 +32,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * Constants
 	 */
 	private static final int VALIDATION_FEES = 1;
-	private static int SIGNATURES_THRESHOLD = 10;
-	private static final int TRUNC = 10;
-	private static final int TX_MIN = 10;
+	private static int SIGNATURES_THRESHOLD = 2;
+	private static final int TRUNC = 30;
+	private static final int TX_MIN = 4;
 	private static final int ZERO_ID = 0;
 	private static final int HONEST = 1;
 	private static final int MALICIOUS = 0;
@@ -46,13 +45,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * Variables for simulations
 	 */
-	private static long malTrials = 0;
+	private static long malTrials = 0; 
 	private static long malSuccess = 0;
+	private static TestingLog testLog;
 	
 	/*
 	 * For slave/master operation
 	 */
-	protected static int testingMode = 0;/*
+	protected static int testingMode = 2;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -63,18 +63,26 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public static void main(String args[]) {
 	try {
-		IP = grabIP();
+		//IP = grabIP();
 		init();//Initialize IP and address + system properties
 		if(testingMode == 0) {
 			setInfo();
+			log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
+			mode = Integer.parseInt(get());
+			while(mode != MALICIOUS && mode != HONEST) {
+				log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
+				mode = Integer.parseInt(get());
+			}
 		}else if(testingMode == 1) {
-			Configuration cnf = new Configuration();
-			cnfs = cnf.parseConfigurations();
-			setInfo(cnfs.remove(0));
+			cnfs = Configuration.parseConfigurations();
+			Configuration cnf = cnfs.remove(0);
+			setInfo(cnf);
+			mode = cnf.isMalicious()?MALICIOUS:HONEST;
 			configurationsLeft = cnfs.size();
 			for(int i = 0;i<cnfs.size();i++) {
 				Configuration tmp = cnfs.get(i);
 				tmp.setIntroducer(address);
+				System.out.println(tmp.isMalicious());
 			}
 		}else {
 			Configuration cnf = new Configuration();
@@ -82,6 +90,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			LightChainRMIInterface intro = getLightChainRMI(cnf.getIntroducer());
 			cnf = intro.getConf();
 			setInfo(cnf);
+			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
+			System.out.println("MODE = " + mode);
 		}
 		
 		LightChainNode lightChainNode = new LightChainNode();
@@ -122,15 +132,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		view = new HashMap<>();
 		viewMode = new HashMap<>();
 		viewBalance = new HashMap<>();
-		log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-		mode = Integer.parseInt(get());
-		while(mode != MALICIOUS && mode != HONEST) {
-			log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-			mode = Integer.parseInt(get());
-		}
-		setNameID(hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC));
-		setNumID(Integer.parseInt(getNameID(),2));
-		setInfo();
+		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC);
+		setNumID(Integer.parseInt(name,2));
+		name = hasher.getHash(name,TRUNC);
+		setNameID(name);
 	}
 	
 	/*
@@ -302,13 +307,18 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// If number of transactions obtained is less than TX_MIN then we terminate the process
 			if(tList.size() < TX_MIN) {
 				log("Cannot find TX_MIN number of transactions.");
+				testLog.logBlockValidation(-1, false);
+				testLog.logViewUpdate(System.currentTimeMillis()-start, false);
 				return;
 			}
 			// If there are TX_MIN transaction then add them into a new block
 			Block newBlk = new Block(blk.getH(),getNumID(),getAddress(),tList,blk.getIndex()+1);
 			// send the new block for PoV validation
 			boolean isValidated = validate(newBlk);
-			if(!isValidated)return;
+			if(!isValidated) {
+				testLog.logViewUpdate(System.currentTimeMillis()-start, true);
+				return;
+			}
 			// insert new block after it was validated
 			insert(newBlk);
 			// contact the owner of the previous block and let him withdraw his flag data node.
@@ -327,7 +337,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;
-			
+			testLog.logViewUpdate(time, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -442,7 +452,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * their signatures of the hash value of the block if the validation was successful
 	 * and gets null otherwise.
 	 */
-	public boolean validate(Block blk) throws RemoteException {
+	public boolean validate(Block blk) {
 		try {
 			long start = System.currentTimeMillis();
 			if(mode == MALICIOUS) {
@@ -461,6 +471,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				// if one validator returns null, then validation has failed
 				if(signature == null) {
 					log("Validating Block failed.");
+					testLog.logBlockValidation(System.currentTimeMillis()-start, false);
 					return false;
 				}
 				sigma.add(signature);
@@ -474,7 +485,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;
-			
+			testLog.logBlockValidation(time, true);
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -915,6 +926,19 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	}
 	
 	// for Testing:
+	
+	public void insertGen() throws RemoteException{
+		StringBuilder st = new StringBuilder();
+		for(int i=0;i<TRUNC;i++) {
+			st.append("0");
+		}
+		String prev = st.toString();
+		int index = 0;
+		Block b = new Block(prev,getNumID(),getAddress(),index);
+		insert(new NodeInfo(getAddress(),ZERO_ID,b.getH()));
+		insert(b);
+	}
+	
 	public void put(Transaction t) throws RemoteException{
 		transactions.add(t);
 		insert(t);
@@ -923,4 +947,45 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		blocks.add(t);
 		insert(t);
 	}
+	
+	private void createNewTransaction(String cont) {
+		try {
+			Block lstBlk = getLatestBlock();
+			log("The prev found is : " + lstBlk.getNumID());
+			Transaction t = new Transaction(lstBlk.getH(), getNumID() ,cont, getAddress());
+			boolean verified = validate(t);
+			if(verified == false) {
+				log("Transaction validation Failed");
+				return ;
+			}
+			log("Added transaction with nameID " + lstBlk.getH());
+			t.setAddress(getAddress());
+			transactions.add(t);
+			insert(t);
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public TestingLog startSim(int numTransactions, int pace) throws RemoteException {
+		testLog = new TestingLog(mode == MALICIOUS);
+		Random rnd = new Random();
+		try {
+			for(int i=0;i<numTransactions;i++) {
+				Thread.sleep((1000*pace + (rnd.nextInt(20000)-10000))/2);//wait for (pace +- 10 seconds)/2 
+				createNewTransaction(System.currentTimeMillis()+i+""+rnd.nextDouble());
+				Thread.sleep((1000*pace + (rnd.nextInt(20000)-10000))/2);//wait for (pace +- 10 seconds)/2 
+				updateViewTable();
+				if(i%3 == 0) {
+					Thread.sleep(rnd.nextInt(5000));
+					viewUpdate();
+				}
+				if(i%10==0) System.out.println(100.0*i / numTransactions + "% done.");
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return testLog;
+	}
+	
 }

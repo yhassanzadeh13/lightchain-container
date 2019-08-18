@@ -1,31 +1,21 @@
 package skipGraph;
 import java.io.BufferedReader;
 import java.io.IOException;
-
-import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
-import java.util.TreeMap;
 
-import blockchain.Block;
-import blockchain.Transaction;
-import hashing.Hasher;
 import hashing.HashingTools;
 import remoteTest.Configuration;
 import remoteTest.PingLog;
-import signature.DigitalSignature;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
@@ -42,7 +32,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	protected static ArrayList<NodeInfo> data;
 	private static int dataNum = 0 ; 
 	
-	public static final boolean local = false;//If set to true, it would work fine on local networks without having to go through the hassle of 
+	public static final boolean local = true;//If set to true, it would work fine on local networks without having to go through the hassle of 
 
 	
 	/*
@@ -64,19 +54,19 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		super(RMIPort);
 		maxLevels = TRUNC;
 		lookup = new NodeInfo[maxLevels+2][2][MAX_DATA];
-		dataID = new HashMap<>();
-		data = new ArrayList<>();
+		if(dataID==null) dataID = new HashMap<>();
+		if(data==null)data = new ArrayList<>();
 		// get Port number
-		log("Enter RMI port: ");
-		String numInput = get();
-		while(!numInput.matches("0|[1-9][0-9]*")) {
-			log("Invalid port. Enter a valid port number for RMI:");
-			numInput = get();			
-		}
-		RMIPort = Integer.parseInt(numInput);
-		Registry reg = LocateRegistry.createRegistry(RMIPort);
-		reg.rebind("RMIImpl", this);
-		log("Rebinding Successful");
+//		log("Enter RMI port: ");
+//		String numInput = get();
+//		while(!numInput.matches("0|[1-9][0-9]*")) {
+//			log("Invalid port. Enter a valid port number for RMI:");
+//			numInput = get();			
+//		}
+//		RMIPort = Integer.parseInt(numInput);
+//		Registry reg = LocateRegistry.createRegistry(RMIPort);
+//		reg.rebind("RMIImpl", this);
+//		log("Rebinding Successful");
 	}
 	/*
 	 * This method initializes the information of the current node
@@ -118,12 +108,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public static void setInfo(Configuration conf) {
 		hasher = new HashingTools();
 		introducer = conf.getIntroducer();
-		nameID = conf.getNameID();
-		numID = Integer.parseInt(conf.getNumID());
 		RMIPort = Integer.parseInt(conf.getPort());
 		address = IP + ":" + RMIPort;
+		nameID = hasher.getHash(address,TRUNC);
+		numID = Integer.parseInt(nameID,2);
 		if(introducer.equalsIgnoreCase("none")) {
+			if(data == null) data = new ArrayList<>();
 			data.add(new NodeInfo(address,numID,nameID));
+			if(dataID == null) dataID = new HashMap<>();
 			dataID.put(numID, 0);
 			dataNum++;
 		}
@@ -400,7 +392,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public ArrayList<NodeInfo> searchNum(int targetInt,int level, ArrayList<NodeInfo> lst){
 
-		log("Search at: "+address); // we use this to see when a search has passed through this node
+		//log("Search at: "+address); // we use this to see when a search has passed through this node
 
 		int dataIdx = getBestNum(targetInt);// get the data node (or main node) that is closest to the target search
 		lst.add(data.get(dataIdx));//Add the current node's info to the search list
