@@ -66,7 +66,7 @@ public class RemoteAccessTool {
 				while(true) {
 					printMenu();
 					String input = get();
-					if(!input.matches("[0-9]")) {
+					if(!input.matches("10|[0-9]")) {
 						log("Invalid query. Please enter the number of one of the possible operations");
 						continue;
 					}
@@ -152,6 +152,13 @@ public class RemoteAccessTool {
 						pingStats();
 					}else if(query == 9) {
 						break;
+					}else if(query == 10) {
+						initiateShutDown();
+						grabAllNodes();
+						for(NodeInfo cur : nodeList) {
+							LightChainRMIInterface nd = getRMI(cur.getAddress());
+							nd.shutDown();
+						}
 					}
 				}
 			}catch(Exception e)
@@ -177,6 +184,7 @@ public class RemoteAccessTool {
         log("7-Traverse");
         log("8-Perform latency testing");
         log("9-Exit");
+        log("10-Shut down all instances");
 	}
 	
 	/*
@@ -342,6 +350,24 @@ public class RemoteAccessTool {
 			writer.close();
 		}catch(IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * Shuts down all the node in the network it connects to
+	 */
+
+	private void initiateShutDown() {
+		grabAllNodes();
+		int sz = nodeList.size();
+		try{
+			CountDownLatch ltch = new CountDownLatch(sz);
+			for(int i=0;i<sz;i++) {
+				ShutDownThread t = new ShutDownThread(i, ltch);
+			}
+			ltch.await();
+		}catch(Exception e) {
+			
 		}
 	}
 	
@@ -545,6 +571,28 @@ public class RemoteAccessTool {
 		
 	}
 	
+	static class ShutDownThread extends Thread{
+		Thread t;
+		CountDownLatch latch;
+		int ind;
+		
+		public ShutDownThread(int ind, CountDownLatch ltch) {
+			this.latch = ltch;
+			this.ind = ind;
+		}
+		
+		
+		public void run() {
+			LightChainRMIInterface curRMI = getRMI(nodeList.get(ind).getAddress());
+			try {
+				curRMI.shutDown();
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+			latch.countDown();
+		}
+		
+	}
 	
 }
 

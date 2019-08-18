@@ -45,7 +45,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static final int LEFT = 0;
 	private static final int ZERO_LEVEL = 0;
 	private static final int UNASSIGNED = -1;
-	public static final int TRUNC = 10;
+	public static int TRUNC = 30;
 	
 	/*
 	 * Constructor for SkipNode class

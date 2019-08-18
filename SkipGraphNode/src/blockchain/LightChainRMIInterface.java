@@ -19,4 +19,7 @@ public interface LightChainRMIInterface extends RMIInterface {
 	public Configuration getConf() throws RemoteException;
 	public TestingLog startSim(int numTransactions, int pace) throws RemoteException;
 	public void insertGen() throws RemoteException;
+	
+	//To shut down all instances
+	public void shutDown() throws RemoteException;
 }

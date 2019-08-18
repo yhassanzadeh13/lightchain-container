@@ -33,7 +33,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	private static final int VALIDATION_FEES = 1;
 	private static int SIGNATURES_THRESHOLD = 2;
-	private static final int TRUNC = 30;
+	static{
+		TRUNC = 30;
+	}
 	private static final int TX_MIN = 4;
 	private static final int ZERO_ID = 0;
 	private static final int HONEST = 1;
@@ -987,5 +989,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 		return testLog;
 	}
+	
+	public void shutDown() throws RemoteException{
+		System.exit(0);
+	}
+	
 	
 }
