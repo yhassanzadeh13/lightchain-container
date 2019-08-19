@@ -66,7 +66,7 @@ public class RemoteAccessTool {
 				while(true) {
 					printMenu();
 					String input = get();
-					if(!input.matches("10|[0-9]")) {
+					if(!input.matches("11|10|[0-9]")) {
 						log("Invalid query. Please enter the number of one of the possible operations");
 						continue;
 					}
@@ -154,10 +154,10 @@ public class RemoteAccessTool {
 						break;
 					}else if(query == 10) {
 						initiateShutDown();
+					}else if(query == 11) {
 						grabAllNodes();
-						for(NodeInfo cur : nodeList) {
-							LightChainRMIInterface nd = getRMI(cur.getAddress());
-							nd.shutDown();
+						for(NodeInfo el : nodeList) {
+							System.out.println(el.getAddress()+"\t"+el.getNameID()+"\t"+el.getNumID());
 						}
 					}
 				}
@@ -185,6 +185,7 @@ public class RemoteAccessTool {
         log("8-Perform latency testing");
         log("9-Exit");
         log("10-Shut down all instances");
+        log("11-Print all nodes");
 	}
 	
 	/*
@@ -242,7 +243,7 @@ public class RemoteAccessTool {
 			StringBuilder sb = new StringBuilder();
 			
 			sb.append("NumID,Malicious,Transaction Attempts,Transaction Success,Transaction time(per),Success?,View Update Time (per),"
-					+ ",TX>TXMIN?,Validate Block time,Validate success\n");
+					+ "TX>TXMIN?,Validate Block time,Validate success\n");
 			
 			for(NodeInfo cur : nodeList) {
 				TestingLog lg = TestingLogMap.get(cur);
@@ -250,8 +251,9 @@ public class RemoteAccessTool {
 				Collections.sort(transactions);
 				ArrayList<ViewUpdateLog> viewUpdates = lg.getViewUpdateLog();
 				Collections.sort(viewUpdates);
-				sb.append(cur.getNumID()+","+lg.isMalicious()+","+lg.getAttempts()+","+lg.getSuccess());
+				sb.append(cur.getNumID()+","+lg.isMalicious()+","+lg.getAttempts()+","+lg.getSuccess()+",");
 				for(int i=0;i<transactions.size();i++) {
+					if(i!=0) sb.append(",,,,");
 					sb.append(transactions.get(i));
 					if(i<viewUpdates.size()) {
 						sb.append(","+viewUpdates.get(i));
@@ -357,17 +359,18 @@ public class RemoteAccessTool {
 	 * Shuts down all the node in the network it connects to
 	 */
 
-	private void initiateShutDown() {
+	private static void initiateShutDown() {
 		grabAllNodes();
 		int sz = nodeList.size();
 		try{
 			CountDownLatch ltch = new CountDownLatch(sz);
 			for(int i=0;i<sz;i++) {
 				ShutDownThread t = new ShutDownThread(i, ltch);
+				t.start();
 			}
 			ltch.await();
 		}catch(Exception e) {
-			
+			//Not needed since they will always throw an exception 
 		}
 	}
 	

@@ -88,7 +88,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 		}else {
 			Configuration cnf = new Configuration();
-			cnf.parseIntroducer();
+			//cnf.parseIntroducer();
+			cnf.setIntroducer("192.168.100.31:1099");
 			LightChainRMIInterface intro = getLightChainRMI(cnf.getIntroducer());
 			cnf = intro.getConf();
 			setInfo(cnf);
@@ -501,8 +502,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * to get their signatures and stores their signatures in the sigma array.
 	 */
 	public boolean validate(Transaction t) throws RemoteException {
+		long start = System.currentTimeMillis();
 		try {
-			long start = System.currentTimeMillis();
 			if(mode == MALICIOUS) {
 				malTrials++;
 			}
@@ -522,6 +523,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				// if a validators returns null that means the validation has failed
 				if(signature == null) {
 					log("Validating Transaction failed.");
+					testLog.logTransaction(false,  System.currentTimeMillis()-start);
 					return false;
 				}
 				sigma.add(signature);
@@ -534,10 +536,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				malSuccess++;
 			}
 			long time = end - start;
-			
+			testLog.logTransaction(false,  time);
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			testLog.logTransaction(false,  System.currentTimeMillis()-start);
 			return false;
 		}
 	}
