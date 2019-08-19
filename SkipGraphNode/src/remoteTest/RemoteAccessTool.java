@@ -307,7 +307,7 @@ public class RemoteAccessTool {
 		numAtts = Integer.parseInt(inp);
 		grabAllNodes();
 		
-		int sz = 1;//nodeList.size();
+		int sz = nodeList.size();
 		for(int k=0;k<numAtts;k++) {
 			try{
 				CountDownLatch ltch = new CountDownLatch(sz);
