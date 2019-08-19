@@ -536,7 +536,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				malSuccess++;
 			}
 			long time = end - start;
-			testLog.logTransaction(false,  time);
+			testLog.logTransaction(true,  time);
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
