@@ -357,7 +357,7 @@ public class RemoteAccessTool {
 	 * Shuts down all the node in the network it connects to
 	 */
 
-	private void initiateShutDown() {
+	private static void initiateShutDown() {
 		grabAllNodes();
 		int sz = nodeList.size();
 		try{

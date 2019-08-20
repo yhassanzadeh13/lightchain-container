@@ -87,7 +87,7 @@ public final class Configuration implements Serializable{
 			}
 			in.close();
 		} catch (Exception e) {
-
+			System.out.println(defaultPath);
 		}
 
 		return lst;
@@ -95,12 +95,14 @@ public final class Configuration implements Serializable{
 
 	public void parseIntroducer() {
 		try {
+			System.out.println(configPath);
 			prop.load(new FileInputStream(configPath));
 		} catch(Exception e) {
 			System.err.println("could not open config file: " + configPath);
 			System.exit(1);
 		}
 		introducer = prop.getProperty("introducer");
+		System.out.println("intro " + introducer);
 	}
 
 	public String getIntroducer() {

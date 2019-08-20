@@ -89,7 +89,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI(cnf.getIntroducer());
+			LightChainRMIInterface intro = getLightChainRMI("172.20.132.16:1099");
 			cnf = intro.getConf();
 			setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
