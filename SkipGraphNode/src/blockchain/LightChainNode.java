@@ -89,7 +89,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("172.20.132.210:1099");
+			LightChainRMIInterface intro = getLightChainRMI("172.20.132.165:3001");
 			cnf = intro.getConf();
 			setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
@@ -302,6 +302,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			
 			Block blk = getLatestBlock();
 			// Change numID to a nameID string
+			if(blk == null) {
+				log("Error in retreiving the Latest block: not a block was returned");
+				log("viewUpdate terminated");
+				return ;
+			}
 			String name = numToName(blk.getNumID());
 			
 			log("Searching for " + name + " in viewUpdate()");
@@ -716,8 +721,21 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// get the hash value of the block that contains the owner's latest transaction			
 			int blkNumID = view.get(t.getOwner());
 			
-			Block prevBlk = (Block)searchByNumID(prev);
-			Block thisBlk = (Block)searchByNumID(blkNumID);
+			NodeInfo b1 = searchByNumID(prev);
+			if(!(b1 instanceof Block)) {
+				log("isSound(): search for prev did not return a block: " + prev);
+				log("It returned numID: " + b1.getNameID());
+				return false;
+			}
+			NodeInfo b2 = searchByNumID(blkNumID);
+			if(!(b2 instanceof Block)) {
+				log("isSound(): search for latest block of owner did not return a block: " + prev);
+				log("It returned numID: " + b2.getNameID());
+				return false;
+			}
+			
+			Block prevBlk = (Block)b1;
+			Block thisBlk = (Block)b2;
 			
 			int tIdx = prevBlk.getIndex();
 			int bIdx = thisBlk.getIndex();
@@ -875,6 +893,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		try {
 			// find owner from the network
 			NodeInfo owner = searchByNumID(num);
+			
+			if(owner.getNumID() != num) {
+				log("GetOwnerPublicKey: no node was found with given numID");
+				log("Given numID: " + num);
+				log("Found numID: " + owner.getNumID());
+				return null;
+			}
+			
 			// Contact the owner through RMI
 			LightChainRMIInterface ownerRMI = getLightChainRMI(owner.getAddress());
 			// get the owner'r Public key through RMI
