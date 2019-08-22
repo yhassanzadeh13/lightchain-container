@@ -16,6 +16,7 @@ import skipGraph.SkipNode;
 public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	
 	private static final long serialVersionUID = 1L;
+	private static LightChainNode lightChainNode;
 	private static ArrayList<Transaction> transactions;
 	private static ArrayList<Block> blocks;
 	private static DigitalSignature digitalSignature;
@@ -51,10 +52,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public static void main(String args[]) {				
 		try {
 			init();
-			LightChainNode node = new LightChainNode();
+			lightChainNode = new LightChainNode();
+			//Setting the SkipNode in the SkipNode class to the same thing
+			SkipNode.node = lightChainNode;
 			while(true) {
 				printMenu();
-				node.ask();
+				lightChainNode.ask();
 			}
 		}catch(RemoteException e) {
 			System.out.println("Remote Exception in main method. Terminating.");
@@ -842,13 +845,16 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	}
 	
 	public LightChainRMIInterface getLightChainRMI(String adrs) {
-		if(validateIP(adrs))
+		if(validateIP(adrs)){
+			if(adrs.equalsIgnoreCase(address)) {
+				return lightChainNode;
+			}
 			try {
 				return (LightChainRMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
 			}catch(Exception e) {
 				log("Exception while attempting to lookup RMI located at address: "+adrs);
 			}
-		else {
+		} else {
 			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
 		}
 		return null;
