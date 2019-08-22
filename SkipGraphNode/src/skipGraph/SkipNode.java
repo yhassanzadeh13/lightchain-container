@@ -19,6 +19,7 @@ import remoteTest.PingLog;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
+	protected static SkipNode node;
 	protected static String address;
 	protected static String nameID;
 	protected static int numID;
@@ -666,14 +667,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * This method returns an RMI instance of the node with the given address
 	 */
 	public static RMIInterface getRMI(String adrs) {
-		if(validateIP(adrs))
+		if(validateIP(adrs)) {
+			if(adrs.equalsIgnoreCase(address)) return node;
 			try {
 				return (RMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
 			}catch(Exception e) {
 				log("Exception while attempting to lookup RMI located at address: "+adrs);
 				e.printStackTrace();
 			}
-		else {
+		}else {
 			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
 		}
 		return null;
