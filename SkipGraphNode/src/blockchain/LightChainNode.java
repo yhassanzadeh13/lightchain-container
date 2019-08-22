@@ -31,7 +31,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	private static final int VALIDATION_FEES = 1;
 	private static int SIGNATURES_THRESHOLD = 10;
-	private static final int TRUNC = 10;
+	private static final int TRUNC = 30;
 	private static final int TX_MIN = 10;
 	private static final int ZERO_ID = 0;
 	private static final int HONEST = 1;
@@ -90,8 +90,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
 			mode = Integer.parseInt(get());
 		}
-		setNameID(hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC));
-		setNumID(Integer.parseInt(getNameID(),2));
+		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC);
+		setNumID(Integer.parseInt(name,2));
+		name = hasher.getHash(name,TRUNC);
+		setNameID(name);
 		setInfo();
 	}
 	
@@ -157,7 +159,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				prev = lstBlk.getH();
 				index = lstBlk.getIndex() + 1;
 			}else {
-				prev = "000000";
+				prev = "000000000000000000000000000000";
 				index = 0;
 			}
 			Block b = new Block(prev,getNumID(),getAddress(),index);
@@ -245,13 +247,17 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 	
-	/*
-	 * This method finds the latest block on the blockchain and takes its numID
+	/**
+	 * @param This method finds the latest block on the blockchain and takes its numID
 	 * and uses it to find all transactions that have this numID as nameID and uses
 	 * getTransactionsWithNameID() method to get such transactions, and if the number
 	 * of found transactions if at least TX_MIN, the transactions are casted into a block
 	 * and the block is sent for validation.
 	 * 
+	 */
+	/**
+	 * @param This method updates the view
+	 * @throws RemoteException
 	 */
 	public void viewUpdate() throws RemoteException {
 		
