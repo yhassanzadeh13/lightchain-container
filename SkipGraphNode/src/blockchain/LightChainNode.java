@@ -89,7 +89,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("172.20.132.16:1099");
+			LightChainRMIInterface intro = getLightChainRMI("172.20.132.210:1099");
 			cnf = intro.getConf();
 			setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
@@ -268,6 +268,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			String name = numToName(blk.getNumID());
 			// get transactions pointing at the tail
 			ArrayList<Transaction> tList = getTransactionsWithNameID(name);
+			if(tList == null)
+				return ;
 			// iterate over found transactions pointing at the blockchain
 			for(int i=0 ; i<tList.size() ; ++i) {
 				int owner = tList.get(i).getOwner();
@@ -307,7 +309,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// Get all transaction with this nameID
 			ArrayList<Transaction> tList = getTransactionsWithNameID(name);
 			// If number of transactions obtained is less than TX_MIN then we terminate the process
-			if(tList.size() < TX_MIN) {
+			if(tList == null || tList.size() < TX_MIN) {
 				log("Cannot find TX_MIN number of transactions.");
 				testLog.logBlockValidation(-1, false);
 				testLog.logViewUpdate(System.currentTimeMillis()-start, false);
@@ -394,7 +396,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// an empty list to add transaction to it and return it
 			ArrayList<Transaction> tList = new ArrayList<>();
 			
-			if(!t.getNameID().equals(name)) {
+			if(t == null || !t.getNameID().equals(name)) {
 				log("No transaction was found with the given nameID");
 				return tList;
 			}
@@ -501,8 +503,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * to get their signatures and stores their signatures in the sigma array.
 	 */
 	public boolean validate(Transaction t) throws RemoteException {
+		long start = System.currentTimeMillis();
 		try {
-			long start = System.currentTimeMillis();
 			if(mode == MALICIOUS) {
 				malTrials++;
 			}
@@ -522,6 +524,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				// if a validators returns null that means the validation has failed
 				if(signature == null) {
 					log("Validating Transaction failed.");
+					testLog.logTransaction(false,  System.currentTimeMillis()-start);
 					return false;
 				}
 				sigma.add(signature);
@@ -534,10 +537,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				malSuccess++;
 			}
 			long time = end - start;
-			
+			testLog.logTransaction(true,  time);
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
+			testLog.logTransaction(false,  System.currentTimeMillis()-start);
 			return false;
 		}
 	}

@@ -175,7 +175,7 @@ class TransactionLog implements Serializable, Comparable<TransactionLog>{
 	}
 	
 	public String toString() {
-		return success+","+timeTaken;
+		return timeTaken+","+success;
 	}
 	
 	
