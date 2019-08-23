@@ -68,6 +68,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	try {
 		//IP = grabIP();
 		init();//Initialize IP and address + system properties
+		lightChainNode = new LightChainNode();
 		if(testingMode == 0) {
 			setInfo();
 			log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
@@ -79,7 +80,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else if(testingMode == 1) {
 			cnfs = Configuration.parseConfigurations();
 			Configuration cnf = cnfs.remove(0);
-			setInfo(cnf);
+			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
 			configurationsLeft = cnfs.size();
 			for(int i = 0;i<cnfs.size();i++) {
@@ -90,18 +91,16 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("172.20.132.165:3001");
+			LightChainRMIInterface intro = getLightChainRMI("172.16.114.35:3001");
 			cnf = intro.getConf();
-			setInfo(cnf);
+			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
 			System.out.println("MODE = " + mode);
 		}
-		
-		lightChainNode = new LightChainNode();
 		//Setting the SkipNode in the SkipNode class to the same thing
 		SkipNode.node = lightChainNode;
-		if(testingMode == 2) lightChainNode.insert(new NodeInfo(address,numID,nameID));
-
+		if(testingMode == 2) lightChainNode.insert(new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
+		
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", lightChainNode);
 		log("Rebinding Successful");
@@ -139,8 +138,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		viewBalance = new HashMap<>();
 		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC);
 		setNumID(Integer.parseInt(name,2));
+		log("My numID is: " + Integer.parseInt(name,2));
 		name = hasher.getHash(name,TRUNC);
 		setNameID(name);
+		log("My nameID is: " + name);
 	}
 	
 	/*
@@ -168,7 +169,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public void ask() throws RemoteException {
         String input = get();
-        if(!input.matches("[1-8]")) {
+        if(!input.matches("[1-9]")) {
         	log("Invalid query. Please enter the number of one of the possible operations");
         	return;
         }
@@ -204,7 +205,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				prev = lstBlk.getH();
 				index = lstBlk.getIndex() + 1;
 			}else {
-				prev = "000000";
+				prev = numToName(0);
 				index = 0;
 			}
 			Block b = new Block(prev,getNumID(),getAddress(),index);
@@ -255,6 +256,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			updateViewTable();
 		}else if (query == 8) { // viewUpdate
 			viewUpdate();
+		}else if (query == 9) {
+			log("Which Level");
+			int num = Integer.parseInt(get());
+			printLevel(num);
 		}
     }
 	
@@ -562,14 +567,17 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public String PoV(Block blk) throws RemoteException {
 		try {
 			updateViewTable();
+			log("Validating block for " + blk.getOwner());
 			boolean val = isAuthenticated(blk) && isConsistent(blk);
 			if(val == false)
 				return null;
 			// iterate over transactions and check them one by one
 			ArrayList<Transaction> ts = blk.getS();
 			for(int i=0 ; i<ts.size() ; ++i) {
-				if(!isAuthenticated(ts.get(i)) /*|| !isSound(ts.get(i))*/)
+				if(!isAuthenticated(ts.get(i)) /*|| !isSound(ts.get(i))*/) {
+					log("Transaction inside block is not authentic");
 					return null;
+				}
 			}
 			String signedHash = digitalSignature.signString(blk.getH());
 			return signedHash;
@@ -615,7 +623,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if(verified == false) {
 				log("Block does not contain signature of Owner");
 			}
-			
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;
@@ -692,6 +699,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public String PoV(Transaction t) throws RemoteException {
 		try {
 			updateViewTable();
+			log("Validating Transaction for " + t.getOwner());
 			boolean val = isAuthenticated(t) && isCorrect(t) && isSound(t) && hasBalanceCompliance(t);
 			if(val == false)
 				return null;
@@ -890,7 +898,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * and first verifies of the given public key truly belongs to the owner
 	 * by hashing the provided public key and comparing it with the given numID
 	 * if the test fails it prints it to console and return null.
-	 * otherwise it returns the public key of the woner.
+	 * otherwise it returns the public key of the owner.
 	 */
 	public PublicKey getOwnerPublicKey(int num) throws RemoteException {
 		try {
