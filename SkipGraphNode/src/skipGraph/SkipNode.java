@@ -93,8 +93,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		RMIPort = Integer.parseInt(numInput);
 		address = IP + ":" + RMIPort;
 		// The nameID and numID are hash values of the address
-		nameID = hasher.getHash(address,TRUNC);
-		numID = Integer.parseInt(nameID,2);
+		//nameID = hasher.getHash(address,TRUNC);
+		//numID = Integer.parseInt(nameID,2);
 
 		// In case the introducer to this node is null, then the insert method
 		// will not be called on it, so we manually add it to the data list and
@@ -175,6 +175,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			log("Deleting the number " + num );
 		}
     }
 
@@ -189,6 +190,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public NodeInfo insertSearch(int level, int direction,int num, String target) throws RemoteException {		
 		try {
+			if(dataID.get(num) == null)
+			log("Inserting" + target + " at: " + num + " in level " + level + "in direction " + direction);
 			int dataIdx = dataID.get(num);
 			// If the current node and the inserted node have common bits more than the current level,
 			// then this node is the neighbor so we return it
@@ -365,7 +368,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			int dif = Math.abs(num-data.get(0).getNumID());
 			int best = 0 ;
 			for(int i=1 ; i<dataNum ; ++i)
-				if(Math.abs(data.get(i).getNumID()-num) < dif) {
+				if(Math.abs(data.get(i).getNumID()-num) < dif ) {
 					dif = Math.abs(data.get(i).getNumID()-num);
 					best = i;
 				}
@@ -397,14 +400,14 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
 			// Keep going down levels as long as there is either no right neighbor
 			// or the right neighbor has a numID greater than the target
-			while(level >= ZERO_LEVEL && (lookup[level][1][dataIdx] == null || lookup[level][1][dataIdx].getNumID() > targetInt))
+			while(level >= ZERO_LEVEL && (lookup[level][RIGHT][dataIdx] == null || lookup[level][RIGHT][dataIdx].getNumID() > targetInt))
 				level--;
 			// If there are no more levels to go down to return the current node
 			if(level < ZERO_LEVEL) {
 				return lst;
 			}
 			// delegate the search to the right neighbor
-			RMIInterface rightRMI = getRMI(lookup[level][1][dataIdx].getAddress());
+			RMIInterface rightRMI = getRMI(lookup[level][RIGHT][dataIdx].getAddress());
 			try{
 				return rightRMI.searchNum(targetInt,level,lst);
 			}catch(Exception e) {

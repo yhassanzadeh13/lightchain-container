@@ -346,11 +346,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			insert(new NodeInfo(getAddress(),ZERO_ID,newBlk.getH()));
 			// iterate over transaction of this block and insert a transaction pointer corresponding to
 			// each of the pointers, and then asks every owner to delete this node from the overlay
-			for(int i=0 ; i<tList.size(); ++i) {
-				//insert(new NodeInfo(getAddress(),newBlk.getNumID(),numToName(tList.get(i).getOwner())));
-				LightChainRMIInterface tRMI = getLightChainRMI(tList.get(i).getAddress());
-				tRMI.delete(tList.get(i).getNumID());
-			}
+//			for(int i=0 ; i<tList.size(); ++i) {
+//				//insert(new NodeInfo(getAddress(),newBlk.getNumID(),numToName(tList.get(i).getOwner())));
+//				LightChainRMIInterface tRMI = getLightChainRMI(tList.get(i).getAddress());
+//				tRMI.delete(tList.get(i).getNumID());
+//			}
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;
@@ -579,6 +579,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 					return null;
 				}
 			}
+			log("Block Validation Successful");
 			String signedHash = digitalSignature.signString(blk.getH());
 			return signedHash;
 		} catch (Exception e) {
@@ -1020,7 +1021,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				createNewTransaction(System.currentTimeMillis()+i+""+rnd.nextDouble());
 				Thread.sleep((1000*pace + (rnd.nextInt(20000)-10000))/2);//wait for (pace +- 10 seconds)/2 
 				updateViewTable();
-				if(i%2 == 0) {
+				if(i%1 == 0) {
 					Thread.sleep(rnd.nextInt(5000));
 					viewUpdate();
 				}
