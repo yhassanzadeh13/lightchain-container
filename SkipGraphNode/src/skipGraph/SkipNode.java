@@ -467,7 +467,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 */
 	public int getBestName(String name,int direction) {
 		try {
-			int num = 0;
+			int num = data.get(0).getNumID();
 			int best = 0;
 			int val = commonBits(name,data.get(0).getNameID());
 			for(int i=1 ; i<dataNum ; ++i) {
@@ -486,11 +486,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 							best = i;
 							num = data.get(i).getNumID();
 						}
-					}else {
-						if(data.get(i).getNumID() < num) {
+					}else if(data.get(i).getNumID() < num) {
 							best = i;
 							num = data.get(i).getNumID();	
-						}
 					}
 				}
 			}
@@ -519,7 +517,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			if(data.get(dataIdx).getNameID().equals(searchTarget)) // if the current node hold the same nameID, return it.
 				return data.get(dataIdx);
 			// calculate common bits to find to which level the search must be routed
-			int newLevel = commonBits(searchTarget); 
+			int newLevel = commonBits(searchTarget,data.get(dataIdx).getNameID()); 
 			
 			// If the number of common bits is not more than the current level
 			// then we continue the search in the same level in the same direction

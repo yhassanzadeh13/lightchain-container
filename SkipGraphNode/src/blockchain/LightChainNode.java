@@ -91,7 +91,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("172.16.114.35:3001");
+			LightChainRMIInterface intro = getLightChainRMI("172.20.132.117:3001");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
@@ -1020,7 +1020,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				createNewTransaction(System.currentTimeMillis()+i+""+rnd.nextDouble());
 				Thread.sleep((1000*pace + (rnd.nextInt(20000)-10000))/2);//wait for (pace +- 10 seconds)/2 
 				updateViewTable();
-				if(i%3 == 0) {
+				if(i%2 == 0) {
 					Thread.sleep(rnd.nextInt(5000));
 					viewUpdate();
 				}
