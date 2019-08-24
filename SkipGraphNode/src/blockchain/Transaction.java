@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import hashing.Hasher;
 import hashing.HashingTools;
+import signature.SignedBytes;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 
@@ -14,7 +15,7 @@ public class Transaction extends NodeInfo{
 	private final int owner;
 	private final String cont;//Use random string for this
 	private final String h;//Hash
-	private ArrayList<String> sigma;
+	private ArrayList<SignedBytes> sigma;
 	private Hasher hasher;
 	
 	// need to add address to transaction
@@ -29,7 +30,7 @@ public class Transaction extends NodeInfo{
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	
-	public ArrayList<String> getSigma(){
+	public ArrayList<SignedBytes> getSigma(){
 		return sigma;
 	}
 	
@@ -46,7 +47,7 @@ public class Transaction extends NodeInfo{
 	public String getH() {
 		return h;
 	}
-	public void setSigma(ArrayList<String> s) {
+	public void setSigma(ArrayList<SignedBytes> s) {
 		sigma = s;
 	}
 	public String toString() {

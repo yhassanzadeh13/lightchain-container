@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import hashing.Hasher;
 import hashing.HashingTools;
+import signature.SignedBytes;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 
@@ -15,7 +16,7 @@ public class Block extends NodeInfo{
 	private final int owner;
 	private ArrayList<Transaction> S;
 	private final String h;
-	private ArrayList<String> sigma;
+	private ArrayList<SignedBytes> sigma;
 	private Hasher hasher ;
 	private final int index;
 	
@@ -59,10 +60,10 @@ public class Block extends NodeInfo{
 	public String getH() {
 		return h;
 	}
-	public ArrayList<String> getSigma(){
+	public ArrayList<SignedBytes> getSigma(){
 		return sigma;
 	}
-	public void setSigma(ArrayList<String> s) {
+	public void setSigma(ArrayList<SignedBytes> s) {
 		sigma = s;
 	}
 	public void addTransactions(ArrayList<Transaction> tList) {

@@ -5,11 +5,12 @@ import java.security.PublicKey;
 
 import remoteTest.Configuration;
 import remoteTest.TestingLog;
+import signature.SignedBytes;
 import skipGraph.RMIInterface;
 
 public interface LightChainRMIInterface extends RMIInterface {
-	public String PoV(Transaction t) throws RemoteException ;
-	public String PoV(Block blk) throws RemoteException ;
+	public SignedBytes PoV(Transaction t) throws RemoteException ;
+	public SignedBytes PoV(Block blk) throws RemoteException ;
 	public int getMode() throws RemoteException;
 	public PublicKey getPublicKey() throws RemoteException ;
 	

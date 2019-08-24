@@ -152,16 +152,16 @@ public class DigitalSignature {
 	/*
 	 * This method takes a string, signs it, and then returns the signed string
 	 */
-	public String signString(String text) {
+	public SignedBytes signString(String text) {
 		
 		Signature signature;
 		try {	
 			signature = Signature.getInstance(signAlgorithm);
 			signature.initSign(privateKey);
-			byte[] data = text.getBytes();
+			byte[] data = text.getBytes("UTF-8");
 			signature.update(data);
 			byte[] signed = signature.sign();
-			return new String(signed);
+			return new SignedBytes(signed);
 			
 		} catch (Exception e) {
 			log("Exception caught: " + e.toString());
@@ -202,7 +202,7 @@ public class DigitalSignature {
 	 * This methods receives a string and the signed data and verifies it
 	 * It returns true if the operation is successful and false otherwise
 	 */
-	public boolean verifyString(String data, String signedData, PublicKey pKey) {
+	public boolean verifyString(String data, SignedBytes signedData, PublicKey pKey) {
 			
 		Signature signature ;
 		try {

@@ -66,7 +66,7 @@ public class RemoteAccessTool {
 				while(true) {
 					printMenu();
 					String input = get();
-					if(!input.matches("[1-9][0-9]*")) {
+					if(!input.matches("[0-9]+")) {
 						log("Invalid query. Please enter the number of one of the possible operations");
 						continue;
 					}
@@ -622,7 +622,7 @@ public class RemoteAccessTool {
 			LightChainRMIInterface curRMI = getRMI(nodeList.get(ind).getAddress());
 			try {
 				curRMI.shutDown();
-			} catch (RemoteException e) {
+			} catch (Exception e) {
 				//No need (it will always throw an error)
 			}
 			latch.countDown();
