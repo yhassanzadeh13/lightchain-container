@@ -91,7 +91,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("172.20.132.117:3001");
+			LightChainRMIInterface intro = getLightChainRMI(grabIP()+":3001");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
@@ -1031,6 +1031,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			e.printStackTrace();
 		}
 		return testLog;
+	}
+	
+	public TestingLog getTestLog() throws RemoteException {
+		return testLog;
+	}
+	
+	public void printLog(String name) throws RemoteException {
+		
 	}
 	
 	public void shutDown() throws RemoteException{
