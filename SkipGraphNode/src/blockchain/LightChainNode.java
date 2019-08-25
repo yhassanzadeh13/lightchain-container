@@ -14,6 +14,7 @@ import hashing.Hasher;
 import remoteTest.Configuration;
 import remoteTest.TestingLog;
 import signature.DigitalSignature;
+import signature.SignedBytes;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 
@@ -100,6 +101,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		//Setting the SkipNode in the SkipNode class to the same thing
 		SkipNode.node = lightChainNode;
 		if(testingMode == 2) lightChainNode.insert(new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
+		
+		//Initializing the testLog
+		testLog = new TestingLog(mode==0);
 		
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", lightChainNode);
@@ -481,15 +485,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				malTrials++;
 			}
 			ArrayList<NodeInfo> validators = getValidators(blk);
-			ArrayList<String> sigma = new ArrayList<>();
+			ArrayList<SignedBytes> sigma = new ArrayList<>();
 			// add the owner's signature to the block
-			String mySign = digitalSignature.signString(blk.getH());
+			SignedBytes mySign = digitalSignature.signString(blk.getH());
 			sigma.add(mySign);
 			blk.setSigma(sigma);
 			// iterate over validators and ask them to validate the block
 			for(int i=0 ; i<validators.size() ; ++i) {
 				LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
-				String signature = node.PoV(blk);
+				SignedBytes signature = node.PoV(blk);
 				// if one validator returns null, then validation has failed
 				if(signature == null) {
 					log("Validating Block failed.");
@@ -529,16 +533,18 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// obtain validators
 			ArrayList<NodeInfo> validators = getValidators(t);
 			// define an empty list
-			ArrayList<String> sigma = new ArrayList<>();
+			ArrayList<SignedBytes> sigma = new ArrayList<>();
 			// add the owner's signature of the transaction's hash value to the sigma
-			String mySign = digitalSignature.signString(t.getH());
+			SignedBytes mySign = digitalSignature.signString(t.getH());
 			sigma.add(mySign);
 			t.setSigma(sigma);
+			
+			if(!isAuthenticated(t)) log("The transactiton could not be validated even by the node itself."); 
 			
 			// iterate over validators and use RMI to ask them to validate the transaction
 			for(int i=0 ; i<validators.size(); ++i) {
 				LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
-				String signature = node.PoV(t);
+				SignedBytes signature = node.PoV(t);
 				// if a validators returns null that means the validation has failed
 				if(signature == null) {
 					log("Validating Transaction failed.");
@@ -569,7 +575,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * 	2) Consistency
 	 * 	3) Authenticity and soundness of the transactions it contains.
 	 */
-	public String PoV(Block blk) throws RemoteException {
+	public SignedBytes PoV(Block blk) throws RemoteException {
 		try {
 			updateViewTable();
 			log("Validating block for " + blk.getOwner());
@@ -585,7 +591,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				}
 			}
 			log("Block Validation Successful");
-			String signedHash = digitalSignature.signString(blk.getH());
+			SignedBytes signedHash = digitalSignature.signString(blk.getH());
 			return signedHash;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -615,7 +621,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return false;
 			}
 			// get the sigma array of the block
-			ArrayList<String> blkSigma = blk.getSigma();
+			ArrayList<SignedBytes> blkSigma = blk.getSigma();
 			// retrieve the public key of the owner of the block
 			PublicKey ownerPublicKey = getOwnerPublicKey(blk.getOwner());
 			boolean verified = false;
@@ -702,15 +708,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * returns null in case any of the tests fails, otherwise it signs the hashvalue of the transaction
 	 * and sends the signed value to the owner.
 	 */
-	public String PoV(Transaction t) throws RemoteException {
+	public SignedBytes PoV(Transaction t) throws RemoteException {
 		try {
 			updateViewTable();
 			log("Validating Transaction for " + t.getOwner());
 			boolean val = isAuthenticated(t) && isCorrect(t) && isSound(t) && hasBalanceCompliance(t);
 			if(val == false)
 				return null;
-			String signedHash = digitalSignature.signString(t.getH());
 			log("Transaction Validation Successful");
+			SignedBytes signedHash = digitalSignature.signString(t.getH());
 			return signedHash;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -820,7 +826,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return false;
 			}
 			// now get the sigma array from transaction and iterate over signatures it contains
-			ArrayList<String> tSigma = t.getSigma();
+			ArrayList<SignedBytes> tSigma = t.getSigma();
 			PublicKey ownerPublicKey = getOwnerPublicKey(t.getOwner());
 			boolean verified = false;
 			if(ownerPublicKey == null)
@@ -1037,6 +1043,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			e.printStackTrace();
 		}
 		return testLog;
+	}
+	
+	public TestingLog getTestLog() throws RemoteException {
+		return testLog;
+	}
+	
+	public void printLog(String name) throws RemoteException {
+		
 	}
 	
 	public void shutDown() throws RemoteException{

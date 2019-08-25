@@ -66,7 +66,7 @@ public class RemoteAccessTool {
 				while(true) {
 					printMenu();
 					String input = get();
-					if(!input.matches("11|10|[0-9]")) {
+					if(!input.matches("[0-9]+")) {
 						log("Invalid query. Please enter the number of one of the possible operations");
 						continue;
 					}
@@ -159,6 +159,12 @@ public class RemoteAccessTool {
 						for(NodeInfo el : nodeList) {
 							System.out.println(el.getAddress()+"\t"+el.getNameID()+"\t"+el.getNumID());
 						}
+					}else if(query == 12) {
+						node.printLog("TestingLog_" + node.getNumID());
+					}else if(query == 13) {
+						printAllLogs();
+					}else {
+						log("No matching query.");
 					}
 				}
 			}catch(Exception e)
@@ -186,6 +192,8 @@ public class RemoteAccessTool {
         log("9-Exit");
         log("10-Shut down all instances");
         log("11-Print all nodes");
+        log("12-Print node's log (to csv)");
+        log("13-Grab and print all logs");
 	}
 	
 	/*
@@ -238,6 +246,14 @@ public class RemoteAccessTool {
 			e.printStackTrace();
 		}
 	
+		printTestingLog();
+	}
+
+	/*
+	 * Print Testing Log
+	 */
+	
+	private static void printTestingLog() {
 		try {
 			PrintWriter writer = new PrintWriter(new File("TestingLog" + System.currentTimeMillis()%200 + ".csv"));
 			StringBuilder sb = new StringBuilder();
@@ -267,7 +283,6 @@ public class RemoteAccessTool {
 		}catch(IOException e) {
 			e.printStackTrace();
 		}
-		
 	}
 	
 	
@@ -372,6 +387,24 @@ public class RemoteAccessTool {
 		}catch(Exception e) {
 			//Not needed since they will always throw an exception 
 		}
+	}
+	
+	/*
+	 * Grabs all the testing logs from all the nodes and prints them to CSV (Use this in case an exception arises during testing and you want
+	 * to recover the logs
+	 */
+	
+	private static void printAllLogs() {
+		TestingLogMap = new ConcurrentHashMap<>();
+		for(NodeInfo node : nodeList) {
+			try {
+				LightChainRMIInterface cur = getRMI(node.getAddress());
+				TestingLogMap.put(node, cur.getTestLog());
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		printTestingLog();
 	}
 	
 	/*
@@ -589,8 +622,8 @@ public class RemoteAccessTool {
 			LightChainRMIInterface curRMI = getRMI(nodeList.get(ind).getAddress());
 			try {
 				curRMI.shutDown();
-			} catch (RemoteException e) {
-				e.printStackTrace();
+			} catch (Exception e) {
+				//No need (it will always throw an error)
 			}
 			latch.countDown();
 		}
