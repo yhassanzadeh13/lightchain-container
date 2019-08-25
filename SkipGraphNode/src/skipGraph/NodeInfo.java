@@ -42,4 +42,8 @@ public class NodeInfo implements Serializable {
 				numID == node.getNumID() && 
 				nameID.equals(node.getNameID()); 
 	}
+	@Override
+	public String toString() {
+		return "Node: address: " + address + "\tnumID: " + numID + "\tnameID: " + nameID;
+	}
 }

@@ -17,6 +17,7 @@ import java.util.Scanner;
 import hashing.HashingTools;
 import remoteTest.Configuration;
 import remoteTest.PingLog;
+import remoteTest.TestingLog;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
@@ -48,6 +49,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	private static final int ZERO_LEVEL = 0;
 	private static final int UNASSIGNED = -1;
 	public static int TRUNC = 30;
+	
+	/*
+	 * For simulations
+	 */
+	protected static TestingLog testLog;
 	
 	/*
 	 * Constructor for SkipNode class
@@ -192,7 +198,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		try {
 			if(dataID.get(num) == null)
 			log("Inserting" + target + " at: " + num + " in level " + level + "in direction " + direction);
-			int dataIdx = dataID.get(num);
+			int dataIdx=0;
+			try{
+				dataIdx = dataID.get(num);
+			}catch(Exception e) {
+				testLog.logException(e, "dataID: " + dataID + "num: " + num + (data==null?"":data.toString()));
+			}
 			// If the current node and the inserted node have common bits more than the current level,
 			// then this node is the neighbor so we return it
 			if(commonBits(target,data.get(dataIdx).getNameID()) > level) 
@@ -318,7 +329,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					
 					if(lft != null) {
 						RMIInterface lftRMI = getRMI(lft.getAddress());
-						log("Left node at level " + (level+1) + " is: " + lft.getAddress() + " " + lft.getNumID() + " " + lft.getNameID());
+						//log("Left node at level " + (level+1) + " is: " + lft.getAddress() + " " + lft.getNumID() + " " + lft.getNameID());
 						lftRMI.setRightNode(level+1,node, lft.getNumID());
 						left = lft.getAddress();
 						leftNum = lft.getNumID();
@@ -338,8 +349,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					
 					if(rit != null) {
 						RMIInterface ritRMI = getRMI(rit.getAddress());
-						log("Right node at level " + (level+1) + " is: " + rit.getAddress() + " " + rit.getNumID() + " " + rit.getNameID());
-						
+						//log("Right node at level " + (level+1) + " is: " + rit.getAddress() + " " + rit.getNumID() + " " + rit.getNameID());
 						ritRMI.setLeftNode(level+1, node, rit.getNumID());
 						right = rit.getAddress();
 						rightNum = rit.getNumID();
@@ -410,6 +420,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			RMIInterface rightRMI = getRMI(lookup[level][RIGHT][dataIdx].getAddress());
 			try{
 				return rightRMI.searchNum(targetInt,level,lst);
+			}catch(StackOverflowError e) {
+				testLog.logOverflow(e, data, "Overflow in searchNum.\ntargetint: "+ targetInt + "\tlevel: "+level,lst);
+			
+				return null;
 			}catch(Exception e) {
 				log("Exception in searchNum. Target: "+targetInt);
 				return lst;
@@ -427,6 +441,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			RMIInterface leftRMI = getRMI(lookup[level][LEFT][dataIdx].getAddress());
 			try{
 				return leftRMI.searchNum(targetInt, level, lst);
+			}catch(StackOverflowError e) {
+				testLog.logOverflow(e, data, "Overflow in searchNum.\ntargetint: "+ targetInt + "\tlevel: "+level,lst);
+			
+				return null;
 			}catch(Exception e) {
 				log("Exception in searchNum. Target: "+targetInt);
 				return lst;
@@ -556,7 +574,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					result = k;
 			}
 			return result;
-		} catch (Exception e) {
+		}catch(StackOverflowError e) {
+			testLog.logOverflow(e, data, "Overflow in searchName.\nSearch target: "+ searchTarget + "\tlevel: "+level+" direction: "+ direction);
+			return null;
+		}catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}			

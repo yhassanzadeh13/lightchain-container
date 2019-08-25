@@ -9,6 +9,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -163,6 +164,37 @@ public class RemoteAccessTool {
 						node.printLog("TestingLog_" + node.getNumID());
 					}else if(query == 13) {
 						printAllLogs();
+					}else if(query == 14) {
+						log("Enter the numID of the node that you want to check if it is reachable:");
+						String st = get();
+						try {
+							int inp = Integer.parseInt(st);
+							checkIfReachable(inp);
+						}catch(Exception e) {
+							log("Invalid number, aborting...");
+						}
+					}else if(query == 15) {
+						grabUniqueNodes();
+						PrintWriter erpw = new PrintWriter(new File("ErrorLog.txt"));
+						PrintWriter expw = new PrintWriter(new File("ExceptionLog.txt"));
+						for(NodeInfo cur : nodeList) {
+							try {
+								log("Node: " + cur);
+								LightChainRMIInterface curRMI = getRMI(cur.getAddress());
+								TestingLog lg = curRMI.getTestLog();//.printExceptionLogs();
+								lg.printExceptionLogs(expw);
+								lg.printOverflowLogs(erpw);
+							}catch(Exception e) {
+								log("Error printing errors.");
+								e.printStackTrace();
+							}
+						}
+					}else if(query == 16) {
+						long ind = System.currentTimeMillis()%100;
+						grabUniqueNodes();
+						Configuration.generateConfigFile(nodeList, "node"+ind+".conf");
+						grabAllNodes();
+						Configuration.generateConfigFile(nodeList,  "node_with_data"+ind+".conf");
 					}else {
 						log("No matching query.");
 					}
@@ -194,6 +226,9 @@ public class RemoteAccessTool {
         log("11-Print all nodes");
         log("12-Print node's log (to csv)");
         log("13-Grab and print all logs");
+        log("14-Check if a node is reachable.");
+        log("15-Print logged exceptions");
+        log("16-Generate config file of skipGraph.");
 	}
 	
 	/*
@@ -205,7 +240,7 @@ public class RemoteAccessTool {
 		TestingLogMap = new ConcurrentHashMap<>();
 		
 		//Grab all the nodes so we can communicate with them
-		grabAllNodes();
+		grabUniqueNodes();
 		
 		//Simulation variables
 		int numTransactions; //Number of transactions to insert per node
@@ -320,7 +355,7 @@ public class RemoteAccessTool {
 			inp = get();
 		}
 		numAtts = Integer.parseInt(inp);
-		grabAllNodes();
+		grabUniqueNodes();
 		
 		int sz = nodeList.size();
 		for(int k=0;k<numAtts;k++) {
@@ -375,7 +410,7 @@ public class RemoteAccessTool {
 	 */
 
 	private static void initiateShutDown() {
-		grabAllNodes();
+		grabUniqueNodes();
 		int sz = nodeList.size();
 		try{
 			CountDownLatch ltch = new CountDownLatch(sz);
@@ -428,6 +463,53 @@ public class RemoteAccessTool {
 		return;
 	}
 	
+	public static void grabUniqueNodes(){//To filter out transactions and blocks
+		NodeInfo curNode = null;
+		HashSet<String> addresses = new HashSet<String>();
+		nodeList = new ArrayList<>();
+		try {
+			curNode = node.searchByNumID(0);
+			while(curNode!=null) {
+				addresses.add(curNode.getAddress());
+				RMIInterface curRMI = getRMI(curNode.getAddress());
+				curNode = curRMI.getRightNode(0, curNode.getNumID());
+			}
+			for(String adrs : addresses) {
+				RMIInterface curRMI = getRMI(adrs);
+				nodeList.add(curRMI.getNode(curRMI.getNumID()));
+			}
+		}catch(RemoteException e) {
+			e.printStackTrace();
+			return;
+		}
+		System.out.println("Total number of nodes: " + nodeList.size());
+		return;
+	}
+	
+	public static boolean checkIfReachable(int numID) {
+		grabAllNodes();
+		NodeInfo[][][] curlookup;
+		boolean flag = false;
+		for(NodeInfo cur : nodeList) {
+			try {
+				RMIInterface nd = getRMI(cur.getAddress());
+				curlookup = nd.getLookupTable();
+				for(int i=0;i<curlookup.length;i++) {
+					for(int j=0;j<curlookup[0].length;j++) {
+						for(int k=0;k<curlookup[0][0].length;k++) {
+							if(curlookup[i][j][k]!=null && curlookup[i][j][k].getNumID() == numID) {
+								log("The numID "+ numID + " is reachable from the following parameters.\nNode: "+cur+"\ni: "+i+" j:"+j+" k:"+k);
+								flag = true;
+							}
+						}
+					}
+				}
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return flag;
+	}
 	
 	
 	/*
