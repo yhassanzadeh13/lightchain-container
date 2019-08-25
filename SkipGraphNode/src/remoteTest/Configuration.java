@@ -1,11 +1,16 @@
 package remoteTest;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Properties;
+
+import skipGraph.NodeInfo;
 
 //Configuration stores config needed to spin up a SkipGraph node
 //current fields:
@@ -72,24 +77,23 @@ public final class Configuration implements Serializable{
 			in = new BufferedReader(new FileReader(defaultPath));
 			String input = in.readLine();
 			int n = Integer.parseInt(input);
-			for(int i = 0 ; i < n ; i++) {
-				String introducer="none";
-				String nameID="1111";
-				String numID="1";
-				String port="1099";
-				boolean malicious;
-				introducer = in.readLine().split("=")[1];
-				//nameID = in.readLine().split("=")[1];
-				//numID = in.readLine().split("=")[1];
-				port = in.readLine().split("=")[1];
-				malicious = Boolean.parseBoolean(in.readLine().split("=")[1]);
-				lst.add(new Configuration(introducer,nameID,numID,port,malicious));
+			while((input = in.readLine()) != null) {
+				String[] tokens = input.split("=");
+				if(tokens.length<2) {
+					System.out.println("Error in parsing configurations. Please double check the configuration file. Line: "+ input + " is not valid.");
+				}
+				Configuration cur = assign(tokens[0],tokens[1]);
+				if(cur!=null) lst.add(cur);
+			}
+			Configuration cur = finalizeAssign();
+			if(cur!=null) lst.add(cur);
+			if(lst.size() != n) {
+				System.out.println("Number of configurations given does not match the number of configurations parsed!");
 			}
 			in.close();
 		} catch (Exception e) {
 			System.out.println(defaultPath);
 		}
-
 		return lst;
 	}
 
@@ -127,5 +131,74 @@ public final class Configuration implements Serializable{
 	
 	public boolean isMalicious() {
 		return malicious;
+	}
+	
+	//To make parsing configurations more generic
+	private static Configuration currentConfig = new Configuration();
+	private static boolean[] assigned = new boolean[5];
+	private static Configuration assign(String propertyName, String value) {
+		Configuration ret = null; //Return null by default, if we encounter a property that has been set before, return the built configuration and start making a new one.
+		switch(propertyName) {
+			case "introducer" : if(assigned[0]) break; assigned[0]=true; currentConfig.setIntroducer(value); return ret;
+			case "numID" : if(assigned[1]) break; assigned[1]=true; currentConfig.setNumID(value); return ret;
+			case "nameID" : if(assigned[2]) break; assigned[2]=true; currentConfig.setNameID(value); return ret;
+			case "port" : if(assigned[3]) break; assigned[3]=true; currentConfig.setPort(value); return ret;
+			case "malicious" : if(assigned[4]) break; assigned[4]=true; currentConfig.setMalicious(Boolean.parseBoolean(value)); return ret;
+			default: System.out.println("Property: "+propertyName+" in config file not recognized! Please double check the config file and keep in mind"+
+										" that config files are case sensitive. Valid flags: 'introducer', 'numID', 'nameID', 'port', 'malicious'");
+		}//If we reach this stage, this means that we have a ready config file for return.
+		for(int i=0;i<assigned.length;i++) { //reset all flags
+			assigned[i] = false;
+		}
+		ret = currentConfig;
+		currentConfig = new Configuration();
+		assign(propertyName,value);
+		return ret;
+	}
+	private static Configuration finalizeAssign() {
+		Configuration ret = currentConfig;
+		currentConfig = new Configuration();
+		return ret;
+	}
+	
+	public static void generateConfigFile(ArrayList<NodeInfo> lst) {
+		generateConfigFile(lst, "node_"+System.currentTimeMillis()%100+".conf");
+	}
+	
+	public static void generateConfigFile(ArrayList<NodeInfo> lst, String filePath) {
+		try {
+			if(filePath.length()<5 || !filePath.substring(filePath.length()-5).equalsIgnoreCase(".conf")) {
+				filePath = filePath+".conf";
+			}
+			PrintWriter writer = new PrintWriter(new File(filePath));
+			writer.println(lst.size());
+			int prt=45000;
+			for(NodeInfo cur : lst) {
+				writer.println("introducer=none");//Default values
+				writer.println("nameID="+cur.getNameID());
+				writer.println("numID="+cur.getNumID());
+				writer.println("port="+prt++);//Default values
+				writer.println("malicious=false");//Default values
+			}
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void setNameID(String nameID) {
+		this.nameID = nameID;
+	}
+
+	public void setNumID(String numID) {
+		this.numID = numID;
+	}
+
+	public void setPort(String port) {
+		this.port = port;
+	}
+
+	public void setMalicious(boolean malicious) {
+		this.malicious = malicious;
 	}
 }

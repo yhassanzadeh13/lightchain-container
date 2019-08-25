@@ -51,7 +51,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	private static long malTrials = 0; 
 	private static long malSuccess = 0;
-	private static TestingLog testLog;
 	
 	/*
 	 * For slave/master operation
@@ -87,7 +86,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			for(int i = 0;i<cnfs.size();i++) {
 				Configuration tmp = cnfs.get(i);
 				tmp.setIntroducer(address);
-				System.out.println(tmp.isMalicious());
 			}
 		}else {
 			Configuration cnf = new Configuration();

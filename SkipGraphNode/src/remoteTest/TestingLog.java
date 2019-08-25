@@ -1,7 +1,11 @@
 package remoteTest;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.ArrayList;
+
+import skipGraph.NodeInfo;
 
 public class TestingLog implements Serializable, Comparable<TestingLog>{
 	
@@ -13,6 +17,8 @@ public class TestingLog implements Serializable, Comparable<TestingLog>{
 	private ArrayList<TransactionLog> transactionAttempts;
 	private ArrayList<ViewUpdateLog> viewUpdateLog;
 	private ViewUpdateLog curLog;
+	private ArrayList<ExceptionLog> exceptions;
+	private ArrayList<StackOverflowLog> overflows;
 	
 	public TestingLog(boolean malicious) {
 		this.malicious=malicious;
@@ -21,15 +27,62 @@ public class TestingLog implements Serializable, Comparable<TestingLog>{
 		transactionAttempts = new ArrayList<>();
 		viewUpdateLog = new ArrayList<>();
 		curLog = new ViewUpdateLog();
-
+		exceptions = new ArrayList<>();
+		overflows = new ArrayList<>();
+	}
+	
+	public void logException(Exception e, String st) {
+		exceptions.add(new ExceptionLog(e,st));
+	}
+	
+	public void logException(Exception e) {
+		exceptions.add(new ExceptionLog(e));
+	}
+	
+	public ArrayList<ExceptionLog> getExceptions(){
+		return exceptions;
+	}
+	
+	public void printExceptionLogs() {
+		for(ExceptionLog cur : exceptions) {
+			System.out.println(cur);
+		}
+	}
+	
+	public void printExceptionLogs(PrintWriter pw) {
+		for(ExceptionLog cur : exceptions) {
+			pw.println(cur);
+		}
+	}
+	
+	public void logOverflow(Error e, ArrayList<NodeInfo> graph, String st) {
+		overflows.add(new StackOverflowLog(e,graph,st));
+	}
+	
+	public void logOverflow(Error e, ArrayList<NodeInfo> graph, String st, ArrayList<NodeInfo> lst) {
+		overflows.add(new StackOverflowLog(e,graph,st,lst));
+	}
+	
+	public ArrayList<StackOverflowLog> getOverflows(){
+		return overflows;
+	}
+	
+	public void printOverflowLogs() {
+		for(StackOverflowLog cur : overflows) {
+			System.out.println(cur);
+		}
+	}
+	
+	public void printOverflowLogs(PrintWriter pw) {
+		for(StackOverflowLog cur : overflows) {
+			pw.println(cur);
+		}
 	}
 	
 	public void logTransaction(boolean success, long timeTaken) {
 		transactionAttempts.add(new TransactionLog(success,timeTaken));
-		//if(malicious) {
-			Attempts++;
-			if(success) Success++;
-		//}
+		Attempts++;
+		if(success) Success++;
 	}
 	
 	public void logBlockValidation(long time, boolean success) {
@@ -177,6 +230,81 @@ class TransactionLog implements Serializable, Comparable<TransactionLog>{
 	public String toString() {
 		return timeTaken+","+success;
 	}
+}
+
+class ExceptionLog implements Serializable{
+	private static final long serialVersionUID = 1L;
+	private Exception exception;
+	private String description;
 	
+	public ExceptionLog(Exception e, String description) {
+		this.exception=e;
+		this.description=description;
+	}
 	
+	public ExceptionLog(Exception e) {
+		this.exception=e;
+		this.description="No description provided.";
+	}
+
+	@Override
+	public String toString() {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		exception.printStackTrace(pw);
+		return "Description:" + description + "\n Exception:\n" + sw.toString();
+	}
+}
+
+class StackOverflowLog implements Serializable{
+	private static final long serialVersionUID = 1L;
+	private Error error;
+	private ArrayList<NodeInfo> graph;
+	private ArrayList<NodeInfo> path;
+	private String description;
+	
+	public StackOverflowLog(Error error,ArrayList<NodeInfo> graph, String desc) {
+		this.error = error;
+		this.graph = new ArrayList<>();
+		this.graph.addAll(graph);
+		this.description = desc;
+	}
+	
+	public StackOverflowLog(Error error,ArrayList<NodeInfo> graph, String desc,ArrayList<NodeInfo> path) {
+		this.error = error;
+		this.graph = new ArrayList<>();
+		this.graph.addAll(graph);
+		this.description = desc;
+		this.path = path;
+	}
+	
+	@Override
+	public String toString() {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		error.printStackTrace(pw);
+		StringBuilder sb = new StringBuilder();
+		sb.append("Description: "+ description + "\n");
+		sb.append("Nodes: \n");
+		int cnt=1;
+		for(NodeInfo nd : graph) {
+			sb.append("\n"+cnt++ + ") "+nd.getAddress()+" " + nd.getNameID() + " " + nd.getNumID());
+		}
+		sb.append("Exception:\n ");
+		String tmp = sw.toString();
+		String[] toks = tmp.split("\n");
+		for(int i=0;i<toks.length;i++) {
+			if(i!=0 && !toks[i].equalsIgnoreCase(toks[i-1])) {
+				sb.append(toks[i]+"\n");
+			}
+		}
+		if(path!=null) {
+			cnt = 1;
+			for(NodeInfo nd : path) {
+				sb.append("\n"+cnt++ + ") "+nd.getAddress()+" " + nd.getNameID() + " " + nd.getNumID());
+			}
+		}
+		sb.append("\n");
+		return sb.toString();
+	}
 }
