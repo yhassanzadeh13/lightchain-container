@@ -91,10 +91,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("172.20.132.117:3001");
+			LightChainRMIInterface intro = getLightChainRMI("172.16.114.35:3001");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
-			mode = cnf.isMalicious()?MALICIOUS:HONEST;			
+			mode = cnf.isMalicious()?MALICIOUS:HONEST;
 			System.out.println("MODE = " + mode);
 		}
 		//Setting the SkipNode in the SkipNode class to the same thing
@@ -159,7 +159,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         log("5-Search By Numeric ID");
         log("6-Print the Lookup Table");
         log("7-Update View Table");
-        log("8-Update view");
+        log("8-Print Data");
+        log("9-Print Level");
 	}
 	
 	/*
@@ -252,10 +253,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				printLookup(num);
 			else
 				log("Data node with given index does not exist");
-		}else if(query == 7) { // delete dataNode
+		}else if(query == 7) { // delete dataNode{
 			updateViewTable();
-		}else if (query == 8) { // viewUpdate
 			viewUpdate();
+		}else if (query == 8) { // viewUpdate
+			printData();
 		}else if (query == 9) {
 			log("Which Level");
 			int num = Integer.parseInt(get());
@@ -339,9 +341,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// insert new block after it was validated
 			insert(newBlk);
 			// contact the owner of the previous block and let him withdraw his flag data node.
-			NodeInfo prevOwner = searchByNumID(blk.getOwner());
-			LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevOwner.getAddress());
-			prevOwnerRMI.delete(ZERO_ID);
+			if(blk.getAddress().equals(getAddress())) {
+				delete(ZERO_ID);
+			}else {
+				LightChainRMIInterface prevOwnerRMI = getLightChainRMI(blk.getAddress());
+				prevOwnerRMI.delete(ZERO_ID);
+			}
 			// insert flag node for this block
 			insert(new NodeInfo(getAddress(),ZERO_ID,newBlk.getH()));
 			// iterate over transaction of this block and insert a transaction pointer corresponding to
@@ -705,6 +710,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if(val == false)
 				return null;
 			String signedHash = digitalSignature.signString(t.getH());
+			log("Transaction Validation Successful");
 			return signedHash;
 		} catch (Exception e) {
 			e.printStackTrace();

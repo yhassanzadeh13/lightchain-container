@@ -29,6 +29,16 @@ public class Transaction extends NodeInfo{
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	
+	public Transaction(Transaction t) {
+		super(t.getAddress(),t.getNumID(),t.getNameID());
+		hasher = new HashingTools();
+		this.prev = t.getPrev();
+		this.owner = t.getOwner();
+		this.cont = t.getCont();
+		this.h = t.getH();
+		this.sigma = t.getSigma();
+	}
+	
 	public ArrayList<String> getSigma(){
 		return sigma;
 	}

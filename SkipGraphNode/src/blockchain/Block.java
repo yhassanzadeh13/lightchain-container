@@ -46,6 +46,16 @@ public class Block extends NodeInfo{
 		this.h = hasher.getHash(prev + owner + sb.toString(),SkipNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
+	public Block(Block blk) {
+		super(blk.getAddress(),blk.getNumID(),blk.getNameID());
+		hasher = new HashingTools();
+		this.index = blk.getIndex();
+		this.prev = blk.getPrev();
+		this.owner= blk.getOwner();
+		this.S = blk.getS();
+		this.h = blk.getH();
+		this.sigma = blk.getSigma();
+	}
 	
 	public String getPrev() {
 		return prev;

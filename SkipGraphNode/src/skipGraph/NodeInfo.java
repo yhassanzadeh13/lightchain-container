@@ -15,6 +15,13 @@ public class NodeInfo implements Serializable {
 		this.numID = num;
 		this.nameID = name;
 	}
+	
+	public NodeInfo(NodeInfo node) {
+		this.address = node.getAddress();
+		this.numID = node.getNumID();
+		this.nameID = node.getNameID();
+	}
+	
 	/*
 	 * Getters and Setters for NodeInfo entries.
 	 */
