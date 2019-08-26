@@ -1,5 +1,6 @@
 package signature;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -67,10 +68,13 @@ public class DigitalSignature {
 	private void storeKeyPair() {
 		
 		try {
-			FileOutputStream out = new FileOutputStream(privateKeyName + ".key");
+			//Initialize folder
+			File parentDir = new File(System.getProperty("user.dir")+File.separator+"Keys");
+			parentDir.mkdirs();
+			FileOutputStream out = new FileOutputStream(System.getProperty("user.dir")+File.separator+"Keys"+File.separator+privateKeyName + ".key");
 			out.write(privateKey.getEncoded());
 			out.close();
-			out = new FileOutputStream(publicKeyName + ".key");
+			out = new FileOutputStream(System.getProperty("user.dir")+File.separator+"Keys"+File.separator+publicKeyName + ".key");
 			out.write(publicKey.getEncoded());
 			out.close();
 			

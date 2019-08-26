@@ -55,7 +55,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * For slave/master operation
 	 */
-	protected static int testingMode = 2;/*
+	protected static int testingMode = 1;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -90,7 +90,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("172.16.114.35:3001");
+			LightChainRMIInterface intro = getLightChainRMI(grabIP()+":1099");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
@@ -1045,10 +1045,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	
 	public TestingLog getTestLog() throws RemoteException {
 		return testLog;
-	}
-	
-	public void printLog(String name) throws RemoteException {
-		
 	}
 	
 	public void shutDown() throws RemoteException{

@@ -24,5 +24,4 @@ public interface LightChainRMIInterface extends RMIInterface {
 	//To shut down all instances
 	public void shutDown() throws RemoteException;
 	public TestingLog getTestLog() throws RemoteException;
-	public void printLog(String name) throws RemoteException;
 }

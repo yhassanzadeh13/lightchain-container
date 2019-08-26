@@ -913,6 +913,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 	public static void logData(String target,String type) {
 		try {
+			File logPath = new File(System.getProperty("user.dir")+File.separator+"Logs"+File.separator+"nodeLogs"+File.separator+type + RMIPort + ".txt");
 			PrintWriter writer = new PrintWriter(new File(type + RMIPort + ".txt"));
 			StringBuilder sb = new StringBuilder();
 			sb.append("Target: " + target + "\n");

@@ -161,7 +161,7 @@ public class RemoteAccessTool {
 							System.out.println(el.getAddress()+"\t"+el.getNameID()+"\t"+el.getNumID());
 						}
 					}else if(query == 12) {
-						node.printLog("TestingLog_" + node.getNumID());
+						printCurrentLog();
 					}else if(query == 13) {
 						printAllLogs();
 					}else if(query == 14) {
@@ -174,21 +174,7 @@ public class RemoteAccessTool {
 							log("Invalid number, aborting...");
 						}
 					}else if(query == 15) {
-						grabUniqueNodes();
-						PrintWriter erpw = new PrintWriter(new File("ErrorLog.txt"));
-						PrintWriter expw = new PrintWriter(new File("ExceptionLog.txt"));
-						for(NodeInfo cur : nodeList) {
-							try {
-								log("Node: " + cur);
-								LightChainRMIInterface curRMI = getRMI(cur.getAddress());
-								TestingLog lg = curRMI.getTestLog();//.printExceptionLogs();
-								lg.printExceptionLogs(expw);
-								lg.printOverflowLogs(erpw);
-							}catch(Exception e) {
-								log("Error printing errors.");
-								e.printStackTrace();
-							}
-						}
+						printAllErrors();
 					}else if(query == 16) {
 						long ind = System.currentTimeMillis()%100;
 						grabUniqueNodes();
@@ -290,13 +276,15 @@ public class RemoteAccessTool {
 	
 	private static void printTestingLog() {
 		try {
-			PrintWriter writer = new PrintWriter(new File("TestingLog" + System.currentTimeMillis()%200 + ".csv"));
+			File logPath = new File(System.getProperty("user.dir")+File.separator+"Logs"+File.separator+"Simulations"+File.separator+"TestingLog" + System.currentTimeMillis()%200 + ".csv");
+			logPath.getParentFile().mkdirs();
+			PrintWriter writer = new PrintWriter(logPath);
 			StringBuilder sb = new StringBuilder();
 			
 			sb.append("NumID,Malicious,Transaction Attempts,Transaction Success,Transaction time(per),Success?,View Update Time (per),"
 					+ "TX>TXMIN?,Validate Block time,Validate success\n");
 			
-			for(NodeInfo cur : nodeList) {
+			for(NodeInfo cur : TestingLogMap.keySet()) {
 				TestingLog lg = TestingLogMap.get(cur);
 				ArrayList<TransactionLog> transactions = lg.getTransactionAttempts();
 				Collections.sort(transactions);
@@ -374,7 +362,9 @@ public class RemoteAccessTool {
 			if(printProgress) System.out.println("Percentage done: " + 100.0*k/numAtts + "%");
 		}
 		try {
-			PrintWriter writer = new PrintWriter(new File("test" + System.currentTimeMillis()%20 + ".csv"));
+			File pingLog = new File(System.getProperty("user.dir")+File.separator+"Logs"+File.separator+"RTTDelay"+File.separator+"log"+System.currentTimeMillis()%20+".csv");
+			pingLog.getParentFile().mkdirs();
+			PrintWriter writer = new PrintWriter(pingLog);
 			StringBuilder sb = new StringBuilder();
 			
 			for(NodeInfo cur : res.keySet()) {
@@ -425,6 +415,21 @@ public class RemoteAccessTool {
 	}
 	
 	/*
+	 * Grab the current node's log and print thtem to CSV
+	 */
+	
+	private static void printCurrentLog() {
+		TestingLogMap = new ConcurrentHashMap<>();
+		try {
+			TestingLogMap.put(node.getNode(node.getNumID()), node.getTestLog());
+		}catch(Exception e) {
+			e.printStackTrace();
+			return;
+		}
+		printTestingLog();
+	}
+	
+	/*
 	 * Grabs all the testing logs from all the nodes and prints them to CSV (Use this in case an exception arises during testing and you want
 	 * to recover the logs
 	 */
@@ -440,6 +445,38 @@ public class RemoteAccessTool {
 			}
 		}
 		printTestingLog();
+	}
+	
+	/*
+	 * Grabs all the testing logs from all the nodes and prints the errors/exceptions to a txt file 
+	 */
+	
+	private static void printAllErrors() {
+		try {
+			grabUniqueNodes();
+			File errordir = new File(System.getProperty("user.dir")+File.separator+"Logs"+File.separator+"Errors"+File.separator+"ErrorLog.txt");
+			File excepdir = new File(System.getProperty("user.dir")+File.separator+"Logs"+File.separator+"Exceptions"+File.separator+"ExceptionLog.txt");
+			errordir.getParentFile().mkdirs();
+			excepdir.getParentFile().mkdirs();
+			System.out.println(errordir.getPath());
+			PrintWriter erpw = new PrintWriter(errordir);
+			PrintWriter expw = new PrintWriter(excepdir);
+			for(NodeInfo cur : nodeList) {
+				try {
+					log("Node: " + cur);
+					LightChainRMIInterface curRMI = getRMI(cur.getAddress());
+					TestingLog lg = curRMI.getTestLog();//.printExceptionLogs();
+					lg.printExceptionLogs(expw);
+					lg.printOverflowLogs(erpw);
+				}catch(Exception e) {
+					log("Error printing errors.");
+					e.printStackTrace();
+				}
+			}
+		}catch(Exception e) {
+			log("Error getting exceptions. :)");
+			e.printStackTrace();
+		}
 	}
 	
 	/*
