@@ -55,7 +55,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * For slave/master operation
 	 */
-	protected static int testingMode = 1;/*
+	protected static int testingMode = 2;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -94,18 +94,18 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
-			System.out.println("MODE = " + mode);
 		}
-		//Setting the SkipNode in the SkipNode class to the same thing
-		SkipNode.node = lightChainNode;
-		if(testingMode == 2) lightChainNode.insert(new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
-		
 		//Initializing the testLog
 		testLog = new TestingLog(mode==0);
+		//Setting the SkipNode in the SkipNode class to the same thing
+		SkipNode.node = lightChainNode;
 		
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", lightChainNode);
 		log("Rebinding Successful");
+		System.out.println("inserting");
+		if(testingMode == 2) lightChainNode.insert(new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
+		System.out.println("inserting done.");
 		while(true) {
 			printMenu();
 			lightChainNode.ask();
@@ -679,6 +679,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			ArrayList<NodeInfo> validators = new ArrayList<>();
 			// stores the address of the taken nodes so that we make sure we do not take a node twice
 			HashMap<String,Integer> taken = new HashMap<>();   
+			taken.put(address, 1);//To not take the node itself or any data node belonging to it.
 			int count = 0, i = 0;
 			// keep iterating until we get SIGNATURES_THRESHOLD number of validators
 			while(count < SIGNATURES_THRESHOLD && i <= ALPHA) {
@@ -687,7 +688,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				NodeInfo node = searchByNumID(num);
 				i++;
 				// if already taken or equals the owner's 			node, then keep iterating.
-				if(taken.containsKey(node.getAddress()) || node.equals(data.get(0)))continue;
+				if(taken.containsKey(node.getAddress()))continue;
 				count++;
 				taken.put(node.getAddress(), 1);
 				validators.add(node);
@@ -885,14 +886,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// so in order to avoid this case, when we find an already added node, 
 			// we repeat the search
 			HashMap<String,Integer> taken = new HashMap<>(); 
-			
+			taken.put(address, 1);//To not take the node itself or any data node belonging to it.
 			int count = 0 , i = 0;
 			while(count < SIGNATURES_THRESHOLD && i <= ALPHA) { // terminates when we get the required number of validators
 				String hash = t.getPrev() + t.getOwner() + t.getCont() + i ;
 				int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
 				NodeInfo node = searchByNumID(num);
 				i++;
-				if(taken.containsKey(node.getAddress()) || node.equals(data.get(0)))continue;
+				if(taken.containsKey(node.getAddress()))continue;
 				count++;
 				taken.put(node.getAddress(), 1);
 				validators.add(node);

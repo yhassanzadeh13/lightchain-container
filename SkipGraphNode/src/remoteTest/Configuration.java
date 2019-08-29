@@ -106,7 +106,6 @@ public final class Configuration implements Serializable{
 			System.exit(1);
 		}
 		introducer = prop.getProperty("introducer");
-		System.out.println("intro " + introducer);
 	}
 
 	public String getIntroducer() {

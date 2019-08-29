@@ -178,9 +178,9 @@ public class RemoteAccessTool {
 					}else if(query == 16) {
 						long ind = System.currentTimeMillis()%100;
 						grabUniqueNodes();
-						Configuration.generateConfigFile(nodeList, "node"+ind+".conf");
+						Configuration.generateConfigFile(nodeList, System.getProperty("user.dir")+File.separator+"Logs"+File.separator+"Configurations"+File.separator+"node"+ind+".conf");
 						grabAllNodes();
-						Configuration.generateConfigFile(nodeList,  "node_with_data"+ind+".conf");
+						Configuration.generateConfigFile(nodeList, System.getProperty("user.dir")+File.separator+"Logs"+File.separator+"Configurations"+File.separator+"node_with_data"+ind+".conf");
 					}else {
 						log("No matching query.");
 					}
@@ -225,6 +225,8 @@ public class RemoteAccessTool {
 	public static void startSim() {
 		TestingLogMap = new ConcurrentHashMap<>();
 		
+		
+
 		//Grab all the nodes so we can communicate with them
 		grabUniqueNodes();
 		

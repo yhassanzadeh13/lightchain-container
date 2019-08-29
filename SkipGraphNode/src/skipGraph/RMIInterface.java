@@ -30,8 +30,8 @@ public interface RMIInterface extends Remote {
 	 * Setters
 	 */
 	
-	public void setLeftNode(int level, NodeInfo newNode,int num) throws RemoteException;
-	public void setRightNode(int level,NodeInfo newNode,int num) throws RemoteException;
+	public void setLeftNode(int num, int level,NodeInfo newNode, NodeInfo oldNode)  throws RemoteException;
+	public void setRightNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException;
 	
 	/*
 	 * Searches
