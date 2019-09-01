@@ -169,6 +169,8 @@ public final class Configuration implements Serializable{
 			if(filePath.length()<5 || !filePath.substring(filePath.length()-5).equalsIgnoreCase(".conf")) {
 				filePath = filePath+".conf";
 			}
+			File configPath = new File(filePath);
+			configPath.getParentFile().mkdirs();
 			PrintWriter writer = new PrintWriter(new File(filePath));
 			writer.println(lst.size());
 			int prt=45000;

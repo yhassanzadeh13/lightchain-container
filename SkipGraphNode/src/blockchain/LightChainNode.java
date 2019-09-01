@@ -99,13 +99,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		testLog = new TestingLog(mode==0);
 		//Setting the SkipNode in the SkipNode class to the same thing
 		SkipNode.node = lightChainNode;
-		
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", lightChainNode);
 		log("Rebinding Successful");
-		System.out.println("inserting");
+		System.out.println("inserting: " + new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
 		if(testingMode == 2) lightChainNode.insert(new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
 		System.out.println("inserting done.");
+		
+
+
 		while(true) {
 			printMenu();
 			lightChainNode.ask();
@@ -249,12 +251,18 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			log("nameID: " + result.getNameID());
 		}else if(query == 6) { // print the lookup table of the current node
 			log("In case you want the lookup table of the original node enter 0.");
-			log("Otherwise, enter the index of the data node ");
+			log("Otherwise, enter the numID of the data node ");
+			log("Available nodes: ");
+			int idx = 0;
+			for(int num : lookup2.keySet()) {
+				log(++idx + " " + num);
+			}
 			int num = Integer.parseInt(get());
-			if(num < getDataNum())
+			if(num == 0) num = numID;
+			if(lookup2.get(num)!=null)
 				printLookup(num);
 			else
-				log("Data node with given index does not exist");
+				log("Data node with given numID does not exist");
 		}else if(query == 7) { // delete dataNode{
 			updateViewTable();
 			viewUpdate();
@@ -1028,15 +1036,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		Random rnd = new Random();
 		try {
 			for(int i=0;i<numTransactions;i++) {
-				Thread.sleep((1000*pace + (rnd.nextInt(20000)-10000))/2);//wait for (pace +- 10 seconds)/2 
+				Thread.sleep(rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
 				createNewTransaction(System.currentTimeMillis()+i+""+rnd.nextDouble());
-				Thread.sleep((1000*pace + (rnd.nextInt(20000)-10000))/2);//wait for (pace +- 10 seconds)/2 
+				Thread.sleep(rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
 				updateViewTable();
 				if(i%1 == 0) {
-					Thread.sleep(rnd.nextInt(5000));
+					Thread.sleep(rnd.nextInt(rnd.nextInt(4000)));
 					viewUpdate();
 				}
-				if(i%10==0) System.out.println(100.0*i / numTransactions + "% done.");
+				if(i%5==0) System.out.println(100.0*i / numTransactions + "% done.");
 			}
 		}catch(Exception e) {
 			e.printStackTrace();

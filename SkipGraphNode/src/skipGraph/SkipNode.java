@@ -381,8 +381,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * and it routes the search through the skip graph recursively using RMI
 	 * @see RMIInterface#searchNum(int, int)
 	 */
-	public ArrayList<NodeInfo> searchNum(int targetInt,int level, ArrayList<NodeInfo> lst){
-
+	public ArrayList<NodeInfo> searchNum(int targetInt,int level, ArrayList<NodeInfo> lst) throws RemoteException{
+		System.out.println(targetInt + " " + level + " " + lst.toString());
 		int num = getBestNum(targetInt);// get the data node (or main node) that is closest to the target search
 		lst.add(lookup2.get(num));//Add the current node's info to the search list
 		if(num == targetInt) {
@@ -609,7 +609,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
 	public void setRightNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException{
 		try {
-			lookup2.put(num, level, LEFT, assignNode(newNode), oldNode);
+			lookup2.put(num, level, RIGHT, assignNode(newNode), oldNode);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -814,7 +814,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
            	if(lookup2.get(num, i, RIGHT)== null)
         		logLine("null\t");
         	else {
-        		NodeInfo rNode = lookup2.get(num, i, LEFT);
+        		NodeInfo rNode = lookup2.get(num, i, RIGHT);
         		logLine(rNode.getAddress() + " " + rNode.getNumID() + " " + rNode.getNameID()+"\t");
         	}
             log("\n\n");

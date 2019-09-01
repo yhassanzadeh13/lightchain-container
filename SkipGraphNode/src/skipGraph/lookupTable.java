@@ -94,7 +94,7 @@ public class lookupTable {
 	 */
 	public boolean put(int numID, int level, int direction, NodeInfo newNode, NodeInfo expectedOldNode) {
 		if(!lookup.containsKey(numID)) return false;
-		return lookup.get(numID).safePut(level, direction, newNode, expectedOldNode);
+		return lookup.get(numID).safePut(level, direction, newNode, null);//expectedOldNode);
 	}
 	
 	/**
@@ -163,10 +163,10 @@ public class lookupTable {
 		}
 	
 	class Table{
-		private HashMap<Integer, NodeInfo> table;
+		private ConcurrentHashMap<Integer, NodeInfo> table;
 		
 		public Table() {
-			table = new HashMap<Integer, NodeInfo>();
+			table = new ConcurrentHashMap<Integer, NodeInfo>();
 		}
 		
 		public NodeInfo get(int level, int direction) {
@@ -176,10 +176,15 @@ public class lookupTable {
 		
 		private NodeInfo put(int level, int direction, NodeInfo newNode) {
 			if(!validate(level,direction)) return null;
+			if(newNode == null) return remove(level, direction);
 			System.out.println(table + " index: " + getInd(level,direction));
 			NodeInfo res = table.put(getInd(level,direction), newNode);
 			System.out.println(level + " " + direction + " " + newNode + " " + res);
 			return res;
+		}
+		
+		private NodeInfo remove(int level, int direction) {
+			return table.remove(getInd(level, direction));
 		}
 		
 		//TODO: see if we can get rid of expectedOldNode==null

@@ -489,6 +489,7 @@ public class RemoteAccessTool {
 		nodeList = new ArrayList<NodeInfo>();
 		try {
 			curNode = node.searchByNumID(0);
+			System.out.println();
 			while(curNode!=null) {
 				nodeList.add(curNode);
 				RMIInterface curRMI = getRMI(curNode.getAddress());
