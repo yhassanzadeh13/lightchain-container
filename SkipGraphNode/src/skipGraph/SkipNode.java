@@ -154,7 +154,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public void delete(int num) throws RemoteException {
 		
 		try {
-			for(int j=maxLevels-1 ; j >=0  ; j--) {
+			for(int j=maxLevels ; j >=0  ; j--) {
 				// if there are no neighbors at level j, just move on
 				NodeInfo lNode=lookup2.get(num, j, LEFT), rNode = lookup2.get(num, j, RIGHT), thisNode = lookup2.get(num);
 				//if(lookup[j][LEFT][i] == null && lookup[j][RIGHT][i] == null) {
