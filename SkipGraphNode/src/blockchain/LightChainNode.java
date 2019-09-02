@@ -544,9 +544,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			SignedBytes mySign = digitalSignature.signString(t.getH());
 			sigma.add(mySign);
 			t.setSigma(sigma);
-			
-			if(!isAuthenticated(t)) log("The transactiton could not be validated even by the node itself."); 
-			
+						
 			// iterate over validators and use RMI to ask them to validate the transaction
 			for(int i=0 ; i<validators.size(); ++i) {
 				LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
@@ -1020,7 +1018,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			boolean verified = validate(t);
 			if(verified == false) {
 				log("Transaction validation Failed");
-				//return ;
+				return ;
 			}
 			log("Added transaction with nameID " + lstBlk.getH());
 			t.setAddress(getAddress());
