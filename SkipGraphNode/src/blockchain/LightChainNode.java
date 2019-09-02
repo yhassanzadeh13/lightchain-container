@@ -91,6 +91,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
 			LightChainRMIInterface intro = getLightChainRMI(grabIP()+":1099");
+			//LightChainRMIInterface intro = getLightChainRMI(cnf.getIntroducer());
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
@@ -250,7 +251,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			log("numID: " + result.getNumID());
 			log("nameID: " + result.getNameID());
 		}else if(query == 6) { // print the lookup table of the current node
-			log("In case you want the lookup table of the original node enter 0.");
+			log("In case you want the lookup table of the original node enter -1.");
 			log("Otherwise, enter the numID of the data node ");
 			log("Available nodes: ");
 			int idx = 0;
@@ -258,7 +259,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				log(++idx + " " + num);
 			}
 			int num = Integer.parseInt(get());
-			if(num == 0) num = numID;
+			if(num == -1) num = numID;
 			if(lookup2.get(num)!=null)
 				printLookup(num);
 			else
@@ -1036,9 +1037,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		Random rnd = new Random();
 		try {
 			for(int i=0;i<numTransactions;i++) {
-				Thread.sleep(rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
+				Thread.sleep(1+rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
 				createNewTransaction(System.currentTimeMillis()+i+""+rnd.nextDouble());
-				Thread.sleep(rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
+				Thread.sleep(1+rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
 				updateViewTable();
 				if(i%1 == 0) {
 					Thread.sleep(rnd.nextInt(rnd.nextInt(4000)));

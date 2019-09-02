@@ -30,8 +30,8 @@ public interface RMIInterface extends Remote {
 	 * Setters
 	 */
 	
-	public void setLeftNode(int num, int level,NodeInfo newNode, NodeInfo oldNode)  throws RemoteException;
-	public void setRightNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException;
+	public boolean setLeftNode(int num, int level,NodeInfo newNode, NodeInfo oldNode)  throws RemoteException;
+	public boolean setRightNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException;
 	
 	/*
 	 * Searches
@@ -40,7 +40,7 @@ public interface RMIInterface extends Remote {
 	public NodeInfo searchByNameID(String targetString) throws RemoteException;
 	public NodeInfo searchByNumID(int targetNum) throws RemoteException;
 	public ArrayList<NodeInfo> searchByNumID(int targetNum,ArrayList<NodeInfo> lst) throws RemoteException;
-	public ArrayList<NodeInfo> searchNum(int searchTarget,int level,ArrayList<NodeInfo> lst) throws RemoteException;
+	public ArrayList<NodeInfo> searchNum(int searchTarget,int level,ArrayList<NodeInfo> lst, int jumpsLeft) throws RemoteException;
 	
 	/*
 	 * Skip Node with data nodes functions

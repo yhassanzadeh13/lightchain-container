@@ -1,5 +1,6 @@
 package skipGraph;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
@@ -37,7 +38,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 
 	// lookup: (Right Left @Level)
 	//protected static NodeInfo[][][] lookup ;
-	protected static lookupTable lookup2 ;
+	protected static lookupTable lookup2;
 	private static String introducer; 
 	protected static int RMIPort ;
 	protected static Scanner in = new Scanner(System.in);
@@ -130,6 +131,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		log("Set introducer " + introducer + " for " + numID);
 		RMIPort = Integer.parseInt(conf.getPort());
 		address = IP + ":" + RMIPort;
+		if(!conf.getNameID().equals(Configuration.UNASSIGNED_NAMEID)) nameID = conf.getNameID();
+		if(!conf.getNumID().equals(Configuration.UNASSIGNED_NUMID)) numID = Integer.parseInt(conf.getNumID());
 		if(introducer.equalsIgnoreCase("none")) {
 			lookup2.addNode(new NodeInfo(address,numID,nameID));
 			dataNum++;
@@ -154,7 +157,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	public void delete(int num) throws RemoteException {
 		
 		try {
-			for(int j=maxLevels-1 ; j >=0  ; j--) {
+			for(int j=maxLevels ; j >=0  ; j--) {
 				// if there are no neighbors at level j, just move on
 				NodeInfo lNode=lookup2.get(num, j, LEFT), rNode = lookup2.get(num, j, RIGHT), thisNode = lookup2.get(num);
 				//if(lookup[j][LEFT][i] == null && lookup[j][RIGHT][i] == null) {
@@ -232,7 +235,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	//TODO: Change insert to not always insert from the introducer
 	public void insert(NodeInfo node){
 		try {
-			lookup2.addNode(node);
+			lookup2.initializeNode(node);
 			String left = null;
 			String right = null;
 			// We search through the introducer node to find the node with 
@@ -360,6 +363,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// after we conclude inserting the node in all levels,
 			// we add the inserted node to the data array
 			// and we map its numID with its index in the data array using dataID
+			lookup2.finalizeNode();
 		}catch(RemoteException e) {
 			e.printStackTrace();
 			log("Remote Exception thrown in insert function.");
@@ -381,8 +385,25 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * and it routes the search through the skip graph recursively using RMI
 	 * @see RMIInterface#searchNum(int, int)
 	 */
-	public ArrayList<NodeInfo> searchNum(int targetInt,int level, ArrayList<NodeInfo> lst) throws RemoteException{
-		System.out.println(targetInt + " " + level + " " + lst.toString());
+	public ArrayList<NodeInfo> searchNum(int targetInt,int level, ArrayList<NodeInfo> lst, int jumpsLeft) throws RemoteException{
+		if(jumpsLeft++ == 40) {
+			NodeInfo curNode = null;
+			ArrayList<NodeInfo> nodeList = new ArrayList<NodeInfo>();
+			try {
+				curNode = searchByNumID(0);
+				System.out.println();
+				while(curNode!=null) {
+					nodeList.add(curNode);
+					RMIInterface curRMI = getRMI(curNode.getAddress());
+					curNode = curRMI.getRightNode(0, curNode.getNumID());
+				}
+			}catch(RemoteException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Total number of nodes: " + nodeList.size());
+			Configuration.generateConfigFile(nodeList);
+			System.exit(0);
+		}
 		int num = getBestNum(targetInt);// get the data node (or main node) that is closest to the target search
 		lst.add(lookup2.get(num));//Add the current node's info to the search list
 		if(num == targetInt) {
@@ -402,7 +423,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// delegate the search to the right neighbor
 			RMIInterface rightRMI = getRMI(lookup2.get(num, level, RIGHT).getAddress());
 			try{
-				return rightRMI.searchNum(targetInt,level,lst);
+				return rightRMI.searchNum(targetInt,level,lst,jumpsLeft);
 			}catch(StackOverflowError e) {
 				//Fix overflow logging
 				//testLog.logOverflow(e, data, "Overflow in searchNum.\ntargetint: "+ targetInt + "\tlevel: "+level,lst);
@@ -423,7 +444,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// delegate the search to the left neighbor
 			RMIInterface leftRMI = getRMI(lookup2.get(num, level, LEFT).getAddress());
 			try{
-				return leftRMI.searchNum(targetInt, level, lst);
+				return leftRMI.searchNum(targetInt, level, lst,jumpsLeft);
 			}catch(StackOverflowError e) {
 				//testLog.logOverflow(e, data, "Overflow in searchNum.\ntargetint: "+ targetInt + "\tlevel: "+level,lst);
 				return null;
@@ -467,7 +488,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				lst.add(lookup2.get(num));
 				return lst;
 			}
-			return searchNum(searchTarget,level,lst);
+			return searchNum(searchTarget,level,lst,0);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -599,20 +620,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 		return lookup2.get(num, level, RIGHT);
 	}
 
-	public void setLeftNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException{
-		try {
-			lookup2.put(num, level, LEFT, assignNode(newNode), oldNode);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public boolean setLeftNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException{
+		return lookup2.put(num, level, LEFT, assignNode(newNode), oldNode);
 	}
 
-	public void setRightNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException{
-		try {
-			lookup2.put(num, level, RIGHT, assignNode(newNode), oldNode);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public boolean setRightNode(int num, int level,NodeInfo newNode, NodeInfo oldNode) throws RemoteException{
+		return lookup2.put(num, level, RIGHT, assignNode(newNode), oldNode);
 	}
 
 	public int getNumID(){

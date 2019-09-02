@@ -28,6 +28,12 @@ public final class Configuration implements Serializable{
 	private String configPath;
 	Properties prop = new Properties();
 
+	//Constants
+	public static final String UNASSIGNED_INTRODUCER = "none";
+	public static final String UNASSIGNED_NAMEID = "nameID";
+	public static final String UNASSIGNED_NUMID = "numID";
+	public static String UNASSIGNED_PORT = "0000";
+	
 	// Fields
 	private String introducer  = "none";
 	private String nameID      = "nameID";
@@ -133,7 +139,7 @@ public final class Configuration implements Serializable{
 	}
 	
 	//To make parsing configurations more generic
-	private static Configuration currentConfig = new Configuration();
+	private static Configuration currentConfig = new Configuration(UNASSIGNED_INTRODUCER, UNASSIGNED_NAMEID, UNASSIGNED_NUMID, UNASSIGNED_PORT, false);
 	private static boolean[] assigned = new boolean[5];
 	private static Configuration assign(String propertyName, String value) {
 		Configuration ret = null; //Return null by default, if we encounter a property that has been set before, return the built configuration and start making a new one.
@@ -150,18 +156,18 @@ public final class Configuration implements Serializable{
 			assigned[i] = false;
 		}
 		ret = currentConfig;
-		currentConfig = new Configuration();
+		currentConfig = new Configuration(UNASSIGNED_INTRODUCER, UNASSIGNED_NAMEID, UNASSIGNED_NUMID, UNASSIGNED_PORT, false);
 		assign(propertyName,value);
 		return ret;
 	}
 	private static Configuration finalizeAssign() {
 		Configuration ret = currentConfig;
-		currentConfig = new Configuration();
+		currentConfig = new Configuration(UNASSIGNED_INTRODUCER, UNASSIGNED_NAMEID, UNASSIGNED_NUMID, UNASSIGNED_PORT, false);
 		return ret;
 	}
 	
 	public static void generateConfigFile(ArrayList<NodeInfo> lst) {
-		generateConfigFile(lst, "node_"+System.currentTimeMillis()%100+".conf");
+		generateConfigFile(lst, System.getProperty("user.dir")+File.separator+"logs" + File.separator + "Configurations"+File.separator  + "node_"+System.currentTimeMillis()%100+".conf");
 	}
 	
 	public static void generateConfigFile(ArrayList<NodeInfo> lst, String filePath) {

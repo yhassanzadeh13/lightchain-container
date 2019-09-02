@@ -15,6 +15,14 @@ public class lookupTable {
 	private HashMap<Integer, Table> lookup;
 	public static final int LEFT = 0;
 	public static final int RIGHT = 1;
+	
+	
+	/*
+	 * The buffer is there so we can finalize a node's table and insertion before we add it to the other nodes. This prevents any access to it during search etc.
+	 */
+	private NodeInfo nodeBuffer;
+	private  Table tableBuffer;
+
 
 	
 	public lookupTable(int maxLevels) {
@@ -47,6 +55,34 @@ public class lookupTable {
 	}
 	
 	/**
+	 * Adds the node to the buffer. This allows the user to finish finalising the node's lookup table before making it accessible.
+	 * This also makes the node inaccessible from getBestNum and getBestName. Once the node is finalised, you can use {@link lookupTable#finalizeNode()} 
+	 * to commit the node to the lookup table.
+	 * 
+	 * @param node The NodeInfo of the node you want to add tto the buffer.
+	 */
+	public void initializeNode(NodeInfo node) {
+		nodeBuffer = node;
+		tableBuffer = new Table();
+	}
+	
+	/**
+	 * Commits the node in buffer to the lookup table. 
+	 * @return Returns true if the node was committed properly. Returns false if the node was not initialised properly
+	 * and thus not committed.
+	 */
+	public boolean finalizeNode() {
+		if(this.nodeBuffer==null || this.tableBuffer == null) return false;
+		else {
+			dataNodes.put(nodeBuffer.getNumID(), nodeBuffer);
+			lookup.put(nodeBuffer.getNumID(), tableBuffer);
+			nodeBuffer = null;
+			tableBuffer = null;
+			return true;
+		}
+	}
+	
+	/**
 	 * Removes all references to the node with the given numID
 	 * @param numID the numID of the node you want to remove
 	 * @return the stored node info of the given numID.
@@ -74,9 +110,10 @@ public class lookupTable {
 	 *                  of
 	 * @param level     The level on the lookup table
 	 * @param direction The direction (lookupTable.RIGHT or lookupTable.LEFT)
-	 * @return The information of the desired neighbour
+	 * @return The information of the desired neighbour or null if the numID is invalid
 	 */
 	public NodeInfo get(int numID, int level, int direction) {
+		if(!dataNodes.contains(numID)) return null;
 		return lookup.get(numID).get(level, direction);
 	}
 	
@@ -93,8 +130,11 @@ public class lookupTable {
 	 * @return				  Returns true if the node was placed properly and the expectedOldNode was what it replaced. False and the lookup is not modified otherwise.
 	 */
 	public boolean put(int numID, int level, int direction, NodeInfo newNode, NodeInfo expectedOldNode) {
+		if(nodeBuffer != null && nodeBuffer.getNumID()==numID) {
+			return tableBuffer.safePut(level, direction, newNode, expectedOldNode);
+		}
 		if(!lookup.containsKey(numID)) return false;
-		return lookup.get(numID).safePut(level, direction, newNode, null);//expectedOldNode);
+		return lookup.get(numID).safePut(level, direction, newNode, expectedOldNode);
 	}
 	
 	/**
@@ -122,11 +162,11 @@ public class lookupTable {
 	 */
 	public int getBestName(String name,int direction) {
 		try {
-			int best = 0;
+			int best = -1;
 			int num = -1;
 			for (int cur : dataNodes.keySet()) {
 				if(num == -1) num = cur;
-				int tmp = commonBits(name, dataNodes.get(name).getNameID());
+				int tmp = commonBits(name, dataNodes.get(cur).getNameID());
 				if(tmp > best) {
 					best = tmp;
 					num = cur;
@@ -177,9 +217,7 @@ public class lookupTable {
 		private NodeInfo put(int level, int direction, NodeInfo newNode) {
 			if(!validate(level,direction)) return null;
 			if(newNode == null) return remove(level, direction);
-			System.out.println(table + " index: " + getInd(level,direction));
 			NodeInfo res = table.put(getInd(level,direction), newNode);
-			System.out.println(level + " " + direction + " " + newNode + " " + res);
 			return res;
 		}
 		
@@ -194,6 +232,7 @@ public class lookupTable {
 				if(expectedOldNode==null || equal(cur,expectedOldNode)) return true;
 				else {
 					put(level,direction,cur);
+					System.exit(0);
 					return false;
 				}
 			//}

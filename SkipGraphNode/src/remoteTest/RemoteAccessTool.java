@@ -39,7 +39,7 @@ public class RemoteAccessTool {
 			if(!skipInit) {
 				log("Enter IP address along with port (x to exit)");
 				ip = in.nextLine();
-				while(ip.equals("x") || (!validateIP(ip) && ip.split(":").length!=2)) {
+				while(ip.equals("x") || (!validateIP(ip) || ip.split(":").length!=2)) {
 					if(ip.equals("x")) System.exit(0);
 					log("Please enter a valid IP address with respective port");
 					ip = in.nextLine();
