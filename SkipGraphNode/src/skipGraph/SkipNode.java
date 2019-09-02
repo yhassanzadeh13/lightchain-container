@@ -263,7 +263,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// First, we insert the node at level 0
 			
 			int posNum = position.getNumID(); // numID of the closest node
-			String posName = position.getNameID(); // nameID of the closest node
 			int leftNum = UNASSIGNED ; // numID of left node
 			int rightNum = UNASSIGNED ; // numID of right node
 			
@@ -283,10 +282,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					leftNum = cur.getNumID();
 					lookup2.put(node.getNumID(), ZERO_LEVEL, LEFT, assignNode(cur), null); //null because the lookup table is empty
 					leftRMI.setRightNode(leftNum, ZERO_LEVEL, node, position);
+					System.out.println("set right  node");
 				}				
 				lookup2.put(node.getNumID(), ZERO_LEVEL, RIGHT, assignNode(position), null);
 				posRMI.setLeftNode(posNum, ZERO_LEVEL, node, cur);// insert the current node in the lookup table of its right neighbor
-			
+				System.out.println("set left node");
 			}else{ // if the closest node is to the left
 				
 				NodeInfo cur = posRMI.getRightNode(ZERO_LEVEL,posNum);
@@ -300,14 +300,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				
 				lookup2.put(node.getNumID(), ZERO_LEVEL, LEFT, assignNode(position), null); //This is before the if statement so that the order of insertion is the same
 				posRMI.setRightNode(posNum, ZERO_LEVEL, node, cur);// insert the current node in the lookup table of its right neighbor
-
 				if(right != null) { // insert current node in the lookup table of its right neighbor if it exists
 					RMIInterface rightRMI = getRMI(right);
 					rightNum = cur.getNumID();
 					lookup2.put(node.getNumID(), ZERO_LEVEL, RIGHT, assignNode(cur), null); //null because the lookup table is empty
 					rightRMI.setLeftNode(rightNum, ZERO_LEVEL, node, position);
-				}				
-				
+				}						
 			}
 			
 			// Now, we insert the node in the rest of the levels
@@ -364,9 +362,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 			// we add the inserted node to the data array
 			// and we map its numID with its index in the data array using dataID
 			lookup2.finalizeNode();
+			log("inserting actually done.");
 		}catch(RemoteException e) {
 			e.printStackTrace();
 			log("Remote Exception thrown in insert function.");
+		}catch(Exception e) {
+			e.printStackTrace();
 		}
 	}
 

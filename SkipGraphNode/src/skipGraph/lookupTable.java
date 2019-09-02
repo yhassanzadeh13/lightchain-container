@@ -42,14 +42,16 @@ public class lookupTable {
 	
 	/**
 	 * Adds a node to the data nodes.
-	 * 
+	 * Warning: Only use this if the node you are adding is properly initialized and ready to be accessed. If you still
+	 * want to initialize the node (eg. the lookup table is not finalized or you do not want it to be accessible yet) then use
+	 * {@link lookupTable#initializeNode(NodeInfo)}
 	 * @param nd The node that is to be added the lookup
 	 * @return false if the numID given was added previously, true otherwise.
 	 */
-	public boolean addNode(NodeInfo nd) {
-		NodeInfo ret = dataNodes.put(nd.getNumID(), nd);
+	public boolean addNode(NodeInfo node) {
+		NodeInfo ret = dataNodes.put(node.getNumID(), node);
 		if (ret == null) {
-			lookup.put(nd.getNumID(), new Table());
+			lookup.put(node.getNumID(), new Table());
 		}
 		return ret == null;
 	}
@@ -59,7 +61,7 @@ public class lookupTable {
 	 * This also makes the node inaccessible from getBestNum and getBestName. Once the node is finalised, you can use {@link lookupTable#finalizeNode()} 
 	 * to commit the node to the lookup table.
 	 * 
-	 * @param node The NodeInfo of the node you want to add tto the buffer.
+	 * @param node The NodeInfo of the node you want to add to the buffer.
 	 */
 	public void initializeNode(NodeInfo node) {
 		nodeBuffer = node;
@@ -113,7 +115,7 @@ public class lookupTable {
 	 * @return The information of the desired neighbour or null if the numID is invalid
 	 */
 	public NodeInfo get(int numID, int level, int direction) {
-		if(!dataNodes.contains(numID)) return null;
+		if(!dataNodes.containsKey(numID)) return null;
 		return lookup.get(numID).get(level, direction);
 	}
 	

@@ -91,7 +91,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
 			LightChainRMIInterface intro = getLightChainRMI(grabIP()+":1099");
-			//LightChainRMIInterface intro = getLightChainRMI(cnf.getIntroducer());
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
@@ -1021,7 +1020,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			boolean verified = validate(t);
 			if(verified == false) {
 				log("Transaction validation Failed");
-				return ;
+				//return ;
 			}
 			log("Added transaction with nameID " + lstBlk.getH());
 			t.setAddress(getAddress());
@@ -1037,9 +1036,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		Random rnd = new Random();
 		try {
 			for(int i=0;i<numTransactions;i++) {
-				Thread.sleep(1+rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
+				Thread.sleep(rnd.nextInt(1000 * pace)/2);//wait for (pace +- 10 seconds)/2 
 				createNewTransaction(System.currentTimeMillis()+i+""+rnd.nextDouble());
-				Thread.sleep(1+rnd.nextInt(1000 * pace));//wait for (pace +- 10 seconds)/2 
+				Thread.sleep(rnd.nextInt(1000 * pace)/2);//wait for (pace +- 10 seconds)/2 
 				updateViewTable();
 				if(i%1 == 0) {
 					Thread.sleep(rnd.nextInt(rnd.nextInt(4000)));
