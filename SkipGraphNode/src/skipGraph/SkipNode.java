@@ -551,7 +551,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 					return result;
 			}
 			// Continue the search on the opposite direction
-			if(lookup2.get(bestNum, newLevel, direction) != null) {
+			if(lookup2.get(bestNum, newLevel, 1-direction) != null) {
 				RMIInterface leftRMI = getRMI(lookup2.get(bestNum, newLevel, 1-direction).getAddress());
 				NodeInfo k = leftRMI.searchName(searchTarget, newLevel, 1-direction);
 				if(result == null || commonBits(k.getNameID(),lookup2.get(bestNum).getNameID()) > commonBits(result.getNameID(),lookup2.get(bestNum).getNameID()))
