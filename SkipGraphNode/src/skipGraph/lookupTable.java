@@ -257,7 +257,7 @@ public class lookupTable {
 		}
 		
 		private boolean validateLevel(int level) {
-			return level >=0 && level < maxLevels;
+			return level >=0 && level <= maxLevels;
 		}
 		
 		private boolean validateDir(int direction) {

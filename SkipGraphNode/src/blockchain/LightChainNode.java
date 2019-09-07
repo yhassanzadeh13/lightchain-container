@@ -55,7 +55,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * For slave/master operation
 	 */
-	protected static int testingMode = 2;/*
+	protected static int testingMode = 1;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -90,7 +90,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI(grabIP()+":1099");
+			LightChainRMIInterface intro = getLightChainRMI("192.168.1.22:1099");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
@@ -336,6 +336,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// If number of transactions obtained is less than TX_MIN then we terminate the process
 			if(tList == null || tList.size() < TX_MIN) {
 				log("Cannot find TX_MIN number of transactions.");
+				log("Found " + tList.size() + "Transactions");
 				testLog.logBlockValidation(-1, false);
 				testLog.logViewUpdate(System.currentTimeMillis()-start, false);
 				return;
@@ -423,6 +424,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			NodeInfo t = searchByNameID(name);
 			// an empty list to add transaction to it and return it
 			ArrayList<Transaction> tList = new ArrayList<>();
+			
 			
 			if(t == null || !t.getNameID().equals(name)) {
 				log("No transaction was found with the given nameID");
@@ -773,7 +775,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				log("Transaction not sound");
 				log("Index of prev: " + tIdx);
 				log("Index of latest: " + bIdx);
-			}
+			}else
+				log("Transaction is sound");
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;

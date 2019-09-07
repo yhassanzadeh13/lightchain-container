@@ -171,7 +171,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				// if right is null, update left
 				}else if (rNode == null) {
 					RMIInterface leftRMI = getRMI(lNode.getAddress());
-					leftRMI.setRightNode(rNode.getNumID(), j, rNode, thisNode);
+					leftRMI.setRightNode(lNode.getNumID(), j, rNode, thisNode);
 				// otherwise update both sides and connect them to each other.
 				}else {
 					RMIInterface rightRMI = getRMI(rNode.getAddress());
@@ -854,42 +854,42 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	
 	protected void printLevel(int k) throws RemoteException {
 		//TODO: fix this
-//		try {
-//			ArrayList<NodeInfo> nodes = new ArrayList<>();
-//			NodeInfo node = null;
-//			int num =  UNASSIGNED;
-//			if(lookup[k][LEFT][0] != null) {
-//				node = lookup[k][LEFT][0];
-//				num = lookup[k][LEFT][0].getNumID();
-//			}
-//			while(node != null) {
-//				RMIInterface no = getRMI(node.getAddress());
-//				nodes.add(no.getNode(num));
-//				node = no.getLeftNode(k, num);
-//				if(node != null)
-//				num = no.getLeftNumID(k, num);
-//			}
-//			Collections.reverse(nodes);
-//			nodes.add(data.get(0));
-//			node = null;
-//			if(lookup[k][RIGHT][0] != null) {
-//				node = lookup[k][RIGHT][0];
-//				num = lookup[k][RIGHT][0].getNumID();
-//			}
-//			while(node != null) {
-//				RMIInterface no = getRMI(node.getAddress());
-//				nodes.add(no.getNode(num));
-//				node = no.getRightNode(k,num);
-//				if(node != null)
-//					num = no.getRightNumID(k, num);
-//			}
-//			for(int i=0 ; i<nodes.size(); ++i) {
-//				log(nodes.get(i).getAddress() + " " + nodes.get(i).getNumID() + " " + nodes.get(i).getNameID());
-//			}
-//			log("\n");
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+		try {
+			ArrayList<NodeInfo> nodes = new ArrayList<>();
+			NodeInfo node = null;
+			int num =  UNASSIGNED;
+			if(lookup2.get(numID,k,LEFT) != null) {
+				node = lookup2.get(numID,k,LEFT);
+				num = node.getNumID();
+			}
+			while(node != null) {
+				RMIInterface no = getRMI(node.getAddress());
+				nodes.add(no.getNode(num));
+				node = no.getLeftNode(k, num);
+				if(node != null)
+				num = no.getLeftNumID(k, num);
+			}
+			Collections.reverse(nodes);
+			nodes.add(lookup2.get(numID));
+			node = null;
+			if(lookup2.get(numID,k,RIGHT) != null) {
+				node = lookup2.get(numID,k,RIGHT);
+				num = node.getNumID();
+			}
+			while(node != null) {
+				RMIInterface no = getRMI(node.getAddress());
+				nodes.add(no.getNode(num));
+				node = no.getRightNode(k,num);
+				if(node != null)
+					num = no.getRightNumID(k, num);
+			}
+			for(int i=0 ; i<nodes.size(); ++i) {
+				log(nodes.get(i).getAddress() + " " + nodes.get(i).getNumID() + " " + nodes.get(i).getNameID());
+			}
+			log("\n");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public static String getNodes(int k) {
