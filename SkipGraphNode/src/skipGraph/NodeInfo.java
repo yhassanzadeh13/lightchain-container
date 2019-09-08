@@ -53,4 +53,8 @@ public class NodeInfo implements Serializable {
 	public String toString() {
 		return "Node: address: " + address + "\tnumID: " + numID + "\tnameID: " + nameID;
 	}
+	
+	public final String superString() {
+		return "Node: address: " + address + "\tnumID: " + numID + "\tnameID: " + nameID;
+	}
 }
