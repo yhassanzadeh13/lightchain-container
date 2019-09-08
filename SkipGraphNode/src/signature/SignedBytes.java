@@ -17,11 +17,11 @@ public class SignedBytes implements Serializable{
 	private boolean hasBalance;
 	
 	public SignedBytes(byte[] array) {
-		this.array = array.clone();
+		if(array!=null) this.array = array.clone();
 	}
 	
 	public SignedBytes(byte[] array, boolean isAuthenticated, boolean isSound, boolean isCorrect, boolean hasBalance) {
-		this.array = array.clone();
+		if(array!=null) this.array = array.clone();
 		this.isAuthenticated = isAuthenticated;
 		this.isSound = isSound;
 		this.isCorrect = isCorrect;

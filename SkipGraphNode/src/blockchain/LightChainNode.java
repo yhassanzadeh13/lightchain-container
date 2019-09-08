@@ -90,7 +90,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI(grabIP() + "1099");
+			LightChainRMIInterface intro = getLightChainRMI(grabIP() + ":1099");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
@@ -503,7 +503,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
 				SignedBytes signature = node.PoV(blk);
 				// if one validator returns null, then validation has failed
-				if(signature.getBytes() == null) {
+				if(signature == null || signature.getBytes() == null) {
 					log("Validating Block failed.");
 					testLog.logBlockValidation(System.currentTimeMillis()-start, false);
 					return false;
@@ -534,6 +534,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public boolean validate(Transaction t) throws RemoteException {
 		long start = System.currentTimeMillis();
+		int isAuthenticated = 0;
+		int isSound = 0;
+		int isCorrect = 0;
+		int hasBalance = 0;
 		try {
 			if(mode == MALICIOUS) {
 				malTrials++;
@@ -547,31 +551,39 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			sigma.add(mySign);
 			t.setSigma(sigma);
 						
+			boolean validated = true;
+			long duration=-1;
 			// iterate over validators and use RMI to ask them to validate the transaction
 			for(int i=0 ; i<validators.size(); ++i) {
 				LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
 				SignedBytes signature = node.PoV(t);
+				if(signature.isAuth()) isAuthenticated++;
+				if(signature.isCorrect()) isCorrect++;
+				if(signature.isSound()) isSound++;
+				if(signature.hasBalance()) hasBalance++;
 				// if a validators returns null that means the validation has failed
 				if(signature.getBytes() == null) {
-					log("Validating Transaction failed.");
-					testLog.logTransaction(false,  System.currentTimeMillis()-start);
-					return false;
+					if(validated) duration = System.currentTimeMillis()-start;
+					validated = false;
 				}
 				sigma.add(signature);
 			}
 			t.setSigma(sigma);
-			log("Validation Successful");
+			if(validated) {
+				log("Validation Successful");
+				duration = System.currentTimeMillis()-start;
+			}
+			else log("Validated failed.");
 			
-			long end = System.currentTimeMillis();
+
 			if(mode == MALICIOUS) {
 				malSuccess++;
 			}
-			long time = end - start;
-			testLog.logTransaction(true,  time);
-			return true;
+			testLog.logTransaction(validated,isAuthenticated,isSound,isCorrect,hasBalance,duration);
+			return validated;
 		} catch (Exception e) {
 			e.printStackTrace();
-			testLog.logTransaction(false,  System.currentTimeMillis()-start);
+			testLog.logTransaction(false,isAuthenticated,isSound,isCorrect,hasBalance,System.currentTimeMillis()-start);
 			return false;
 		}
 	}
@@ -718,13 +730,33 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * and sends the signed value to the owner.
 	 */
 	public SignedBytes PoV(Transaction t) throws RemoteException {
+		boolean isAuth = false;
+		boolean isCorrect = false;
+		boolean isSound = false;
+		boolean hasBalance = false;
 		try {
 			updateViewTable();
 			log("Validating Transaction for " + t.getOwner());
-			boolean isAuth = isAuthenticated(t);
-			boolean isCorrect = isCorrect(t);
-			boolean isSound = isSound(t);
-			boolean hasBalance = hasBalanceCompliance(t);
+			try{
+				isAuth = isAuthenticated(t);
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			try{
+				isCorrect = isCorrect(t);
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			try {
+				isSound = isSound(t);
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			try{
+				hasBalance = hasBalanceCompliance(t);
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
 			boolean val = isAuth && isCorrect && isSound && hasBalance;
 			if(val == false)
 				return new SignedBytes(null, isAuth, isSound, isCorrect, hasBalance);
@@ -733,7 +765,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			return signedHash;
 		} catch (Exception e) {
 			e.printStackTrace();
-			return null;
+			return new SignedBytes(null, isAuth, isSound, isCorrect, hasBalance);
 		}
 	}
 	
@@ -788,7 +820,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;
-			return tIdx >= bIdx ;
+			return tIdx > bIdx ;
 		}catch(Exception e) {
 			e.printStackTrace();
 			return false;

@@ -283,7 +283,7 @@ public class RemoteAccessTool {
 			PrintWriter writer = new PrintWriter(logPath);
 			StringBuilder sb = new StringBuilder();
 			
-			sb.append("NumID,Malicious,Transaction Attempts,Transaction Success,Transaction time(per),Success?,View Update Time (per),"
+			sb.append("NumID,Malicious,Transaction Attempts,Transaction Success,Transaction time(per),numAuthenticated,numSound,numCorrect,hasBalance,Success?,View Update Time (per),"
 					+ "TX>TXMIN?,Validate Block time,Validate success\n");
 			
 			for(NodeInfo cur : TestingLogMap.keySet()) {

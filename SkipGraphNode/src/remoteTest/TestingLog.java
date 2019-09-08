@@ -79,8 +79,8 @@ public class TestingLog implements Serializable, Comparable<TestingLog>{
 		}
 	}
 	
-	public void logTransaction(boolean success, long timeTaken) {
-		transactionAttempts.add(new TransactionLog(success,timeTaken));
+	public void logTransaction(boolean success,int numAuthenticated,int numSound,int numCorrect,int hasBalance, long timeTaken) {
+		transactionAttempts.add(new TransactionLog(success,numAuthenticated,numSound,numCorrect,hasBalance,timeTaken));
 		Attempts++;
 		if(success) Success++;
 	}
@@ -205,10 +205,18 @@ class TransactionLog implements Serializable, Comparable<TransactionLog>{
 	private static final long serialVersionUID = 1L;
 	
 	private boolean success;
+	private int isAuthenticated;
+	private int isSound;
+	private int isCorrect;
+	private int hasBalance;
 	private long timeTaken;
 	
-	public TransactionLog(boolean success, long timeTaken) {
+	public TransactionLog(boolean success,int isAuthenticated, int isSound, int isCorrect, int hasBalance, long timeTaken) {
 		this.success=success;
+		this.isAuthenticated = isAuthenticated;
+		this.isSound = isSound;
+		this.isCorrect = isCorrect;
+		this.hasBalance = hasBalance;
 		this.timeTaken=timeTaken;
 	}
 	
@@ -228,7 +236,7 @@ class TransactionLog implements Serializable, Comparable<TransactionLog>{
 	}
 	
 	public String toString() {
-		return timeTaken+","+success;
+		return timeTaken+"," + isAuthenticated + "," + isSound + "," + isCorrect + "," + hasBalance + ","+success;
 	}
 }
 

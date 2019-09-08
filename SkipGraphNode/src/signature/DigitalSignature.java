@@ -213,6 +213,7 @@ public class DigitalSignature {
 			signature = Signature.getInstance(signAlgorithm);
 			signature.initVerify(pKey);
 			signature.update(data.getBytes());
+			if(signedData==null || signedData.getBytes()==null) return false;
 			boolean verification = signature.verify(signedData.getBytes());
 			return verification;
 		}catch(Exception e) {
