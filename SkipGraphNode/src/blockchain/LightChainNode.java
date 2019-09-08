@@ -55,7 +55,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * For slave/master operation
 	 */
-	protected static int testingMode = 1;/*
+	protected static int testingMode = 2;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer

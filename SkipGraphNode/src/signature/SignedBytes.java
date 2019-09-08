@@ -10,11 +10,41 @@ public class SignedBytes implements Serializable{
 
 	private byte[] array;
 	
+	// For testing
+	private boolean isAuthenticated;
+	private boolean isSound;
+	private boolean isCorrect;
+	private boolean hasBalance;
+	
 	public SignedBytes(byte[] array) {
 		this.array = array.clone();
+	}
+	
+	public SignedBytes(byte[] array, boolean isAuthenticated, boolean isSound, boolean isCorrect, boolean hasBalance) {
+		this.array = array.clone();
+		this.isAuthenticated = isAuthenticated;
+		this.isSound = isSound;
+		this.isCorrect = isCorrect;
+		this.hasBalance = hasBalance;
 	}
 	
 	public byte[] getBytes() {
 		return array;
 	}
+	
+	// for testing
+	
+	public boolean isAuth() {
+		return isAuthenticated;
+	}
+	public boolean isSound() {
+		return isSound;
+	}
+	public boolean isCorrect() {
+		return isCorrect;
+	}
+	public boolean hasBalance() {
+		return hasBalance;
+	}
+	
 }
