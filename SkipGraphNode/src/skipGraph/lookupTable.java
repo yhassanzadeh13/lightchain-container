@@ -3,6 +3,8 @@ package skipGraph;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author Shadi Hamdan
@@ -11,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class lookupTable {
 	public int maxLevels;
-	private ConcurrentHashMap<Integer, NodeInfo> dataNodes;
+	private HashMap<Integer, NodeInfo> dataNodes;
 	private HashMap<Integer, Table> lookup;
 	public static final int LEFT = 0;
 	public static final int RIGHT = 1;
@@ -27,7 +29,7 @@ public class lookupTable {
 	
 	public lookupTable(int maxLevels) {
 		this.maxLevels = maxLevels;
-		this.dataNodes = new ConcurrentHashMap<>();
+		this.dataNodes = new HashMap<>();
 		this.lookup = new HashMap<>();
 	}
 	
@@ -39,6 +41,10 @@ public class lookupTable {
 		return lookup.keySet();
 	}
 	
+	public int bufferNumId() {
+		if(nodeBuffer==null) return -1;
+		return nodeBuffer.getNumID();
+	}
 	
 	/**
 	 * Adds a node to the data nodes.
@@ -66,6 +72,7 @@ public class lookupTable {
 	public void initializeNode(NodeInfo node) {
 		nodeBuffer = node;
 		tableBuffer = new Table();
+		tableBuffer.lockTable();
 	}
 	
 	/**
@@ -78,6 +85,7 @@ public class lookupTable {
 		else {
 			dataNodes.put(nodeBuffer.getNumID(), nodeBuffer);
 			lookup.put(nodeBuffer.getNumID(), tableBuffer);
+			tableBuffer.unlockTable();
 			nodeBuffer = null;
 			tableBuffer = null;
 			return true;
@@ -101,6 +109,9 @@ public class lookupTable {
 	 * @return the stored node info of the given numID
 	 */
 	public NodeInfo get(int numID) {
+		if(nodeBuffer != null && nodeBuffer.getNumID()==numID) {
+			return nodeBuffer;
+		}
 		return dataNodes.get(numID);
 	}
 
@@ -115,6 +126,9 @@ public class lookupTable {
 	 * @return The information of the desired neighbour or null if the numID is invalid
 	 */
 	public NodeInfo get(int numID, int level, int direction) {
+		if(nodeBuffer != null && nodeBuffer.getNumID()==numID) {
+			tableBuffer.get(level, direction);
+		}
 		if(!dataNodes.containsKey(numID)) return null;
 		return lookup.get(numID).get(level, direction);
 	}
@@ -158,6 +172,7 @@ public class lookupTable {
 		return bestNum;
 	}
 	
+	
 	/*
 	 * This method receives a nameID and returns the index of the data node which has
 	 * the most common prefix with the given nameID
@@ -193,6 +208,8 @@ public class lookupTable {
 		}
 	}
 	
+	
+	
 	private static int commonBits(String name1, String name2) {
 		if(name1 == null || name2 == null) {
 			return -1;
@@ -205,15 +222,30 @@ public class lookupTable {
 		}
 	
 	class Table{
+		ReadWriteLock lock;
 		private ConcurrentHashMap<Integer, NodeInfo> table;
 		
 		public Table() {
 			table = new ConcurrentHashMap<Integer, NodeInfo>();
+			lock = new ReentrantReadWriteLock(true);
+		}
+		
+		public void lockTable() {
+			lock.writeLock().lock();
+		}
+		
+		public void unlockTable() {
+			lock.writeLock().unlock();
 		}
 		
 		public NodeInfo get(int level, int direction) {
 			if(!validate(level,direction)) return null;
-			return table.get(getInd(level,direction));
+			lock.readLock().lock();
+			try {
+				return table.get(getInd(level,direction));
+			}finally {
+				lock.readLock().unlock();
+			}
 		}
 		
 		private NodeInfo put(int level, int direction, NodeInfo newNode) {
@@ -234,7 +266,7 @@ public class lookupTable {
 				if(expectedOldNode==null || equal(cur,expectedOldNode)) return true;
 				else {
 					put(level,direction,cur);
-					System.exit(0);
+					//System.exit(0);
 					return false;
 				}
 			//}

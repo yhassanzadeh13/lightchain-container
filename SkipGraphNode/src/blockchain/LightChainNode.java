@@ -90,7 +90,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI("192.168.1.22:1099");
+			LightChainRMIInterface intro = getLightChainRMI(grabIP() + "1099");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
@@ -325,7 +325,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if(blk == null) {
 				log("Error in retreiving the Latest block: not a block was returned");
 				log("viewUpdate terminated");
-				return ;
+				return;
 			}
 			String name = numToName(blk.getNumID());
 			
@@ -770,8 +770,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			
 			int tIdx = prevBlk.getIndex();
 			int bIdx = thisBlk.getIndex();
-			
-			if(tIdx <= bIdx) {
+
+			log("Index of prev: " + tIdx);
+			log("Index of latest: " + bIdx);
+			if(tIdx < bIdx) {
 				log("Transaction not sound");
 				log("Index of prev: " + tIdx);
 				log("Index of latest: " + bIdx);
@@ -780,7 +782,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;
-			return tIdx > bIdx ;
+			return tIdx >= bIdx ;
 		}catch(Exception e) {
 			e.printStackTrace();
 			return false;
@@ -959,6 +961,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return (LightChainRMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
 			}catch(Exception e) {
 				log("Exception while attempting to lookup RMI located at address: "+adrs);
+				e.printStackTrace();
 			}
 		} else {
 			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
@@ -1061,5 +1064,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		System.exit(0);
 	}
 	
+
 	
 }

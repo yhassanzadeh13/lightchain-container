@@ -177,11 +177,11 @@ public final class Configuration implements Serializable{
 			}
 			File configPath = new File(filePath);
 			configPath.getParentFile().mkdirs();
-			PrintWriter writer = new PrintWriter(new File(filePath));
+			PrintWriter writer = new PrintWriter(configPath);
 			writer.println(lst.size());
 			int prt=45000;
 			for(NodeInfo cur : lst) {
-				writer.println("introducer=none");//Default values
+				writer.println("introducer="+cur.getAddress());//Incase you want to know which blocks/transactions belong to which node
 				writer.println("nameID="+cur.getNameID());
 				writer.println("numID="+cur.getNumID());
 				writer.println("port="+prt++);//Default values
