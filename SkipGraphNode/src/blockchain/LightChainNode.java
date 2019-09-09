@@ -34,7 +34,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * Constants
 	 */
 	private static final int VALIDATION_FEES = 1;
-	private static int SIGNATURES_THRESHOLD = 2;
+	private static int SIGNATURES_THRESHOLD = 5;
 	static{
 		TRUNC = 30;
 	}
@@ -811,7 +811,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 			log("Index of prev: " + tIdx);
 			log("Index of latest: " + bIdx);
-			if(tIdx < bIdx) {
+			if(tIdx <= bIdx) {
 				log("Transaction not sound");
 				log("Index of prev: " + tIdx);
 				log("Index of latest: " + bIdx);
