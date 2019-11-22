@@ -49,8 +49,6 @@ public interface RMIInterface extends Remote {
 	public NodeInfo searchName(int numID, String searchTarget,int level,int direction) throws RemoteException;
 	public NodeInfo insertSearch(int level, int direction,int num, String target) throws RemoteException;
 	
-	public ArrayList<NodeInfo> getData() throws RemoteException;
-	public NodeInfo[][][] getLookupTable() throws RemoteException;
 	
 	//Pinging
 	

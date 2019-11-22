@@ -58,8 +58,8 @@ public class RemoteAccessTool {
 			try {
 				nameID = node.getNameID();
 				numID = node.getNumID();
-				data = node.getData();
-				lookup = node.getLookupTable();
+				//data = node.getData();
+				//lookup = node.getLookupTable();
 				if(data == null || lookup == null) {
 					log("Couldn't fetch data and lookup properly. Please try again.");
 					continue;
@@ -533,17 +533,17 @@ public class RemoteAccessTool {
 		for(NodeInfo cur : nodeList) {
 			try {
 				RMIInterface nd = getRMI(cur.getAddress());
-				curlookup = nd.getLookupTable();
-				for(int i=0;i<curlookup.length;i++) {
-					for(int j=0;j<curlookup[0].length;j++) {
-						for(int k=0;k<curlookup[0][0].length;k++) {
-							if(curlookup[i][j][k]!=null && curlookup[i][j][k].getNumID() == numID) {
-								log("The numID "+ numID + " is reachable from the following parameters.\nNode: "+cur+"\ni: "+i+" j:"+j+" k:"+k);
-								flag = true;
-							}
-						}
-					}
-				}
+//				curlookup = nd.getLookupTable();
+//				for(int i=0;i<curlookup.length;i++) {
+//					for(int j=0;j<curlookup[0].length;j++) {
+//						for(int k=0;k<curlookup[0][0].length;k++) {
+//							if(curlookup[i][j][k]!=null && curlookup[i][j][k].getNumID() == numID) {
+//								log("The numID "+ numID + " is reachable from the following parameters.\nNode: "+cur+"\ni: "+i+" j:"+j+" k:"+k);
+//								flag = true;
+//							}
+//						}
+//					}
+//				}
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -558,7 +558,7 @@ public class RemoteAccessTool {
 	
 	public static void printLookup(int num) {
 		try {
-			lookup = node.getLookupTable();
+		//	lookup = node.getLookupTable();
 		}catch(Exception e) {
 			log("Couldn't update the lookup table properly. Aborting...");
 			return;

@@ -26,7 +26,7 @@ public class Transaction extends NodeInfo{
 		this.owner = owner;
 		this.cont = cont;
 		hasher = new HashingTools();
-		this.h = hasher.getHash(prev + owner + cont,SkipNode.TRUNC);
+		this.h = hasher.getHash(prev + owner + cont,LightChainNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	

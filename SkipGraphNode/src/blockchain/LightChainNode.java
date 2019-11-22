@@ -11,12 +11,14 @@ import java.util.HashMap;
 import java.util.Random;
 
 import hashing.Hasher;
+import hashing.HashingTools;
 import remoteTest.Configuration;
 import remoteTest.TestingLog;
 import signature.DigitalSignature;
 import signature.SignedBytes;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
+import util.Util;
 
 public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	
@@ -25,6 +27,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private static ArrayList<Transaction> transactions;
 	private static ArrayList<Block> blocks;
 	private static DigitalSignature digitalSignature;
+	private static Hasher hasher;
 	private static HashMap<Integer,Integer> view;
 	private static HashMap<Integer,Integer> viewBalance;
 	private static HashMap<Integer,Integer> viewMode;
@@ -35,9 +38,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	private static final int VALIDATION_FEES = 1;
 	private static int SIGNATURES_THRESHOLD = 5;
-	static{
-		TRUNC = 30;
-	}
 	private static final int TX_MIN = 4;
 	private static final int ZERO_ID = 0;
 	private static final int HONEST = 1;
@@ -45,6 +45,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private static final int UNASSIGNED = -1;
 	private static final int INITIAL_BALANCE = 20;
 	private static final int ALPHA = 12;
+	static final int TRUNC = 30;
 	
 	/*
 	 * Variables for simulations
@@ -55,7 +56,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * For slave/master operation
 	 */
-	protected static int testingMode = 2;/*
+	protected static int testingMode = 1;/*
 										0 = normal functionality
 										1 = master: Gives out N configurations to first N nodes connecting to it
 										2 = Leech: opens local config file and connects to the master as its introducer
@@ -66,16 +67,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public static void main(String args[]) {
 	try {
-		//IP = grabIP();
 		init();//Initialize IP and address + system properties
 		lightChainNode = new LightChainNode();
 		if(testingMode == 0) {
 			setInfo();
-			log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-			mode = Integer.parseInt(get());
+			Util.log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
+			mode = Integer.parseInt(Util.getInput());
 			while(mode != MALICIOUS && mode != HONEST) {
-				log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-				mode = Integer.parseInt(get());
+				Util.log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
+				mode = Integer.parseInt(Util.getInput());
 			}
 		}else if(testingMode == 1) {
 			cnfs = Configuration.parseConfigurations();
@@ -90,7 +90,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}else {
 			Configuration cnf = new Configuration();
 			cnf.parseIntroducer();
-			LightChainRMIInterface intro = getLightChainRMI(grabIP() + ":1099");
+			LightChainRMIInterface intro = getLightChainRMI(Util.grabIP() + ":1099");
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
@@ -101,7 +101,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		SkipNode.node = lightChainNode;
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", lightChainNode);
-		log("Rebinding Successful");
+		Util.log("Rebinding Successful");
 		System.out.println("inserting: " + new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
 		if(testingMode == 2) lightChainNode.insert(new NodeInfo(address,lightChainNode.getNumID(),lightChainNode.getNameID()));
 		System.out.println("inserting done.");
@@ -117,10 +117,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		e.printStackTrace();
 		System.exit(1);
 	}catch(IOException e){
-		log("Error in Rebinding");
+		Util.log("Error in Rebinding");
 		e.printStackTrace();
 	}
-	in.close();
 }
 	
 	
@@ -133,8 +132,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * 	3) set the numID and nameID as the hash value of the public key
 	 */
 	public LightChainNode() throws RemoteException {
-		super();
+		super(TRUNC);
 		digitalSignature = new DigitalSignature();
+		hasher = new HashingTools();
 		transactions = new ArrayList<>();
 		blocks = new ArrayList<>();
 		view = new HashMap<>();
@@ -142,10 +142,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		viewBalance = new HashMap<>();
 		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC);
 		setNumID(Integer.parseInt(name,2));
-		log("My numID is: " + Integer.parseInt(name,2));
+		Util.log("My numID is: " + Integer.parseInt(name,2));
 		name = hasher.getHash(name,TRUNC);
 		setNameID(name);
-		log("My nameID is: " + name);
+		Util.log("My nameID is: " + name);
 	}
 	
 	/*
@@ -153,18 +153,18 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * More options can be appended but require the modification of ask() method.
 	 */
 	public static void printMenu() throws IOException{
-        log("Node at the address: " + address);
-        log("Name ID: "+ nameID +" Number ID: " + numID);
-        log("Choose a query by entering it's code and then press Enter");
-        log("1-Insert Node");
-        log("2-Insert Transaction");
-        log("3-Insert Block");
-        log("4-Search By Name ID");
-        log("5-Search By Numeric ID");
-        log("6-Print the Lookup Table");
-        log("7-Update View Table");
-        log("8-Print Data");
-        log("9-Print Level");
+        Util.log("Node at the address: " + address);
+        Util.log("Name ID: "+ nameID +" Number ID: " + numID);
+        Util.log("Choose a query by entering it's code and then press Enter");
+        Util.log("1-Insert Node");
+        Util.log("2-Insert Transaction");
+        Util.log("3-Insert Block");
+        Util.log("4-Search By Name ID");
+        Util.log("5-Search By Numeric ID");
+        Util.log("6-Print the Lookup Table");
+        Util.log("7-Update View Table");
+        Util.log("8-Print Data");
+        Util.log("9-Print Level");
 	}
 	
 	/*
@@ -173,9 +173,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * Of course do not forget to modify printMenu() when modifying this method
 	 */
 	public void ask() throws RemoteException {
-        String input = get();
+        String input = Util.getInput();
         if(!input.matches("[1-9]")) {
-        	log("Invalid query. Please enter the number of one of the possible operations");
+        	Util.log("Invalid query. Please enter the number of one of the possible operations");
         	return;
         }
 		int query = Integer.parseInt(input);
@@ -184,25 +184,25 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if(getDataNum() == 0) // if there are no inserted nodes yet then, then we insert the current node
 				insert(new NodeInfo(getAddress(),getNumID(),getNameID()));
 			else
-				log("Already Inserted");
+				Util.log("Already Inserted");
 		}else if (query == 2){ // insert transaction
-			log("Enter cont of transaction");
-			String cont = get();
+			Util.log("Enter cont of transaction");
+			String cont = Util.getInput();
 			Block lstBlk = getLatestBlock();
-			log("The prev found is : " + lstBlk.getNumID());
+			Util.log("The prev found is : " + lstBlk.getNumID());
 			Transaction t = new Transaction(lstBlk.getH(), getNumID() ,cont, getAddress());
 			boolean verified = validate(t);
 			if(verified == false) {
-				log("Transaction validation Failed");
+				Util.log("Transaction validation Failed");
 				return ;
 			}
-			log("Added transaction with nameID " + lstBlk.getH());
+			Util.log("Added transaction with nameID " + lstBlk.getH());
 			t.setAddress(getAddress());
 			transactions.add(t);
 			insert(t);
 		}else if (query == 3){ // insert block
-			log("If the inserted block is genesis enter 0, otherwise enter 1");
-			int num = Integer.parseInt(get());
+			Util.log("If the inserted block is genesis enter 0, otherwise enter 1");
+			int num = Integer.parseInt(Util.getInput());
 			String prev ;
 			int index ;
 			if(num == 1) {
@@ -214,64 +214,44 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				index = 0;
 			}
 			Block b = new Block(prev,getNumID(),getAddress(),index);
-			log("Block inserted with " + b.getNumID() + " numID");
+			Util.log("Block inserted with " + b.getNumID() + " numID");
 			insert(new NodeInfo(getAddress(),ZERO_ID,b.getH()));
 			blocks.add(b);
 			insert(b);
 		}else if (query == 4) {// search by name ID
-			log("Please Enter the name ID to be searched");
-			String name = get();
+			Util.log("Please Enter the name ID to be searched");
+			String name = Util.getInput();
 			while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
-				log("Name ID should be a binary string. Please enter a valid Name ID:");
-				name = get();
+				Util.log("Name ID should be a binary string. Please enter a valid Name ID:");
+				name = Util.getInput();
 			}
 			NodeInfo result = null;
 			try{
 				result = searchByNameID(name);
 			}catch(RemoteException e) {
 				e.printStackTrace();
-				log("Remote Exception in query.");
+				Util.log("Remote Exception in query.");
 			}
-			log("SearchByNameID result: ");
-			log("Address: " + result.getAddress());
-			log("numID: " + result.getNumID());
-			log("nameID: " + result.getNameID());
+			Util.log("SearchByNameID result: ");
+			Util.log("Address: " + result.getAddress());
+			Util.log("numID: " + result.getNumID());
+			Util.log("nameID: " + result.getNameID());
 		}else if(query == 5) { // search by num ID
-			log("Please Enter the numeric ID to be searched");
-			String numInput = get();
+			Util.log("Please Enter the numeric ID to be searched");
+			String numInput = Util.getInput();
 			while(!numInput.matches("0|[1-9][0-9]*")) {
-				log("Invalid number entered. Please enter a valid number");
-				numInput = get();
+				Util.log("Invalid number entered. Please enter a valid number");
+				numInput = Util.getInput();
 			}
 			int num = Integer.parseInt(numInput);
 			NodeInfo result = searchByNumID(num);
-			log("SearchByNumID result: ");
-			log("Address: " + result.getAddress());
-			log("numID: " + result.getNumID());
-			log("nameID: " + result.getNameID());
-		}else if(query == 6) { // print the lookup table of the current node
-			log("In case you want the lookup table of the original node enter -1.");
-			log("Otherwise, enter the numID of the data node ");
-			log("Available nodes: ");
-			int idx = 0;
-			for(int num : lookup2.keySet()) {
-				log(++idx + " " + num);
-			}
-			int num = Integer.parseInt(get());
-			if(num == -1) num = numID;
-			if(lookup2.get(num)!=null)
-				printLookup(num);
-			else
-				log("Data node with given numID does not exist");
+			Util.log("SearchByNumID result: ");
+			Util.log("Address: " + result.getAddress());
+			Util.log("numID: " + result.getNumID());
+			Util.log("nameID: " + result.getNameID());
 		}else if(query == 7) { // delete dataNode{
 			updateViewTable();
 			viewUpdate();
-		}else if (query == 8) { // viewUpdate
-			printData();
-		}else if (query == 9) {
-			log("Which Level");
-			int num = Integer.parseInt(get());
-			printLevel(num);
 		}
     }
 	
@@ -323,20 +303,20 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			Block blk = getLatestBlock();
 			// Change numID to a nameID string
 			if(blk == null) {
-				log("Error in retreiving the Latest block: not a block was returned");
-				log("viewUpdate terminated");
+				Util.log("Error in retreiving the Latest block: not a block was returned");
+				Util.log("viewUpdate terminated");
 				return;
 			}
 			String name = numToName(blk.getNumID());
 			
-			log("Searching for " + name + " in viewUpdate()");
+			Util.log("Searching for " + name + " in viewUpdate()");
 			
 			// Get all transaction with this nameID
 			ArrayList<Transaction> tList = getTransactionsWithNameID(name);
 			// If number of transactions obtained is less than TX_MIN then we terminate the process
 			if(tList == null || tList.size() < TX_MIN) {
-				log("Cannot find TX_MIN number of transactions.");
-				log("Found " + tList.size() + "Transactions");
+				Util.log("Cannot find TX_MIN number of transactions.");
+				Util.log("Found " + tList.size() + "Transactions");
 				testLog.logBlockValidation(-1, false);
 				testLog.logViewUpdate(System.currentTimeMillis()-start, false);
 				return;
@@ -386,8 +366,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if(blk instanceof Block)
 				return (Block)blk;
 			else {
-				log(blk.getNumID() + " we returned as latest block");
-				log("Error in getLatestBlock(): instance returned is not a block");
+				Util.log(blk.getNumID() + " we returned as latest block");
+				Util.log("Error in getLatestBlock(): instance returned is not a block");
 				return null;
 			}
 		} catch (Exception e) {
@@ -427,7 +407,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			
 			
 			if(t == null || !t.getNameID().equals(name)) {
-				log("No transaction was found with the given nameID");
+				Util.log("No transaction was found with the given nameID");
 				return tList;
 			}
 			// if the found node is a transaction then, add it to the list
@@ -441,12 +421,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			LightChainRMIInterface thisRMI = getLightChainRMI(t.getAddress());
 			
 			// get addresses of left and right nodes, as well as their numIDs
-			left = thisRMI.getLeftNode(maxLevels,t.getNumID());
+			left = thisRMI.getLeftNode(lookup.getMaxLevels(),t.getNumID());
 			if(left != null)
-				leftNum = thisRMI.getLeftNumID(maxLevels, t.getNumID());
-			right = thisRMI.getRightNode(maxLevels,t.getNumID());
+				leftNum = thisRMI.getLeftNumID(lookup.getMaxLevels(), t.getNumID());
+			right = thisRMI.getRightNode(lookup.getMaxLevels(),t.getNumID());
 			if(right != null)
-				rightNum = thisRMI.getRightNumID(maxLevels, t.getNumID());
+				rightNum = thisRMI.getRightNumID(lookup.getMaxLevels(), t.getNumID());
 			
 			// now in the last level of the skip graph, we go left and right
 			while(left != null) {
@@ -456,9 +436,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				if(node instanceof Transaction)
 					tList.add((Transaction)node);
 				// now go to the left node again
-				left = leftRMI.getLeftNode(maxLevels, leftNum);
+				left = leftRMI.getLeftNode(lookup.getMaxLevels(), leftNum);
 				if(left != null)
-				leftNum = leftRMI.getLeftNumID(maxLevels,leftNum);
+				leftNum = leftRMI.getLeftNumID(lookup.getMaxLevels(),leftNum);
 			}
 			while(right != null) {
 				LightChainRMIInterface rightRMI = getLightChainRMI(right.getAddress());
@@ -468,9 +448,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 					tList.add((Transaction)node);
 				
 				// now go to the right node again
-				right = rightRMI.getRightNode(maxLevels, rightNum);
+				right = rightRMI.getRightNode(lookup.getMaxLevels(), rightNum);
 				if(right != null)
-				rightNum = rightRMI.getRightNumID(maxLevels, rightNum);
+				rightNum = rightRMI.getRightNumID(lookup.getMaxLevels(), rightNum);
 			}
 			return tList;
 		} catch (Exception e) {
@@ -504,7 +484,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				SignedBytes signature = node.PoV(blk);
 				// if one validator returns null, then validation has failed
 				if(signature == null || signature.getBytes() == null) {
-					log("Validating Block failed.");
+					Util.log("Validating Block failed.");
 					testLog.logBlockValidation(System.currentTimeMillis()-start, false);
 					return false;
 				}
@@ -512,7 +492,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 			// update the sigma array of the block with all the signatures
 			blk.setSigma(sigma);
-			log("Validation of block is successful");
+			Util.log("Validation of block is successful");
 			if(mode == MALICIOUS) {
 				malSuccess++;
 			}
@@ -570,10 +550,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 			t.setSigma(sigma);
 			if(validated) {
-				log("Validation Successful");
+				Util.log("Validation Successful");
 				duration = System.currentTimeMillis()-start;
 			}
-			else log("Validated failed.");
+			else Util.log("Validated failed.");
 			
 
 			if(mode == MALICIOUS) {
@@ -596,7 +576,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public SignedBytes PoV(Block blk) throws RemoteException {
 		try {
 			updateViewTable();
-			log("Validating block for " + blk.getOwner());
+			Util.log("Validating block for " + blk.getOwner());
 			boolean isAuth = isAuthenticated(blk);
 			boolean isCons = isConsistent(blk);
 			boolean val = isAuth && isCons;
@@ -606,11 +586,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			ArrayList<Transaction> ts = blk.getS();
 			for(int i=0 ; i<ts.size() ; ++i) {
 				if(!isAuthenticated(ts.get(i)) /*|| !isSound(ts.get(i))*/) {
-					log("Transaction inside block is not authentic");
+					Util.log("Transaction inside block is not authentic");
 					return new SignedBytes(null,isAuth,true,true,true);
 				}
 			}
-			log("Block Validation Successful");
+			Util.log("Block Validation Successful");
 			SignedBytes signedHash = new SignedBytes(digitalSignature.signString(blk.getH()).getBytes(),isAuth,true,true,true);
 			return signedHash;
 		} catch (Exception e) {
@@ -637,7 +617,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// generate the hash value and then compare it with the block's
 			String hash = hasher.getHash(blk.getPrev() + blk.getOwner() + sb.toString(),TRUNC);
 			if(!hash.equals(blk.getH())) {
-				log("Hash value of block not generated properly");
+				Util.log("Hash value of block not generated properly");
 				return false;
 			}
 			// get the sigma array of the block
@@ -653,7 +633,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				if(is) verified = true;
 			}
 			if(verified == false) {
-				log("Block does not contain signature of Owner");
+				Util.log("Block does not contain signature of Owner");
 			}
 			long end = System.currentTimeMillis();
 			
@@ -678,7 +658,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			Block lstBlk = getLatestBlock();	
 			boolean res = blk.getPrev().equals(lstBlk.getH());
 			if(res == false) {
-				log("Block not consistent");
+				Util.log("Block not consistent");
 			}
 			
 			long end = System.currentTimeMillis();
@@ -736,7 +716,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		boolean hasBalance = false;
 		try {
 			updateViewTable();
-			log("Validating Transaction for " + t.getOwner());
+			Util.log("Validating Transaction for " + t.getOwner());
 			try{
 				isAuth = isAuthenticated(t);
 			}catch(Exception e) {
@@ -760,7 +740,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			boolean val = isAuth && isCorrect && isSound && hasBalance;
 			if(val == false)
 				return new SignedBytes(null, isAuth, isSound, isCorrect, hasBalance);
-			log("Transaction Validation Successful");
+			Util.log("Transaction Validation Successful");
 			SignedBytes signedHash = new SignedBytes(digitalSignature.signString(t.getH()).getBytes(),isAuth,isSound, isCorrect,hasBalance);
 			return signedHash;
 		} catch (Exception e) {
@@ -792,14 +772,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			
 			NodeInfo b1 = searchByNumID(prev);
 			if(!(b1 instanceof Block)) {
-				log("isSound(): search for prev did not return a block: " + prev);
-				log("It returned numID: " + b1.getNameID());
+				Util.log("isSound(): search for prev did not return a block: " + prev);
+				Util.log("It returned numID: " + b1.getNameID());
 				return false;
 			}
 			NodeInfo b2 = searchByNumID(blkNumID);
 			if(!(b2 instanceof Block)) {
-				log("isSound(): search for latest block of owner did not return a block: " + prev);
-				log("It returned numID: " + b2.getNameID());
+				Util.log("isSound(): search for latest block of owner did not return a block: " + prev);
+				Util.log("It returned numID: " + b2.getNameID());
 				return false;
 			}
 			
@@ -809,14 +789,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			int tIdx = prevBlk.getIndex();
 			int bIdx = thisBlk.getIndex();
 
-			log("Index of prev: " + tIdx);
-			log("Index of latest: " + bIdx);
+			Util.log("Index of prev: " + tIdx);
+			Util.log("Index of latest: " + bIdx);
 			if(tIdx <= bIdx) {
-				log("Transaction not sound");
-				log("Index of prev: " + tIdx);
-				log("Index of latest: " + bIdx);
+				Util.log("Transaction not sound");
+				Util.log("Index of prev: " + tIdx);
+				Util.log("Index of latest: " + bIdx);
 			}else
-				log("Transaction is sound");
+				Util.log("Transaction is sound");
 			long end = System.currentTimeMillis();
 			
 			long time = end - start;
@@ -843,7 +823,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 			int ownerMode = viewMode.get(t.getOwner());
 			if(ownerMode != mode) {
-				log("Transaction not correct");
+				Util.log("Transaction not correct");
 			}
 			
 			long end = System.currentTimeMillis();
@@ -870,7 +850,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			String hash = hasher.getHash(t.getPrev()+t.getOwner()+t.getCont(),TRUNC);
 			// return false if it was not generated properly
 			if(!hash.equals(t.getH())) {
-				log("Transaction hash value not generated properly");
+				Util.log("Transaction hash value not generated properly");
 				return false;
 			}
 			// now get the sigma array from transaction and iterate over signatures it contains
@@ -885,7 +865,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				if(is) verified = true;
 			}
 			if(verified == false) {
-				log("Transaction does not contain signature of owner");
+				Util.log("Transaction does not contain signature of owner");
 			}
 			
 			long end = System.currentTimeMillis();
@@ -967,9 +947,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			NodeInfo owner = searchByNumID(num);
 			
 			if(owner.getNumID() != num) {
-				log("GetOwnerPublicKey: no node was found with given numID");
-				log("Given numID: " + num);
-				log("Found numID: " + owner.getNumID());
+				Util.log("GetOwnerPublicKey: no node was found with given numID");
+				Util.log("Given numID: " + num);
+				Util.log("Found numID: " + owner.getNumID());
 				return null;
 			}
 			
@@ -982,7 +962,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// if hashedKey is not equal to the provided numID, then there is a problem
 			// and it is printed to the console
 			if(hashedKey != num) {
-				log("GetOwnerPublicKey: given numID does not match with hash value of public key.");
+				Util.log("GetOwnerPublicKey: given numID does not match with hash value of public key.");
 				return null;
 			}
 			return pk;
@@ -993,16 +973,16 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	}
 	
 	public static LightChainRMIInterface getLightChainRMI(String adrs) {
-		if(validateIP(adrs)) {
+		if(Util.validateIP(adrs)) {
 			if(adrs.equalsIgnoreCase(address)) return lightChainNode;
 			try {
 				return (LightChainRMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
 			}catch(Exception e) {
-				log("Exception while attempting to lookup RMI located at address: "+adrs);
+				Util.log("Exception while attempting to lookup RMI located at address: "+adrs);
 				e.printStackTrace();
 			}
 		} else {
-			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
+			Util.log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
 		}
 		return null;
 	}
@@ -1057,14 +1037,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private void createNewTransaction(String cont) {
 		try {
 			Block lstBlk = getLatestBlock();
-			log("The prev found is : " + lstBlk.getNumID());
+			Util.log("The prev found is : " + lstBlk.getNumID());
 			Transaction t = new Transaction(lstBlk.getH(), getNumID() ,cont, getAddress());
 			boolean verified = validate(t);
 			if(verified == false) {
-				log("Transaction validation Failed");
+				Util.log("Transaction validation Failed");
 				return ;
 			}
-			log("Added transaction with nameID " + lstBlk.getH());
+			Util.log("Added transaction with nameID " + lstBlk.getH());
 			t.setAddress(getAddress());
 			transactions.add(t);
 			insert(t);

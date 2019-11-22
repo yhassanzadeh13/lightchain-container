@@ -9,7 +9,7 @@ import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 
 
-public class Block extends NodeInfo{
+public class Block extends NodeInfo {
 	
 	private static final long serialVersionUID = 1L;
 	private final String prev;
@@ -31,7 +31,7 @@ public class Block extends NodeInfo{
 		this.owner = owner;
 		S = new ArrayList<Transaction>();
 		hasher = new HashingTools();
-		this.h = hasher.getHash(prev + owner,SkipNode.TRUNC);
+		this.h = hasher.getHash(prev + owner,LightChainNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	public Block(String prev, int owner,String address ,ArrayList<Transaction> tList,int idx) {
@@ -44,7 +44,7 @@ public class Block extends NodeInfo{
 		StringBuilder sb = new StringBuilder();
 		for(int i=0 ; i < tList.size(); ++i)
 			sb.append(tList.get(i).toString());
-		this.h = hasher.getHash(prev + owner + sb.toString(),SkipNode.TRUNC);
+		this.h = hasher.getHash(prev + owner + sb.toString(),LightChainNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	public Block(Block blk) {

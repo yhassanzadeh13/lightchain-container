@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import util.Util;
+
 
 /**
  * @author Shadi Hamdan
@@ -12,7 +14,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 
 public class lookupTable {
-	public int maxLevels;
+	public static int maxLevels;
 	private HashMap<Integer, NodeInfo> dataNodes;
 	private HashMap<Integer, Table> lookup;
 	public static final int LEFT = 0;
@@ -183,14 +185,14 @@ public class lookupTable {
 			int num = -1;
 			for (int cur : dataNodes.keySet()) {
 				if(num == -1) num = cur;
-				int tmp = commonBits(name, dataNodes.get(cur).getNameID());
+				int tmp = Util.commonBits(name, dataNodes.get(cur).getNameID());
 				if(tmp > best) {
 					best = tmp;
 					num = cur;
 				}
 			}
 			for(int cur : dataNodes.keySet()) {
-				int bits = commonBits(name,dataNodes.get(cur).getNameID());
+				int bits = Util.commonBits(name,dataNodes.get(cur).getNameID());
 				if(bits == best) {
 					if(direction == RIGHT) {
 						if(dataNodes.get(cur).getNumID() > num) {
@@ -208,18 +210,33 @@ public class lookupTable {
 		}
 	}
 	
+	/*
+	 * Print the contents of the lookup table
+	 */
+	public void printLookup(int num) {
+        System.out.println("\n");
+        for(int i = maxLevels-1 ; i >= 0 ; i--)
+        {
+           	if(get(num, i, LEFT) == null)
+        		Util.logLine("null\t");
+        	else {
+        		NodeInfo lNode = get(num, i, LEFT);
+        		Util.logLine(lNode.getAddress() + " " + lNode.getNumID() + " " + lNode.getNameID()+"\t");
+        	}
+           	if(get(num, i, RIGHT) == null)
+        		Util.logLine("null\t");
+        	else {
+        		NodeInfo rNode = lookupTable.this.get(num, i, RIGHT);
+        		Util.logLine(rNode.getAddress() + " " + rNode.getNumID() + " " + rNode.getNameID()+"\t");
+        	}
+            Util.log("\n\n");
+        }
+    }
 	
-	
-	private static int commonBits(String name1, String name2) {
-		if(name1 == null || name2 == null) {
-			return -1;
-		}
-		if(name1.length() != name2.length())
-			return -1;
-		int i = 0;
-		for(i = 0; i < name1.length() && name1.charAt(i) == name2.charAt(i) ; ++i);
-			return i;
-		}
+	public int getMaxLevels() {
+		return maxLevels;
+	}
+
 	
 	class Table{
 		ReadWriteLock lock;
@@ -271,6 +288,7 @@ public class lookupTable {
 				}
 			//}
 		}
+		
 		
 		private boolean equal(NodeInfo nodeA, NodeInfo nodeB) {
 			if(nodeA == null && nodeB == null) {
