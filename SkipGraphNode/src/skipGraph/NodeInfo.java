@@ -15,6 +15,13 @@ public class NodeInfo implements Serializable {
 		this.numID = num;
 		this.nameID = name;
 	}
+	
+	public NodeInfo(NodeInfo node) {
+		this.address = node.getAddress();
+		this.numID = node.getNumID();
+		this.nameID = node.getNameID();
+	}
+	
 	/*
 	 * Getters and Setters for NodeInfo entries.
 	 */
@@ -41,5 +48,13 @@ public class NodeInfo implements Serializable {
 		return address.equals(node.getAddress()) && 
 				numID == node.getNumID() && 
 				nameID.equals(node.getNameID()); 
+	}
+	@Override
+	public String toString() {
+		return "Node: address: " + address + "\tnumID: " + numID + "\tnameID: " + nameID;
+	}
+	
+	public final String superString() {
+		return "Node: address: " + address + "\tnumID: " + numID + "\tnameID: " + nameID;
 	}
 }

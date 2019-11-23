@@ -1,5 +1,6 @@
 package signature;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -67,10 +68,20 @@ public class DigitalSignature {
 	private void storeKeyPair() {
 		
 		try {
+<<<<<<< HEAD
 			FileOutputStream out = new FileOutputStream(privateKeyName + ".key");
 			out.write(privateKey.getEncoded());
 			out.close();
 			out = new FileOutputStream(publicKeyName + ".key");
+=======
+			//Initialize folder
+			File parentDir = new File(System.getProperty("user.dir")+File.separator+"Keys");
+			parentDir.mkdirs();
+			FileOutputStream out = new FileOutputStream(System.getProperty("user.dir")+File.separator+"Keys"+File.separator+privateKeyName + ".key");
+			out.write(privateKey.getEncoded());
+			out.close();
+			out = new FileOutputStream(System.getProperty("user.dir")+File.separator+"Keys"+File.separator+publicKeyName + ".key");
+>>>>>>> origin/Mass_Deployment_lookupRework
 			out.write(publicKey.getEncoded());
 			out.close();
 			
@@ -152,16 +163,16 @@ public class DigitalSignature {
 	/*
 	 * This method takes a string, signs it, and then returns the signed string
 	 */
-	public String signString(String text) {
+	public SignedBytes signString(String text) {
 		
 		Signature signature;
 		try {	
 			signature = Signature.getInstance(signAlgorithm);
 			signature.initSign(privateKey);
-			byte[] data = text.getBytes();
+			byte[] data = text.getBytes("UTF-8");
 			signature.update(data);
 			byte[] signed = signature.sign();
-			return new String(signed);
+			return new SignedBytes(signed);
 			
 		} catch (Exception e) {
 			log("Exception caught: " + e.toString());
@@ -202,13 +213,14 @@ public class DigitalSignature {
 	 * This methods receives a string and the signed data and verifies it
 	 * It returns true if the operation is successful and false otherwise
 	 */
-	public boolean verifyString(String data, String signedData, PublicKey pKey) {
+	public boolean verifyString(String data, SignedBytes signedData, PublicKey pKey) {
 			
 		Signature signature ;
 		try {
 			signature = Signature.getInstance(signAlgorithm);
 			signature.initVerify(pKey);
 			signature.update(data.getBytes());
+			if(signedData==null || signedData.getBytes()==null) return false;
 			boolean verification = signature.verify(signedData.getBytes());
 			return verification;
 		}catch(Exception e) {

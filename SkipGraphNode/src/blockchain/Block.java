@@ -4,18 +4,19 @@ import java.util.ArrayList;
 
 import hashing.Hasher;
 import hashing.HashingTools;
+import signature.SignedBytes;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 
 
-public class Block extends NodeInfo{
+public class Block extends NodeInfo {
 	
 	private static final long serialVersionUID = 1L;
 	private final String prev;
 	private final int owner;
 	private ArrayList<Transaction> S;
 	private final String h;
-	private ArrayList<String> sigma;
+	private ArrayList<SignedBytes> sigma;
 	private Hasher hasher ;
 	private final int index;
 	
@@ -30,7 +31,7 @@ public class Block extends NodeInfo{
 		this.owner = owner;
 		S = new ArrayList<Transaction>();
 		hasher = new HashingTools();
-		this.h = hasher.getHash(prev + owner,SkipNode.TRUNC);
+		this.h = hasher.getHash(prev + owner,LightChainNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
 	}
 	public Block(String prev, int owner,String address ,ArrayList<Transaction> tList,int idx) {
@@ -43,8 +44,18 @@ public class Block extends NodeInfo{
 		StringBuilder sb = new StringBuilder();
 		for(int i=0 ; i < tList.size(); ++i)
 			sb.append(tList.get(i).toString());
-		this.h = hasher.getHash(prev + owner + sb.toString(),SkipNode.TRUNC);
+		this.h = hasher.getHash(prev + owner + sb.toString(),LightChainNode.TRUNC);
 		super.setNumID(Integer.parseInt(this.h,2));
+	}
+	public Block(Block blk) {
+		super(blk.getAddress(),blk.getNumID(),blk.getNameID());
+		hasher = new HashingTools();
+		this.index = blk.getIndex();
+		this.prev = blk.getPrev();
+		this.owner= blk.getOwner();
+		this.S = blk.getS();
+		this.h = blk.getH();
+		this.sigma = blk.getSigma();
 	}
 	
 	public String getPrev() {
@@ -59,10 +70,10 @@ public class Block extends NodeInfo{
 	public String getH() {
 		return h;
 	}
-	public ArrayList<String> getSigma(){
+	public ArrayList<SignedBytes> getSigma(){
 		return sigma;
 	}
-	public void setSigma(ArrayList<String> s) {
+	public void setSigma(ArrayList<SignedBytes> s) {
 		sigma = s;
 	}
 	public void addTransactions(ArrayList<Transaction> tList) {
