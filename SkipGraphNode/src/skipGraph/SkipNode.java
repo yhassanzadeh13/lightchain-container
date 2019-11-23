@@ -19,12 +19,6 @@ import remoteTest.TestingLog;
 
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface{
-<<<<<<< HEAD
-	
-	
-=======
-
->>>>>>> origin/Mass_Deployment_lookupRework
 	protected static SkipNode node;
 	protected static String address;
 	protected static String nameID;
@@ -41,21 +35,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	 * Constants
 	 */
 	private static final long serialVersionUID = 1L;
-<<<<<<< HEAD
-	protected static int maxLevels;
-	private static int MAX_DATA = 20000;
-	private static final int RIGHT = 1;
-	private static final int LEFT = 0;
-	private static final int ZERO_LEVEL = 0;
-	private static final int UNASSIGNED = -1;
-	public static final int TRUNC = 30;
-=======
 	private static final int RIGHT = lookupTable.RIGHT;
 	private static final int LEFT = lookupTable.LEFT;
 	private static final int ZERO_LEVEL = 0;
 	private static final int UNASSIGNED = -1;
 	
->>>>>>> origin/Mass_Deployment_lookupRework
 	
 	/*
 	 * Constructor for SkipNode class
@@ -641,13 +625,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 	/*
 	 * This method returns an RMI instance of the node with the given address
 	 */
-<<<<<<< HEAD
-	public static RMIInterface getRMI(String adrs) {		
-		if(validateIP(adrs)){
-=======
 	public static RMIInterface getRMI(String adrs) {
 		if(Util.validateIP(adrs)) {
->>>>>>> origin/Mass_Deployment_lookupRework
 			if(adrs.equalsIgnoreCase(address)) return node;
 			try {
 				return (RMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
@@ -655,13 +634,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface{
 				Util.log("Exception while attempting to lookup RMI located at address: "+adrs);
 				e.printStackTrace();
 			}
-<<<<<<< HEAD
-		} else {
-			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
-=======
 		}else {
 			Util.log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
->>>>>>> origin/Mass_Deployment_lookupRework
 		}
 		return null;
 	}

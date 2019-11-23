@@ -68,12 +68,6 @@ public class DigitalSignature {
 	private void storeKeyPair() {
 		
 		try {
-<<<<<<< HEAD
-			FileOutputStream out = new FileOutputStream(privateKeyName + ".key");
-			out.write(privateKey.getEncoded());
-			out.close();
-			out = new FileOutputStream(publicKeyName + ".key");
-=======
 			//Initialize folder
 			File parentDir = new File(System.getProperty("user.dir")+File.separator+"Keys");
 			parentDir.mkdirs();
@@ -81,7 +75,6 @@ public class DigitalSignature {
 			out.write(privateKey.getEncoded());
 			out.close();
 			out = new FileOutputStream(System.getProperty("user.dir")+File.separator+"Keys"+File.separator+publicKeyName + ".key");
->>>>>>> origin/Mass_Deployment_lookupRework
 			out.write(publicKey.getEncoded());
 			out.close();
 			

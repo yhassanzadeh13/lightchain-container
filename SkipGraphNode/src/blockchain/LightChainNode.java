@@ -37,14 +37,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * Constants
 	 */
 	private static final int VALIDATION_FEES = 1;
-<<<<<<< HEAD
-	private static int SIGNATURES_THRESHOLD = 10;
-	private static final int TRUNC = 30;
-	private static final int TX_MIN = 10;
-=======
 	private static int SIGNATURES_THRESHOLD = 5;
 	private static final int TX_MIN = 4;
->>>>>>> origin/Mass_Deployment_lookupRework
 	private static final int ZERO_ID = 0;
 	private static final int HONEST = 1;
 	private static final int MALICIOUS = 0;
@@ -71,25 +65,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/*
 	 * Main method is for Running the tests on the node
 	 */
-<<<<<<< HEAD
-	public static void main(String args[]) {				
-		try {
-			init();
-			lightChainNode = new LightChainNode();
-			//Setting the SkipNode in the SkipNode class to the same thing
-			SkipNode.node = lightChainNode;
-			while(true) {
-				printMenu();
-				lightChainNode.ask();
-			}
-		}catch(RemoteException e) {
-			System.out.println("Remote Exception in main method. Terminating.");
-			e.printStackTrace();
-			System.exit(1);
-		}catch(IOException e){
-			log("Error in Rebinding");
-			e.printStackTrace();
-=======
 	public static void main(String args[]) {
 	try {
 		init();//Initialize IP and address + system properties
@@ -119,7 +94,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			cnf = intro.getConf();
 			lightChainNode.setInfo(cnf);
 			mode = cnf.isMalicious()?MALICIOUS:HONEST;
->>>>>>> origin/Mass_Deployment_lookupRework
 		}
 		//Initializing the testLog
 		testLog = new TestingLog(mode==0);
@@ -166,26 +140,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		view = new HashMap<>();
 		viewMode = new HashMap<>();
 		viewBalance = new HashMap<>();
-<<<<<<< HEAD
-		log("Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-		mode = Integer.parseInt(get());
-		while(mode != MALICIOUS && mode != HONEST) {
-			log("Incorrect input. Specify mode of node, enter 1 for HONEST, 0 for MALICIOUS");
-			mode = Integer.parseInt(get());
-		}
-		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC);
-		setNumID(Integer.parseInt(name,2));
-		name = hasher.getHash(name,TRUNC);
-		setNameID(name);
-		setInfo();
-=======
 		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(),TRUNC);
 		setNumID(Integer.parseInt(name,2));
 		Util.log("My numID is: " + Integer.parseInt(name,2));
 		name = hasher.getHash(name,TRUNC);
 		setNameID(name);
 		Util.log("My nameID is: " + name);
->>>>>>> origin/Mass_Deployment_lookupRework
 	}
 	
 	/*
@@ -250,11 +210,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				prev = lstBlk.getH();
 				index = lstBlk.getIndex() + 1;
 			}else {
-<<<<<<< HEAD
-				prev = "000000000000000000000000000000";
-=======
 				prev = numToName(0);
->>>>>>> origin/Mass_Deployment_lookupRework
 				index = 0;
 			}
 			Block b = new Block(prev,getNumID(),getAddress(),index);
@@ -737,11 +693,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				int num = Integer.parseInt(hasher.getHash(hash,TRUNC),2);
 				NodeInfo node = searchByNumID(num);
 				i++;
-<<<<<<< HEAD
 				// if already taken or equals the owner's node, then keep iterating.
-=======
-				// if already taken or equals the owner's 			node, then keep iterating.
->>>>>>> origin/Mass_Deployment_lookupRework
 				if(taken.containsKey(node.getAddress()))continue;
 				count++;
 				taken.put(node.getAddress(), 1);
@@ -1024,17 +976,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 	
-<<<<<<< HEAD
-	public LightChainRMIInterface getLightChainRMI(String adrs) {
-		if(validateIP(adrs)){
-			if(adrs.equalsIgnoreCase(address)) {
-				return lightChainNode;
-			}
-=======
 	public static LightChainRMIInterface getLightChainRMI(String adrs) {
 		if(Util.validateIP(adrs)) {
 			if(adrs.equalsIgnoreCase(address)) return lightChainNode;
->>>>>>> origin/Mass_Deployment_lookupRework
 			try {
 				return (LightChainRMIInterface)Naming.lookup("//"+adrs+"/RMIImpl");
 			}catch(Exception e) {
@@ -1042,11 +986,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				e.printStackTrace();
 			}
 		} else {
-<<<<<<< HEAD
-			log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
-=======
 			Util.log("Error in looking up RMI. Address: "+ adrs + " is not a valid address.");
->>>>>>> origin/Mass_Deployment_lookupRework
 		}
 		return null;
 	}
