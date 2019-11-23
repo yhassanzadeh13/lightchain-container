@@ -1,10 +1,14 @@
 package skipGraph;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import util.Const;
 import util.Util;
 
 
@@ -13,23 +17,22 @@ import util.Util;
  *
  */
 
-public class lookupTable {
-	public static int maxLevels;
-	private HashMap<Integer, NodeInfo> dataNodes;
-	private HashMap<Integer, Table> lookup;
-	public static final int LEFT = 0;
-	public static final int RIGHT = 1;
-	
+public class LookupTable {
+	private  int maxLevels;
+	private Map<Integer, NodeInfo> dataNodes;
+	private Map<Integer, Table> lookup;
 	
 	/*
-	 * The buffer is there so we can finalize a node's table and insertion before we add it to the other nodes. This prevents any access to it during search etc.
+	 * The buffer is there so we can finalize a node's table
+	 *  and insertion before we add it to the other nodes. 
+	 *  This prevents any access to it during search etc.
 	 */
 	private NodeInfo nodeBuffer;
-	private  Table tableBuffer;
+	private Table tableBuffer;
 
 
 	
-	public lookupTable(int maxLevels) {
+	public LookupTable(int maxLevels) {
 		this.maxLevels = maxLevels;
 		this.dataNodes = new HashMap<>();
 		this.lookup = new HashMap<>();
@@ -43,20 +46,23 @@ public class lookupTable {
 		return lookup.keySet();
 	}
 	
-	public int bufferNumId() {
-		if(nodeBuffer==null) return -1;
+	public int bufferNumID() {
+		if(nodeBuffer == null) 
+			return -1;
 		return nodeBuffer.getNumID();
 	}
 	
 	/**
 	 * Adds a node to the data nodes.
-	 * Warning: Only use this if the node you are adding is properly initialized and ready to be accessed. If you still
-	 * want to initialize the node (eg. the lookup table is not finalized or you do not want it to be accessible yet) then use
-	 * {@link lookupTable#initializeNode(NodeInfo)}
+	 * Warning: Only use this if the node you are adding is properly
+	 * initialized and ready to be accessed. If you still want to 
+	 * initialize the node (eg. the lookup table is not finalized or 
+	 * you do not want it to be accessible yet) then use
+	 * {@link LookupTable#initializeNode(NodeInfo)}
 	 * @param nd The node that is to be added the lookup
 	 * @return false if the numID given was added previously, true otherwise.
 	 */
-	public boolean addNode(NodeInfo node) {
+	public synchronized boolean addNode(NodeInfo node) {
 		NodeInfo ret = dataNodes.put(node.getNumID(), node);
 		if (ret == null) {
 			lookup.put(node.getNumID(), new Table());
@@ -65,8 +71,10 @@ public class lookupTable {
 	}
 	
 	/**
-	 * Adds the node to the buffer. This allows the user to finish finalising the node's lookup table before making it accessible.
-	 * This also makes the node inaccessible from getBestNum and getBestName. Once the node is finalised, you can use {@link lookupTable#finalizeNode()} 
+	 * Adds the node to the buffer. This allows the user to finish finalizing 
+	 * the node's lookup table before making it accessible.
+	 * This also makes the node inaccessible from getBestNum and getBestName.
+	 * Once the node is finalized, you can use {@link LookupTable#finalizeNode()} 
 	 * to commit the node to the lookup table.
 	 * 
 	 * @param node The NodeInfo of the node you want to add to the buffer.
@@ -79,11 +87,13 @@ public class lookupTable {
 	
 	/**
 	 * Commits the node in buffer to the lookup table. 
-	 * @return Returns true if the node was committed properly. Returns false if the node was not initialised properly
+	 * @return Returns true if the node was committed properly. 
+	 * @return Returns false if the node was not initialized properly
 	 * and thus not committed.
 	 */
 	public boolean finalizeNode() {
-		if(this.nodeBuffer==null || this.tableBuffer == null) return false;
+		if(this.nodeBuffer == null || this.tableBuffer == null)
+			return false;
 		else {
 			dataNodes.put(nodeBuffer.getNumID(), nodeBuffer);
 			lookup.put(nodeBuffer.getNumID(), tableBuffer);
@@ -99,19 +109,18 @@ public class lookupTable {
 	 * @param numID the numID of the node you want to remove
 	 * @return the stored node info of the given numID.
 	 */
-	public NodeInfo remove(int numID) {
+	public synchronized NodeInfo remove(int numID) {
 		lookup.remove(numID);
 		return dataNodes.remove(numID);
 	}
 	
 	/**
 	 * Gets the information of the node with the given numID 
-	 * 
 	 * @param numID the numID of the node you want to remove
 	 * @return the stored node info of the given numID
 	 */
-	public NodeInfo get(int numID) {
-		if(nodeBuffer != null && nodeBuffer.getNumID()==numID) {
+	public synchronized NodeInfo get(int numID) {
+		if(nodeBuffer != null && nodeBuffer.getNumID() == numID) {
 			return nodeBuffer;
 		}
 		return dataNodes.get(numID);
@@ -127,7 +136,7 @@ public class lookupTable {
 	 * @param direction The direction (lookupTable.RIGHT or lookupTable.LEFT)
 	 * @return The information of the desired neighbour or null if the numID is invalid
 	 */
-	public NodeInfo get(int numID, int level, int direction) {
+	public synchronized NodeInfo get(int numID, int level, int direction) {
 		if(nodeBuffer != null && nodeBuffer.getNumID()==numID) {
 			tableBuffer.get(level, direction);
 		}
@@ -148,7 +157,7 @@ public class lookupTable {
 	 * @return				  Returns true if the node was placed properly and the expectedOldNode was what it replaced. False and the lookup is not modified otherwise.
 	 */
 	public boolean put(int numID, int level, int direction, NodeInfo newNode, NodeInfo expectedOldNode) {
-		if(nodeBuffer != null && nodeBuffer.getNumID()==numID) {
+		if(nodeBuffer != null && nodeBuffer.getNumID() == numID) {
 			return tableBuffer.safePut(level, direction, newNode, expectedOldNode);
 		}
 		if(!lookup.containsKey(numID)) return false;
@@ -194,7 +203,7 @@ public class lookupTable {
 			for(int cur : dataNodes.keySet()) {
 				int bits = Util.commonBits(name,dataNodes.get(cur).getNameID());
 				if(bits == best) {
-					if(direction == RIGHT) {
+					if(direction == Const.RIGHT) {
 						if(dataNodes.get(cur).getNumID() > num) {
 							num = dataNodes.get(cur).getNumID();
 						}
@@ -209,24 +218,23 @@ public class lookupTable {
 			return 0;
 		}
 	}
-	
+		
 	/*
 	 * Print the contents of the lookup table
 	 */
 	public void printLookup(int num) {
         System.out.println("\n");
-        for(int i = maxLevels-1 ; i >= 0 ; i--)
-        {
-           	if(get(num, i, LEFT) == null)
+        for(int i = maxLevels-1 ; i >= 0 ; i--) {
+           	if(get(num, i, Const.LEFT) == null)
         		Util.logLine("null\t");
         	else {
-        		NodeInfo lNode = get(num, i, LEFT);
+        		NodeInfo lNode = get(num, i, Const.LEFT);
         		Util.logLine(lNode.getAddress() + " " + lNode.getNumID() + " " + lNode.getNameID()+"\t");
         	}
-           	if(get(num, i, RIGHT) == null)
+           	if(get(num, i, Const.RIGHT) == null)
         		Util.logLine("null\t");
         	else {
-        		NodeInfo rNode = lookupTable.this.get(num, i, RIGHT);
+        		NodeInfo rNode = LookupTable.this.get(num, i, Const.RIGHT);
         		Util.logLine(rNode.getAddress() + " " + rNode.getNumID() + " " + rNode.getNameID()+"\t");
         	}
             Util.log("\n\n");
@@ -238,7 +246,7 @@ public class lookupTable {
 	}
 
 	
-	class Table{
+	class Table {
 		ReadWriteLock lock;
 		private ConcurrentHashMap<Integer, NodeInfo> table;
 		
@@ -256,7 +264,9 @@ public class lookupTable {
 		}
 		
 		public NodeInfo get(int level, int direction) {
+			
 			if(!validate(level,direction)) return null;
+			
 			lock.readLock().lock();
 			try {
 				return table.get(getInd(level,direction));
@@ -267,26 +277,29 @@ public class lookupTable {
 		
 		private NodeInfo put(int level, int direction, NodeInfo newNode) {
 			if(!validate(level,direction)) return null;
-			if(newNode == null) return remove(level, direction);
+			
+			if(newNode == null) 
+				return remove(level, direction);
+			
 			NodeInfo res = table.put(getInd(level,direction), newNode);
+			
 			return res;
 		}
 		
 		private NodeInfo remove(int level, int direction) {
+			
 			return table.remove(getInd(level, direction));
+		
 		}
 		
 		//TODO: see if we can get rid of expectedOldNode==null
 		public boolean safePut(int level, int direction, NodeInfo newNode, NodeInfo expectedOldNode) {
-			//synchronized (this) {
 				NodeInfo cur = put(level,direction,newNode);
 				if(expectedOldNode==null || equal(cur,expectedOldNode)) return true;
 				else {
 					put(level,direction,cur);
-					//System.exit(0);
 					return false;
 				}
-			//}
 		}
 		
 		

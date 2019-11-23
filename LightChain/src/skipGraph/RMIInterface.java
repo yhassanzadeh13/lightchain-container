@@ -39,8 +39,8 @@ public interface RMIInterface extends Remote {
 	
 	public NodeInfo searchByNameID(String targetString) throws RemoteException;
 	public NodeInfo searchByNumID(int targetNum) throws RemoteException;
-	public ArrayList<NodeInfo> searchByNumID(int targetNum,ArrayList<NodeInfo> lst) throws RemoteException;
-	public ArrayList<NodeInfo> searchNum(int numID, int searchTarget,int level,ArrayList<NodeInfo> lst, int jumpsLeft) throws RemoteException;
+	public ArrayList<NodeInfo> searchByNumIDHelper(int targetNum,ArrayList<NodeInfo> lst) throws RemoteException;
+	public ArrayList<NodeInfo> searchNumID(int numID, int searchTarget,int level,ArrayList<NodeInfo> lst) throws RemoteException;
 	
 	/*
 	 * Skip Node with data nodes functions

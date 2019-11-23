@@ -113,7 +113,7 @@ public class RemoteAccessTool {
 						ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
 						NodeInfo result = null;
 						try{
-							lst = node.searchByNumID(num,lst);
+							lst = node.searchByNumIDHelper(num,lst);
 							result = lst.get(lst.size()-1);
 						}catch(RemoteException e) {
 							e.printStackTrace();
@@ -717,7 +717,7 @@ public class RemoteAccessTool {
 			LightChainRMIInterface curRMI = getRMI(nodeList.get(ind).getAddress());
 			try {
 				if(ind == 0) {
-					curRMI.insertGen();
+					curRMI.insertGenesis();
 				}
 				TestingLog lg = curRMI.startSim(count, pace);
 				TestingLogMap.put(nodeList.get(ind), lg);

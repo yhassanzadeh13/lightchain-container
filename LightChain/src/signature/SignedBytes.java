@@ -19,7 +19,7 @@ public class SignedBytes implements Serializable{
 	public SignedBytes(byte[] array) {
 		if(array!=null) this.array = array.clone();
 	}
-	
+	// TODO: see if it is still necessary to store results of validation
 	public SignedBytes(byte[] array, boolean isAuthenticated, boolean isSound, boolean isCorrect, boolean hasBalance) {
 		if(array!=null) this.array = array.clone();
 		this.isAuthenticated = isAuthenticated;
