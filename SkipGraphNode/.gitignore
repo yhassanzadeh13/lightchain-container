@@ -1,9 +1,0 @@
-/bin/
-node.conf
-ansible-deployment/
-node.conf
-SkipGraphNode/Logs/
-SkipGraphNode/Keys/
-.gitignore
-/Keys/
-/Logs/
