@@ -14,8 +14,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import blockchain.LightChainRMIInterface;
-import blockchain.Transaction;
 import util.Const;
 import util.Util;
 import remoteTest.Configuration;

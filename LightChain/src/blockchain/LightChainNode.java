@@ -1,6 +1,5 @@
 package blockchain;
 
-import java.io.IOException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -14,7 +13,6 @@ import java.util.Random;
 
 import hashing.Hasher;
 import hashing.HashingTools;
-import remoteTest.Configuration;
 import remoteTest.TestingLog;
 import signature.DigitalSignature;
 import signature.SignedBytes;
@@ -779,10 +777,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return true;
 			}
 			int ownerBalance = viewBalance.get(t.getOwner());
-
-			long end = System.currentTimeMillis();
-
-			long time = end - start;
 
 			return ownerBalance >= Const.VALIDATION_FEES;
 		} catch (Exception e) {
