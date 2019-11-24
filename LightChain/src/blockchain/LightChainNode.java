@@ -38,7 +38,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private int mode;
 	private int balance = 20;
 
-	/*
+	/**
 	 * A constructor for LightChainNode, in which the following happens: 1)
 	 * initialize Hasher and digital signature 2) Get the mode of the node (Honest
 	 * or Malicious) 3) set the numID and nameID as the hash value of the public key
@@ -174,7 +174,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 //		}
 //    }
 
-	/*
+	/**
 	 * This method goes to the tail of the blockchain and iterates over the
 	 * transactions pointing at it, and then updating the entries corresponding to
 	 * the owners of the transactions in the view table.
@@ -186,7 +186,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// change numID to nameID format to search for transactions
 			String name = numToName(blk.getNumID());
 			// get transactions pointing at the tail
-			ArrayList<Transaction> tList = getTransactionsWithNameID(name);
+			List<Transaction> tList = getTransactionsWithNameID(name);
 			if (tList == null)
 				return;
 			// iterate over found transactions pointing at the blockchain
@@ -224,7 +224,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			String name = numToName(blk.getNumID());
 
 			// Get all transaction with this nameID
-			ArrayList<Transaction> tList = getTransactionsWithNameID(name);
+			List<Transaction> tList = getTransactionsWithNameID(name);
 			// If number of transactions obtained is less than TX_MIN then we terminate the
 			// process
 			if (tList == null || tList.size() < Const.TX_MIN) {
@@ -265,25 +265,23 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private void insertFlagNode(Block blk) {
 		super.insertNode(new NodeInfo(getAddress(), Const.ZERO_ID, blk.getH()));
 	}
-	
+
 	public void removeFlagNode() throws RemoteException {
 		super.delete(Const.ZERO_ID);
 	}
-	
+
 	private void insertTransaction(Transaction t) {
 		super.insertNode(t);
 	}
-
-	
 
 	private void insertBlock(Block blk) {
 		super.insertNode(blk);
 	}
 
-	/*
+	/**
 	 * This method finds the latest block on the blockchain.
 	 * 
-	 * @returns the latest block on the ledger
+	 * @return the latest block on the ledger
 	 */
 	// TODO: this should be refactored
 	public Block getLatestBlock() throws RemoteException {
@@ -303,10 +301,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method gets the numID of a peer and returns its latest transactions.
 	 * 
-	 * @returns the latest transaction for a particular owner
+	 * @return the latest transaction for a particular owner
 	 */
 	// TODO: this should be refactored, also check where it is being called
 	public Transaction getLatestTransaction(int num) throws RemoteException {
@@ -321,18 +319,18 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 	}
 
-	/*
+	/**
 	 * This function retreives transactions with a certain nameID
 	 * 
 	 * @param name the nameID for which we want to collect transactions that have it
-	 * as nameID
+	 *             as nameID
 	 * 
-	 * @returns a list of transactions that have name as nameID
+	 * @return a list of transactions that have name as nameID
 	 */
-	public ArrayList<Transaction> getTransactionsWithNameID(String name) {
+	public List<Transaction> getTransactionsWithNameID(String name) {
 
-		ArrayList<NodeInfo> list = getNodesWithNameID(name);
-		ArrayList<Transaction> tList = new ArrayList<>();
+		List<NodeInfo> list = getNodesWithNameID(name);
+		List<Transaction> tList = new ArrayList<>();
 
 		for (NodeInfo t : list) {
 			if (t instanceof Transaction)
@@ -341,7 +339,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		return tList;
 	}
 
-	/*
+	/**
 	 * This method is called by a node to validate a block that it has created.
 	 * First it gets the validators of the block, and then contacts each validator
 	 * and asks them to validate the block using PoV and then gets their signatures
@@ -350,7 +348,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * 
 	 * @param blk is the block to be validated
 	 * 
-	 * @returns true of block is valid, and false if block is not valid
+	 * @return true of block is valid, and false if block is not valid
 	 */
 	public boolean validateBlock(Block blk) {
 		try {
@@ -383,14 +381,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * The method is called by a node to validate a transaction that it has created
 	 * First it gets the validators of the transaction, and then contacts each of
 	 * them to get their signatures and stores their signatures in the sigma list.
 	 * 
 	 * @param t transaction to be validated
 	 * 
-	 * @returns true if transaction is valid, and false if it is not valid
+	 * @return true if transaction is valid, and false if it is not valid
 	 */
 	public boolean validateTransaction(Transaction t) throws RemoteException {
 
@@ -444,14 +442,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method is used to validate a block. It checks : 1) Authenticity 2)
 	 * Consistency 3) Authenticity and soundness of the transactions it contains.
 	 * 
 	 * @param blk is block to be validated using proof of validation
 	 * 
-	 * @returns signature of validator in case block is valid, or null if block is
-	 * invalid
+	 * @return signature of validator in case block is valid, or null if block is
+	 *         invalid
 	 */
 	public SignedBytes PoV(Block blk) throws RemoteException {
 		try {
@@ -480,13 +478,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method recieves a block and checks if: 1) its hash value is generated
 	 * properly 2) checks if it contains the signature of its owner
 	 * 
 	 * @param blk is block whose authenticity is to be checked
 	 * 
-	 * @returns true if block is authentic, or false if block is unauthentic
+	 * @return true if block is authentic, or false if block is unauthentic
 	 */
 	public boolean isAuthenticated(Block blk) throws RemoteException {
 		try {
@@ -526,7 +524,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * A block is said to be consistent if its prev points to the current tail of
 	 * the block, so at the time of validation, validators should make sure that
 	 * prev is still pointing to the tail of the blockchain, or otherwise if the
@@ -534,7 +532,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * 
 	 * @param blk whose consistency is to be checked
 	 * 
-	 * @returns true of block is consistent, or false if it is not consistent
+	 * @return true of block is consistent, or false if it is not consistent
 	 */
 	public boolean isConsistent(Block blk) throws RemoteException {
 		try {
@@ -552,12 +550,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method returns the validators of a given block
 	 * 
 	 * @param blk block whose validators are to be found
 	 * 
-	 * @returns list of validators of the given block
+	 * @return list of validators of the given block
 	 */
 	public List<NodeInfo> getValidators(Block blk) {
 		try {
@@ -591,7 +589,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * Checks the soundness, correctness and authenticity of a transaction using
 	 * other methods. Checks if the owner of the transaction has enough balance to
 	 * cover validation fees. returns null in case any of the tests fails, otherwise
@@ -600,7 +598,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * 
 	 * @param t transaction to be validated by proof of validation
 	 * 
-	 * @returns signature of validators in case transaction is valid, or null if not
+	 * @return signature of validators in case transaction is valid, or null if not
 	 */
 	public SignedBytes PoV(Transaction t) throws RemoteException {
 		boolean isAuth = false;
@@ -628,14 +626,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method validated the soundness of a given transaction It checks if the
 	 * given transaction is associated with a block which does not precede the block
 	 * that contains the transaction's owner's last transaction.
 	 * 
 	 * @param t transaction whose soundness is to be checked
 	 * 
-	 * @returns true if transaction is sound, or false if it is not
+	 * @return true if transaction is sound, or false if it is not
 	 */
 	public boolean isSound(Transaction t) {
 		try {
@@ -688,13 +686,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
-	 * Returns true if both nodes are of same type (HONEST,HONEST) or
-	 * (MALICIOUS,MALICIOUS) and returns false if both are of different types.
+	/**
+	 * Checks correctness of transactionReturns true if both nodes are of same type
+	 * (HONEST,HONEST) or (MALICIOUS,MALICIOUS) and returns false if both are of
+	 * different types.
 	 * 
 	 * @param t transaction whose correctness is to be verified
-	 * 
-	 * @returns true if transaction is correct, or false if not
+	 * @return true if transaction is correct, or false if not
 	 */
 	public boolean isCorrect(Transaction t) {
 		try {
@@ -717,7 +715,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method receives a transaction and verifies two things: 1- The hashvalue
 	 * of the transaction was generated according to the correct equation 2- The
 	 * sigma of the transaction contains the transaction's owner signed value of the
@@ -725,7 +723,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * 
 	 * @param t transaction whose authenticity is to be verified
 	 * 
-	 * @returns true if transaction is authentic, or false if not.
+	 * @return true if transaction is authentic, or false if not.
 	 */
 	public boolean isAuthenticated(Transaction t) throws RemoteException {
 		try {
@@ -762,11 +760,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * Checks if the owner of the transaction has enough balance to cover the fees
 	 * of validation
-	 * @param t transaction whose owner will be checked for enough balance compliance
-	 * @returns true if owner of transaction has enough balance to cover validation fees
+	 * 
+	 * @param t transaction whose owner will be checked for enough balance
+	 *          compliance
+	 * 
+	 * @return true if owner of transaction has enough balance to cover validation
+	 *         fees
 	 */
 	public boolean hasBalanceCompliance(Transaction t) {
 		try {
@@ -789,10 +791,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method returns the validators of a given transaction
+	 * 
 	 * @param t transaction whose validators are to be found
-	 * @returns a list of validators for the given transactions
+	 * 
+	 * @return a list of validators for the given transactions
 	 */
 	public ArrayList<NodeInfo> getValidators(Transaction t) {
 		try {
@@ -806,8 +810,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			HashMap<String, Integer> taken = new HashMap<>();
 			taken.put(address, 1);// To not take the node itself or any data node belonging to it.
 			int count = 0, i = 0;
-			while (count < Const.SIGNATURES_THRESHOLD && i <= Const.ALPHA) { // terminates when we get the required number of
-																	// validators
+			while (count < Const.SIGNATURES_THRESHOLD && i <= Const.ALPHA) { // terminates when we get the required
+																				// number of
+				// validators
 				String hash = t.getPrev() + t.getOwner() + t.getCont() + i;
 				int num = Integer.parseInt(hasher.getHash(hash, Const.TRUNC), 2);
 				NodeInfo node = searchByNumID(num);
@@ -825,14 +830,16 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
-	/*
+	/**
 	 * This method recieves the numID of an owner of a transaction or a block and
 	 * first verifies of the given public key truly belongs to the owner by hashing
 	 * the provided public key and comparing it with the given numID if the test
 	 * fails it prints it to console and return null. otherwise it returns the
 	 * public key of the owner.
+	 * 
 	 * @param num numerical ID of node whose public key is to be retrieved
-	 * @returns the public key of the node whose numerical ID was supplied
+	 * 
+	 * @return the public key of the node whose numerical ID was supplied
 	 */
 	public PublicKey getOwnerPublicKey(int num) throws RemoteException {
 		try {
@@ -878,7 +885,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 		return null;
 	}
-	
+
 	public void insertGenesis() throws RemoteException {
 		StringBuilder st = new StringBuilder();
 		for (int i = 0; i < Const.TRUNC; i++) {
@@ -917,7 +924,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 	// for Testing:
 
-	// TODO: decide on keeping or removing those after refactoring simulation approach
+	// TODO: decide on keeping or removing those after refactoring simulation
+	// approach
 	public void put(Transaction t) throws RemoteException {
 		transactions.add(t);
 		insertTransaction(t);

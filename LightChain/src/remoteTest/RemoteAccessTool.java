@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -110,7 +111,7 @@ public class RemoteAccessTool {
 							numInput = get();
 						}
 						int num = Integer.parseInt(numInput);
-						ArrayList<NodeInfo> lst = new ArrayList<NodeInfo>();
+						List<NodeInfo> lst = new ArrayList<NodeInfo>();
 						NodeInfo result = null;
 						try{
 							lst = node.searchByNumIDHelper(num,lst);
