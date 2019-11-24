@@ -229,17 +229,17 @@ public class LookupTable {
 	public void printLookup(int num) {
 		System.out.println("\n");
 		for (int i = maxLevels - 1; i >= 0; i--) {
-			if (get(num, i, Const.LEFT) == null)
+			NodeInfo lNode = get(num,i,Const.LEFT);
+			NodeInfo rNode = get(num,i,Const.RIGHT);
+			if (lNode == null)
 				Util.logLine("null\t");
 			else {
-				NodeInfo lNode = get(num, i, Const.LEFT);
-				Util.logLine(lNode.getAddress() + " " + lNode.getNumID() + " " + lNode.getNameID() + "\t");
+				Util.logLine(lNode.toString() + "\t");
 			}
-			if (get(num, i, Const.RIGHT) == null)
+			if (rNode == null)
 				Util.logLine("null\t");
 			else {
-				NodeInfo rNode = LookupTable.this.get(num, i, Const.RIGHT);
-				Util.logLine(rNode.getAddress() + " " + rNode.getNumID() + " " + rNode.getNameID() + "\t");
+				Util.logLine(rNode.toString() + "\t");
 			}
 			Util.log("\n\n");
 		}

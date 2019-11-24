@@ -16,6 +16,7 @@ import hashing.HashingTools;
 import remoteTest.TestingLog;
 import signature.DigitalSignature;
 import signature.SignedBytes;
+import skipGraph.NodeConfig;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 import util.Const;
@@ -43,9 +44,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 
 	// TODO: because of many parameters add a node config type
-	public LightChainNode(int RMIPort, String IP, int numID, String nameID, String introducer, boolean isInitial)
+	public LightChainNode(int RMIPort, int numID, String nameID, String introducer, boolean isInitial)
 			throws RemoteException {
-		super(Const.TRUNC, RMIPort, IP, numID, nameID, introducer, isInitial);
+		super(new NodeConfig(Const.TRUNC, RMIPort, numID, nameID), introducer, isInitial);
 
 		Registry reg = LocateRegistry.createRegistry(RMIPort);
 		reg.rebind("RMIImpl", this);
@@ -261,7 +262,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	}
 
 	private void insertFlagNode(Block blk) {
-		super.insertNode(new NodeInfo(getAddress(), Const.ZERO_ID, blk.getH()));
+		super.insertDataNode( Const.ZERO_ID, blk.getH());
 	}
 
 	public void removeFlagNode() throws RemoteException {
