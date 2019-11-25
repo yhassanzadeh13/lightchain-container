@@ -225,7 +225,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			// the neighbors of the inserted nodes at level i+1
 
 			int level = Const.ZERO_LEVEL;
-			while (level < lookup.getMaxLevels()) {
+			while (level < maxLevels) {
 
 				if (leftNode != null) {
 
@@ -492,6 +492,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @param searchTarget name ID which we are searching for
 	 * @return NodeInfo of target if found, or its closest node found
 	 * @see RMIInterface#searchByNameID(java.lang.String)
+	 * 
+	 * TODO: currently, when a numID search for a value that does not exist in 
+	 * the skip graph occurs, the returned result depends on the side from which
+	 * the search had started, if search started from the right of the target,
+	 * upper bound, if search starts from left of target, lowerbound is returned
 	 */
 	public NodeInfo searchByNameID(String searchTarget) throws RemoteException {
 		try {
@@ -618,45 +623,50 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	public List<NodeInfo> getNodesWithNameID(String name) {
 		try {
 			// find a transaction that has the given nameID
-			NodeInfo targetNode = searchByNameID(name);
+			NodeInfo ansNode = searchByNameID(name);
 			// an empty list to add transaction to it and return it
 			List<NodeInfo> list = new ArrayList<>();
 
-			if (targetNode == null || !targetNode.getNameID().equals(name)) {
+			if (ansNode == null || !ansNode.getNameID().equals(name)) {
 				Util.log("getNodesWithNameID: No Node was found with the given nameID");
 				return list;
 			}
-			// left and right will store the address of the nodes we are visiting in left
+			
+			list.add(ansNode);
+			
+			// leftNode and rightNode will store the nodes we are visiting in left
 			// and right respectively
 			NodeInfo leftNode, rightNode;
 			// leftNum and rightNum will store numIDs of left and right nodes, used to
 			// correctly access nodes (data nodes functionality)
 			int leftNumID = Const.UNASSIGNED_INT, rightNumID = Const.UNASSIGNED_INT;
 			// thisRMI is just used to extract information of neighbors
-			RMIInterface thisRMI = getRMI(targetNode.getAddress());
+			RMIInterface thisRMI = getRMI(ansNode.getAddress());
+			
+			int ansNodeNumID = ansNode.getNumID();
 
 			// get addresses of left and right nodes, as well as their numIDs
-			leftNode = thisRMI.getLeftNode(maxLevels, targetNode.getNumID());
+			leftNode = thisRMI.getLeftNode(maxLevels, ansNodeNumID);
 			if (leftNode != null)
-				leftNumID = thisRMI.getLeftNumID(maxLevels, targetNode.getNumID());
+				leftNumID = thisRMI.getLeftNumID(maxLevels, ansNodeNumID);
 
-			rightNode = thisRMI.getRightNode(maxLevels, targetNode.getNumID());
+			rightNode = thisRMI.getRightNode(maxLevels, ansNodeNumID);
 			if (rightNode != null)
-				rightNumID = thisRMI.getRightNumID(maxLevels, targetNode.getNumID());
+				rightNumID = thisRMI.getRightNumID(maxLevels, ansNodeNumID);
 
 			// now in the last level of the skip graph, we go left and right
 			while (leftNode != null) {
 				RMIInterface leftRMI = getRMI(leftNode.getAddress());
-				NodeInfo thisNode = leftRMI.getNode(leftNumID);
-				list.add(thisNode);
+				NodeInfo curNode = leftRMI.getNode(leftNumID);
+				list.add(curNode);
 				leftNode = leftRMI.getLeftNode(lookup.getMaxLevels(), leftNumID);
 				if (leftNode != null)
 					leftNumID = leftRMI.getLeftNumID(lookup.getMaxLevels(), leftNumID);
 			}
 			while (rightNode != null) {
 				RMIInterface rightRMI = getRMI(rightNode.getAddress());
-				NodeInfo thisNode = rightRMI.getNode(rightNumID);
-				list.add(thisNode);
+				NodeInfo curNode = rightRMI.getNode(rightNumID);
+				list.add(curNode);
 				// now go to the right node again
 				rightNode = rightRMI.getRightNode(lookup.getMaxLevels(), rightNumID);
 				if (rightNode != null)
