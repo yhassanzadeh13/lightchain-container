@@ -13,7 +13,7 @@ public interface LightChainRMIInterface extends RMIInterface {
 
 	public SignedBytes PoV(Block blk) throws RemoteException;
 
-	public int getMode() throws RemoteException;
+	public boolean getMode() throws RemoteException;
 
 	public PublicKey getPublicKey() throws RemoteException;
 

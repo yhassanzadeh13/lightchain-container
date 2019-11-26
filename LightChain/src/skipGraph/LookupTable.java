@@ -23,6 +23,8 @@ public class LookupTable {
 	/*
 	 * The buffer is there so we can finalize a node's table and insertion before we
 	 * add it to the other nodes. This prevents any access to it during search etc.
+	 * So it is basically to prevent access to the node's lookup table until it is
+	 * fully inserted.
 	 */
 	private NodeInfo nodeBuffer;
 	private Table tableBuffer;
@@ -118,6 +120,8 @@ public class LookupTable {
 	 * @return the stored node info of the given numID
 	 */
 	public synchronized NodeInfo get(int numID) {
+		// if the requested node is the one currently in the buffer
+		// then it is okay return its NodeInfo
 		if (nodeBuffer != null && nodeBuffer.getNumID() == numID) {
 			return nodeBuffer;
 		}
@@ -136,6 +140,9 @@ public class LookupTable {
 	 *         invalid
 	 */
 	public synchronized NodeInfo get(int numID, int level, int direction) {
+		// if the lookup table of the node in the buffer is to be accessed,
+		// then this will cause a block at this point until finalizeNode is 
+		// called to unlock the tableBuffer.
 		if (nodeBuffer != null && nodeBuffer.getNumID() == numID) {
 			tableBuffer.get(level, direction);
 		}
@@ -229,8 +236,8 @@ public class LookupTable {
 	public void printLookup(int num) {
 		System.out.println("\n");
 		for (int i = maxLevels - 1; i >= 0; i--) {
-			NodeInfo lNode = get(num,i,Const.LEFT);
-			NodeInfo rNode = get(num,i,Const.RIGHT);
+			NodeInfo lNode = get(num, i, Const.LEFT);
+			NodeInfo rNode = get(num, i, Const.RIGHT);
 			if (lNode == null)
 				Util.logLine("null\t");
 			else {

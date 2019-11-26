@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import util.Const;
 
 class SkipNodeTest {
+	
+	// TODO: add tests to cover duplicate nameID scenarios
+	// TODO: add tests to cover more data nodes scenarios
 
 	private static int port = 7000;
 	private int maxLevels = 3;

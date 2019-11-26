@@ -29,12 +29,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private List<Block> blocks;
 	private DigitalSignature digitalSignature;
 	private Hasher hasher;
-
-	// TODO: wrap view operations in 1 object
-	private Map<Integer, Integer> view;
-	private Map<Integer, Integer> viewBalance;
-	private Map<Integer, Integer> viewMode;
-	private int mode;
+	private View view;
+	private boolean mode;
 	private int balance = 20;
 
 	/**
@@ -43,135 +39,24 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * or Malicious) 3) set the numID and nameID as the hash value of the public key
 	 */
 
-	// TODO: because of many parameters add a node config type
-	public LightChainNode(int RMIPort, int numID, String nameID, String introducer, boolean isInitial)
-			throws RemoteException {
-		super(new NodeConfig(Const.TRUNC, RMIPort, numID, nameID), introducer, isInitial);
+	public LightChainNode(NodeConfig config, String introducer, boolean isInitial) throws RemoteException {
+		super(config, introducer, isInitial);
 
-		Registry reg = LocateRegistry.createRegistry(RMIPort);
+		Registry reg = LocateRegistry.createRegistry(config.getRMIPort());
 		reg.rebind("RMIImpl", this);
 		Util.log("Rebinding Successful");
-
+		
 		digitalSignature = new DigitalSignature();
 		hasher = new HashingTools();
 		transactions = new ArrayList<>();
 		blocks = new ArrayList<>();
-		view = new HashMap<>();
-		viewMode = new HashMap<>();
-		viewBalance = new HashMap<>();
+		view = new View();
 
 		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(), Const.TRUNC);
 		super.setNumID(Integer.parseInt(name, 2));
 		name = hasher.getHash(name, Const.TRUNC);
 		super.setNameID(name);
 	}
-
-	// TODO: remove this after deciding on new way to interact with LightChainNode
-//	/*
-//	 * This method prints the options for user controlling the node to choose.
-//	 * More options can be appended but require the modification of ask() method.
-//	 */
-//	public static void printMenu() throws IOException{
-//        Util.log("Node at the address: " + address);
-//        Util.log("Name ID: "+ nameID +" Number ID: " + numID);
-//        Util.log("Choose a query by entering it's code and then press Enter");
-//        Util.log("1-Insert Node");
-//        Util.log("2-Insert Transaction");
-//        Util.log("3-Insert Block");
-//        Util.log("4-Search By Name ID");
-//        Util.log("5-Search By Numeric ID");
-//        Util.log("6-Print the Lookup Table");
-//        Util.log("7-Update View Table");
-//        Util.log("8-Print Data");
-//        Util.log("9-Print Level");
-//	}	
-//	/*
-//	 * The ask method is used to make it possible to test implemented functionalities.
-//	 * It can be modified according to what method one would like to test.
-//	 * Of course do not forget to modify printMenu() when modifying this method
-//	 */
-//	public void ask() throws RemoteException {
-//        String input = Util.getInput();
-//        if(!input.matches("[1-9]")) {
-//        	Util.log("Invalid query. Please enter the number of one of the possible operations");
-//        	return;
-//        }
-//		int query = Integer.parseInt(input);
-//		
-//		if(query == 1) { // insert node
-//			if(getDataNum() == 0) // if there are no inserted nodes yet then, then we insert the current node
-//				insert(new NodeInfo(getAddress(),getNumID(),getNameID()));
-//			else
-//				Util.log("Already Inserted");
-//		}else if (query == 2){ // insert transaction
-//			Util.log("Enter cont of transaction");
-//			String cont = Util.getInput();
-//			Block lstBlk = getLatestBlock();
-//			Util.log("The prev found is : " + lstBlk.getNumID());
-//			Transaction t = new Transaction(lstBlk.getH(), getNumID() ,cont, getAddress());
-//			boolean verified = validate(t);
-//			if(verified == false) {
-//				Util.log("Transaction validation Failed");
-//				return ;
-//			}
-//			Util.log("Added transaction with nameID " + lstBlk.getH());
-//			t.setAddress(getAddress());
-//			transactions.add(t);
-//			insert(t);
-//		}else if (query == 3){ // insert block
-//			Util.log("If the inserted block is genesis enter 0, otherwise enter 1");
-//			int num = Integer.parseInt(Util.getInput());
-//			String prev ;
-//			int index ;
-//			if(num == 1) {
-//				Block lstBlk = getLatestBlock();
-//				prev = lstBlk.getH();
-//				index = lstBlk.getIndex() + 1;
-//			}else {
-//				prev = numToName(0);
-//				index = 0;
-//			}
-//			Block b = new Block(prev,getNumID(),getAddress(),index);
-//			Util.log("Block inserted with " + b.getNumID() + " numID");
-//			insert(new NodeInfo(getAddress(),ZERO_ID,b.getH()));
-//			blocks.add(b);
-//			insert(b);
-//		}else if (query == 4) {// search by name ID
-//			Util.log("Please Enter the name ID to be searched");
-//			String name = Util.getInput();
-//			while(!name.matches("[0-1]+")) {//Makes sure the name is a binary string
-//				Util.log("Name ID should be a binary string. Please enter a valid Name ID:");
-//				name = Util.getInput();
-//			}
-//			NodeInfo result = null;
-//			try{
-//				result = searchByNameID(name);
-//			}catch(RemoteException e) {
-//				e.printStackTrace();
-//				Util.log("Remote Exception in query.");
-//			}
-//			Util.log("SearchByNameID result: ");
-//			Util.log("Address: " + result.getAddress());
-//			Util.log("numID: " + result.getNumID());
-//			Util.log("nameID: " + result.getNameID());
-//		}else if(query == 5) { // search by num ID
-//			Util.log("Please Enter the numeric ID to be searched");
-//			String numInput = Util.getInput();
-//			while(!numInput.matches("0|[1-9][0-9]*")) {
-//				Util.log("Invalid number entered. Please enter a valid number");
-//				numInput = Util.getInput();
-//			}
-//			int num = Integer.parseInt(numInput);
-//			NodeInfo result = searchByNumID(num);
-//			Util.log("SearchByNumID result: ");
-//			Util.log("Address: " + result.getAddress());
-//			Util.log("numID: " + result.getNumID());
-//			Util.log("nameID: " + result.getNameID());
-//		}else if(query == 7) { // delete dataNode{
-//			updateViewTable();
-//			viewUpdate();
-//		}
-//    }
 
 	/**
 	 * This method goes to the tail of the blockchain and iterates over the
@@ -191,7 +76,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// iterate over found transactions pointing at the blockchain
 			for (int i = 0; i < tList.size(); ++i) {
 				int owner = tList.get(i).getOwner();
-				view.put(owner, blk.getNumID());
+				view.updateLastBlk(owner, blk.getNumID());
 			}
 
 		} catch (Exception e) {
@@ -262,7 +147,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	}
 
 	private void insertFlagNode(Block blk) {
-		super.insertDataNode( Const.ZERO_ID, blk.getH());
+		super.insertDataNode(Const.ZERO_ID, blk.getH());
 	}
 
 	public void removeFlagNode() throws RemoteException {
@@ -641,13 +526,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// TODO: rethink this assumption
 			// assuming that if a node is not in the view yet then this is the first
 			// transaction;
-			if (!view.containsKey(t.getOwner())) {
-				view.put(t.getOwner(), prev);
+			if (!view.hasLastBlkEntry(t.getOwner())) {
+				view.updateLastBlk(t.getOwner(), prev);
 				return true;
 			}
 
 			// get the hash value of the block that contains the owner's latest transaction
-			int blkNumID = view.get(t.getOwner());
+			int blkNumID = view.getLastBlk(t.getOwner());
 
 			// TODO: remove these checks after implementing type search
 			NodeInfo b1 = searchByNumID(prev);
@@ -696,13 +581,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public boolean isCorrect(Transaction t) {
 		try {
 
-			if (!viewMode.containsKey(t.getOwner())) {
+			if (!view.hasModeEntry(t.getOwner())) {
 				LightChainRMIInterface rmi = getLightChainRMI(t.getAddress());
-				int ownerMode = rmi.getMode();
-				viewMode.put(t.getOwner(), ownerMode);
+				boolean ownerMode = rmi.getMode();
+				view.updateMode(t.getOwner(), ownerMode);
 				return ownerMode == mode;
 			}
-			int ownerMode = viewMode.get(t.getOwner());
+			boolean ownerMode = view.getMode(t.getOwner());
 			if (ownerMode != mode) {
 				Util.log("Transaction not correct");
 			}
@@ -773,11 +658,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		try {
 			long start = System.currentTimeMillis();
 
-			if (!viewBalance.containsKey(t.getOwner())) {
-				viewBalance.put(t.getOwner(), Const.INITIAL_BALANCE);
+			if (!view.hasBalanceEntry(t.getOwner())) {
+				view.updateBalance(t.getOwner(), Const.INITIAL_BALANCE);
 				return true;
 			}
-			int ownerBalance = viewBalance.get(t.getOwner());
+			int ownerBalance = view.getBalance(t.getOwner());
 
 			return ownerBalance >= Const.VALIDATION_FEES;
 		} catch (Exception e) {
@@ -913,7 +798,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		return name;
 	}
 
-	public int getMode() throws RemoteException {
+	public boolean getMode() throws RemoteException {
 		return mode;
 	}
 
