@@ -6,10 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.rmi.AccessException;
 import java.rmi.Naming;
-import java.rmi.NoSuchObjectException;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -27,7 +24,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
 	private static final long serialVersionUID = 1L;
 
-	protected NodeInfo peerNode;
+	private NodeInfo peerNode;
 	protected String address;
 	protected String nameID;
 	protected String IP;
@@ -36,7 +33,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	protected int numID;
 	protected int RMIPort;
 	private boolean isInserted = false;
-	private boolean isInitial;
 	private Registry registry;
 
 	private LookupTable lookup;
@@ -62,7 +58,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		this.numID = config.getNumID();
 		this.nameID = config.getNameID();
 		this.introducer = introducer;
-		this.isInitial = isInitial;
 		this.address = IP + ":" + RMIPort;
 
 		// TODO: this should be removed when launching LightChainNode
@@ -96,7 +91,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * 
 	 * @param num numerical ID of node to be deleted
 	 */
-
 	public void delete(int num) throws RemoteException {
 
 		try {
@@ -137,10 +131,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		insertNode(new NodeInfo(address, nodeNumID, nodeNameID));
 	}
 
-	// TODO: investigate using a sparate function for dataNode insertion
 	/**
 	 * This method inserts either the current node to the skip graph of the
 	 * introducer, or it is used to insert a data node.
+	 * 
+	 * TODO: investigate using a sparate function for dataNode insertion
 	 */
 	public void insertNode(NodeInfo insertedNode) {
 		try {
@@ -306,8 +301,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			// then this node is the neighbor so we return it
 			if (Util.commonBits(target, currentNode.getNameID()) > level)
 				return currentNode;
-			// If search is to the right then delegate the search to right neighbor if it
-			// exists
+			// If search is to the right then delegate the search to right if it exists
 			// If the right neighbor is null then at this level the right neighbor of the
 			// inserted node is null
 			if (direction == Const.RIGHT) {
@@ -317,8 +311,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 				RMIInterface rRMI = getRMI(rNode.getAddress());
 				return rRMI.insertSearch(level, direction, rNode.getNumID(), target);
 			} else {
-				// If search is to the left then delegate the search to the left neighbor if it
-				// exists
+				// If search is to the left then delegate the search left neighbor if it exists
 				// If the left neighbor is null, then the left neighbor of the inserted node at
 				// this level is null.
 				NodeInfo lNode = lookup.get(nodeNumID, level, direction);
@@ -493,10 +486,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @return NodeInfo of target if found, or its closest node found
 	 * @see RMIInterface#searchByNameID(java.lang.String)
 	 * 
-	 * TODO: currently, when a numID search for a value that does not exist in 
-	 * the skip graph occurs, the returned result depends on the side from which
-	 * the search had started, if search started from the right of the target,
-	 * upper bound, if search starts from left of target, lowerbound is returned
+	 *      TODO: currently, when a numID search for a value that does not exist in
+	 *      the skip graph occurs, the returned result depends on the side from
+	 *      which the search had started, if search started from the right of the
+	 *      target, upper bound, if search starts from left of target, lowerbound is
+	 *      returned
 	 */
 	public NodeInfo searchByNameID(String searchTarget) throws RemoteException {
 		try {
@@ -586,17 +580,17 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 				NodeInfo curNode = curRMI.searchName(lookup.get(bestNum, newLevel, direction).getNumID(), searchTarget,
 						newLevel, direction);
 				int common = Util.commonBits(curNode.getNameID(), searchTarget);
-				if(common > newLevel)
+				if (common > newLevel)
 					ansNode = Util.assignNode(curNode);
 			}
-	
+
 			// Continue the search on the opposite direction
 			if (lookup.get(bestNum, newLevel, 1 - direction) != null) {
 				RMIInterface otherRMI = getRMI(lookup.get(bestNum, newLevel, 1 - direction).getAddress());
-				NodeInfo otherNode = otherRMI.searchName(lookup.get(bestNum, newLevel, 1 - direction).getNumID(), searchTarget,
-						newLevel, 1 - direction);
-				int common = Util.commonBits(otherNode.getNameID(),searchTarget);
-				if(common > newLevel)
+				NodeInfo otherNode = otherRMI.searchName(lookup.get(bestNum, newLevel, 1 - direction).getNumID(),
+						searchTarget, newLevel, 1 - direction);
+				int common = Util.commonBits(otherNode.getNameID(), searchTarget);
+				if (common > newLevel)
 					ansNode = Util.assignNode(otherNode);
 			}
 			return ansNode;
@@ -631,9 +625,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 				Util.log("getNodesWithNameID: No Node was found with the given nameID");
 				return list;
 			}
-			
+
 			list.add(ansNode);
-			
+
 			// leftNode and rightNode will store the nodes we are visiting in left
 			// and right respectively
 			NodeInfo leftNode, rightNode;
@@ -642,7 +636,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			int leftNumID = Const.UNASSIGNED_INT, rightNumID = Const.UNASSIGNED_INT;
 			// thisRMI is just used to extract information of neighbors
 			RMIInterface thisRMI = getRMI(ansNode.getAddress());
-			
+
 			int ansNodeNumID = ansNode.getNumID();
 
 			// get addresses of left and right nodes, as well as their numIDs

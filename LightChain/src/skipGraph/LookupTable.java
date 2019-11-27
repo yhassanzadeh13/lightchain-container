@@ -29,20 +29,38 @@ public class LookupTable {
 	private NodeInfo nodeBuffer;
 	private Table tableBuffer;
 
+	/**
+	 * LookupTable constructor
+	 * 
+	 * @param maxLevels the maximum number of levels in the skip graph
+	 */
 	public LookupTable(int maxLevels) {
 		this.maxLevels = maxLevels;
 		this.dataNodes = new HashMap<>();
 		this.lookup = new HashMap<>();
 	}
 
+	/**
+	 * 
+	 * @return how many data nodes we have in this address
+	 */
 	public int size() {
 		return dataNodes.size();
 	}
 
+	/**
+	 * returns the numIDs of data nodes
+	 * 
+	 * @return
+	 */
 	public Set<Integer> keySet() {
 		return lookup.keySet();
 	}
 
+	/**
+	 * 
+	 * @return numID of node in the buffer currently if it exists
+	 */
 	public int bufferNumID() {
 		if (nodeBuffer == null)
 			return -1;
@@ -141,7 +159,7 @@ public class LookupTable {
 	 */
 	public synchronized NodeInfo get(int numID, int level, int direction) {
 		// if the lookup table of the node in the buffer is to be accessed,
-		// then this will cause a block at this point until finalizeNode is 
+		// then this will cause a block at this point until finalizeNode is
 		// called to unlock the tableBuffer.
 		if (nodeBuffer != null && nodeBuffer.getNumID() == numID) {
 			tableBuffer.get(level, direction);
@@ -194,9 +212,13 @@ public class LookupTable {
 		return bestNum;
 	}
 
-	/*
+	/**
 	 * This method receives a nameID and returns the index of the data node which
 	 * has the most common prefix with the given nameID
+	 * 
+	 * @param name      nameID for which we shall find closest data node
+	 * @param direction the direction of search at the moment of call
+	 * @return numID of closest node
 	 */
 	public int getBestName(String name, int direction) {
 		try {
@@ -230,8 +252,10 @@ public class LookupTable {
 		}
 	}
 
-	/*
+	/**
 	 * Print the contents of the lookup table
+	 * 
+	 * @param num numID of node whose table is to be printed
 	 */
 	public void printLookup(int num) {
 		System.out.println("\n");
@@ -252,27 +276,48 @@ public class LookupTable {
 		}
 	}
 
+	/**
+	 * 
+	 * @return maximum levels in skip graph
+	 */
 	public int getMaxLevels() {
 		return maxLevels;
 	}
 
 	class Table {
+
 		ReadWriteLock lock;
 		private ConcurrentHashMap<Integer, NodeInfo> table;
 
+		/**
+		 * constructor for Table
+		 */
 		public Table() {
 			table = new ConcurrentHashMap<Integer, NodeInfo>();
 			lock = new ReentrantReadWriteLock(true);
 		}
 
+		/**
+		 * locks the table for write operations
+		 */
 		public void lockTable() {
 			lock.writeLock().lock();
 		}
 
+		/**
+		 * unlocks table for write operations
+		 */
 		public void unlockTable() {
 			lock.writeLock().unlock();
 		}
 
+		/**
+		 * returns neighbor node at a particular level and direction
+		 * 
+		 * @param level     the level at which want to get neighbor
+		 * @param direction left or right
+		 * @return neighbor node
+		 */
 		public NodeInfo get(int level, int direction) {
 
 			if (!validate(level, direction))
@@ -280,12 +325,20 @@ public class LookupTable {
 
 			lock.readLock().lock();
 			try {
-				return table.get(getInd(level, direction));
+				return table.get(getIndex(level, direction));
 			} finally {
 				lock.readLock().unlock();
 			}
 		}
 
+		/**
+		 * adds a new entry to the table
+		 * 
+		 * @param level     the level at which to add entry
+		 * @param direction the direction at which to add entry (left or right)
+		 * @param newNode   the new node to be added
+		 * @return null if invalid parameters or old value otherwise
+		 */
 		private NodeInfo put(int level, int direction, NodeInfo newNode) {
 			if (!validate(level, direction))
 				return null;
@@ -293,18 +346,34 @@ public class LookupTable {
 			if (newNode == null)
 				return remove(level, direction);
 
-			NodeInfo res = table.put(getInd(level, direction), newNode);
+			NodeInfo res = table.put(getIndex(level, direction), newNode);
 
 			return res;
 		}
 
+		/**
+		 * removes an entry from the table
+		 * 
+		 * @param level     level of removal
+		 * @param direction right or left
+		 * @return removed elements
+		 */
 		private NodeInfo remove(int level, int direction) {
 
-			return table.remove(getInd(level, direction));
+			return table.remove(getIndex(level, direction));
 
 		}
 
 		// TODO: see if we can get rid of expectedOldNode==null
+
+		/**
+		 * 
+		 * @param level           level of addition
+		 * @param direction       left or right
+		 * @param newNode         new node to be added
+		 * @param expectedOldNode node that is expected to be at that particular place
+		 * @return true if indeed expected old node was there or false otherwise
+		 */
 		public boolean safePut(int level, int direction, NodeInfo newNode, NodeInfo expectedOldNode) {
 			NodeInfo cur = put(level, direction, newNode);
 			if (expectedOldNode == null || equal(cur, expectedOldNode))
@@ -315,6 +384,13 @@ public class LookupTable {
 			}
 		}
 
+		/**
+		 * checks if 2 node infos are equal
+		 * 
+		 * @param nodeA first node to be compared
+		 * @param nodeB second node to be compared
+		 * @return true if nodes are equal, or false otherwise
+		 */
 		private boolean equal(NodeInfo nodeA, NodeInfo nodeB) {
 			if (nodeA == null && nodeB == null) {
 				return true;
@@ -324,10 +400,25 @@ public class LookupTable {
 			return nodeA.equals(nodeB);
 		}
 
-		private int getInd(int level, int direction) {
+		/**
+		 * finds the index at which an entry will be placed in the table
+		 * 
+		 * @param level     level of entry
+		 * @param direction direction of entry (left or right)
+		 * @return the index of position of entry in table
+		 */
+		private int getIndex(int level, int direction) {
 			return 2 * level + direction;
 		}
 
+		/**
+		 * validate checks if entry information is valid in that level should be less
+		 * than maxLevels, and direction should be either left or right
+		 * 
+		 * @param level     level of entry
+		 * @param direction left or right
+		 * @return
+		 */
 		private boolean validate(int level, int direction) {
 			return validateLevel(level) && validateDir(direction);
 		}
@@ -337,7 +428,7 @@ public class LookupTable {
 		}
 
 		private boolean validateDir(int direction) {
-			return direction == 1 || direction == 0;
+			return direction == Const.LEFT || direction == Const.RIGHT;
 		}
 	}
 }
