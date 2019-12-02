@@ -109,6 +109,7 @@ public class Util {
 		return new NodeInfo(node);
 	}
 	
+	// TODO: test randomness
 	public static String getRandomString(int length) {
 		StringBuilder sb = new StringBuilder();
 		

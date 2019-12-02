@@ -20,12 +20,13 @@ public class Block extends NodeInfo {
 	private List<SignedBytes> sigma;
 	private Hasher hasher;
 	private final int index;
+	private int levels;
 
 	/**
 	 * @param prev the address of the previous block
 	 * @param owner the address of the owner of the block
 	 */
-	public Block(String prev, int owner, String address, int idx) {
+	public Block(String prev, int owner, String address, int idx,int levels) {
 		super(address, 0, prev);
 		this.index = idx;
 		this.prev = prev;
@@ -33,21 +34,22 @@ public class Block extends NodeInfo {
 		this.transactionSet = new ArrayList<>();
 		this.sigma = new ArrayList<>();
 		hasher = new HashingTools();
-		this.hash = hasher.getHash(prev + owner, Const.TRUNC);
+		this.hash = hasher.getHash(prev + owner, levels);
 		super.setNumID(Integer.parseInt(this.hash, 2));
 	}
 
-	public Block(String prev, int owner, String address, List<Transaction> tList, int idx) {
+	public Block(String prev, int owner, String address, List<Transaction> tList, int idx, int levels) {
 		super(address, 0, prev);
 		this.index = idx;
 		this.prev = prev;
 		this.owner = owner;
 		this.transactionSet = tList;
+		this.levels = levels;
 		hasher = new HashingTools();
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < tList.size(); ++i)
 			sb.append(tList.get(i).toString());
-		this.hash = hasher.getHash(prev + owner + sb.toString(), Const.TRUNC);
+		this.hash = hasher.getHash(prev + owner + sb.toString(), levels);
 		super.setNumID(Integer.parseInt(this.hash, 2));
 	}
 
@@ -60,6 +62,7 @@ public class Block extends NodeInfo {
 		this.transactionSet = blk.getTransactionSet();
 		this.hash = blk.getHash();
 		this.sigma = blk.getSigma();
+		this.levels = blk.getLevels();
 	}
 
 	public String getPrev() {
@@ -92,6 +95,10 @@ public class Block extends NodeInfo {
 
 	public int getIndex() {
 		return index;
+	}
+	
+	public int getLevels() {
+		return levels;
 	}
 
 }

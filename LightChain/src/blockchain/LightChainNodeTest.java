@@ -11,45 +11,103 @@ import org.junit.jupiter.api.Test;
 
 import skipGraph.NodeConfig;
 import util.Const;
+import util.Util;
 
 class LightChainNodeTest {
 
 	private static int port = 7000;
-	private int maxLevels = 3;
-	private int numID1 = 1;
-	private int numID2 = 2;
-	private int numID3 = 3;
-	private int numID4 = 15;
-	private int numID5 = 50;
-	private int numID6 = 100;
-	private String nameID1 = "011";
-	private String nameID2 = "001";
-	private String nameID3 = "100";
-	private String nameID4 = "111";
-	private String nameID5 = "101";
-	private String nameID6 = "010";
-	private NodeConfig initialConfig;
-	private NodeConfig config1;
-	private NodeConfig config2;
-	private NodeConfig sameNameIDConfig1;
-	private NodeConfig sameNameIDConfig2;
-	private NodeConfig sameNameIDConfig3;
+	private Parameters params1;
+	private Parameters params2;
+	private Parameters params3;
+	private Parameters params4;
+	private int RMIPort1;
+	private int RMIPort2;
+	private int RMIPort3;
+	private int RMIPort4;
 
 	@BeforeEach
 	void init() {
-		initialConfig = new NodeConfig(maxLevels, port++, numID2, nameID2);
-		config1 = new NodeConfig(maxLevels, port++, numID1, nameID1);
-		config2 = new NodeConfig(maxLevels, port++, numID3, nameID3);
+		params1 = new Parameters();
+		params2 = new Parameters();
+		params3 = new Parameters();
+		params4 = new Parameters();
+		RMIPort1 = port++;
+		RMIPort2 = port++;
+		RMIPort3 = port++;
+		RMIPort4 = port++;
 	}
 
-	@Ignore
+	@Test
 	void testUpdateView() {
-		fail("Not yet implemented");
+		try {
+
+			// test view update gotten by 3 transaction pointing at genesis block
+
+			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
+			LightChainNode node4 = new LightChainNode(params4, RMIPort4, node1.getAddress(), false);
+
+			Block blk = node1.insertGenesis();
+
+			String randStr1 = Util.getRandomString(10);
+			String randStr2 = Util.getRandomString(11);
+			String randStr3 = Util.getRandomString(12);
+
+			Transaction t2 = new Transaction(blk.getHash(), node2.getNumID(), randStr1, node2.getAddress(),
+					params2.getLevels());
+			Transaction t3 = new Transaction(blk.getHash(), node3.getNumID(), randStr2, node3.getAddress(),
+					params3.getLevels());
+			Transaction t4 = new Transaction(blk.getHash(), node4.getNumID(), randStr3, node4.getAddress(),
+					params4.getLevels());
+
+			node2.insertTransaction(t2);
+			node3.insertTransaction(t3);
+			node4.insertTransaction(t4);
+
+			View v = node1.updateView();
+
+			// view should contain entries for each of the nodes above
+
+			assertEquals(blk.getNumID(), v.getLastBlk(node2.getNumID()), "view not updated correctly");
+			assertEquals(blk.getNumID(), v.getLastBlk(node3.getNumID()), "view not updated correctly");
+			assertEquals(blk.getNumID(), v.getLastBlk(node4.getNumID()), "view not updated correctly");
+
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Ignore
 	void testMineAttempt() {
-		fail("Not yet implemented");
+		try {
+			// test view update gotten by 3 transaction pointing at genesis block
+
+			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
+			LightChainNode node4 = new LightChainNode(params4, RMIPort4, node1.getAddress(), false);
+
+			Block blk = node1.insertGenesis();
+
+			String randStr1 = Util.getRandomString(10);
+			String randStr2 = Util.getRandomString(11);
+			String randStr3 = Util.getRandomString(12);
+
+			Transaction t2 = new Transaction(blk.getHash(), node2.getNumID(), randStr1, node2.getAddress(),
+					params2.getLevels());
+			Transaction t3 = new Transaction(blk.getHash(), node3.getNumID(), randStr2, node3.getAddress(),
+					params3.getLevels());
+			Transaction t4 = new Transaction(blk.getHash(), node4.getNumID(), randStr3, node4.getAddress(),
+					params4.getLevels());
+
+			node2.insertTransaction(t2);
+			node3.insertTransaction(t3);
+			node4.insertTransaction(t4);
+
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
@@ -58,9 +116,9 @@ class LightChainNodeTest {
 		try {
 
 			// test detecting genesis block
-			LightChainNode node1 = new LightChainNode(initialConfig, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(config1, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(config2, node1.getAddress(), false);
+			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
 
 			Block blk = node1.insertGenesis();
 
@@ -72,7 +130,7 @@ class LightChainNodeTest {
 
 			// Test detecting second block after genesis
 
-			Block blk2 = new Block(blk.getHash(), node2.getNumID(), node2.getAddress(), 1);
+			Block blk2 = new Block(blk.getHash(), node2.getNumID(), node2.getAddress(), 1,params2.getLevels());
 			node2.insertBlock(blk2, blk.getAddress());
 
 			Block b1 = node1.getLatestBlock();
@@ -83,7 +141,7 @@ class LightChainNodeTest {
 
 			// Test detecting third block
 
-			Block blk3 = new Block(blk2.getHash(), node3.getNumID(), node3.getAddress(), 2);
+			Block blk3 = new Block(blk2.getHash(), node3.getNumID(), node3.getAddress(), 2,params3.getLevels());
 			node3.insertBlock(blk3, blk2.getAddress());
 
 			b1 = node1.getLatestBlock();
@@ -91,10 +149,8 @@ class LightChainNodeTest {
 
 			b2 = node2.getLatestBlock();
 			assertEquals(blk3, b2, "latest block not found");
-			
-			
-			//TODO: Test with transactions of similar nameID
-			
+
+			// TODO: Test with transactions of similar nameID
 
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -175,9 +231,9 @@ class LightChainNodeTest {
 	@Test
 	void testGetOwnerPublicKey() {
 		try {
-			LightChainNode node1 = new LightChainNode(initialConfig, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(config1, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(config2, node1.getAddress(), false);
+			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
 
 			PublicKey pk2 = node1.getOwnerPublicKey(node2.getNumID());
 			PublicKey pk3 = node1.getOwnerPublicKey(node3.getNumID());

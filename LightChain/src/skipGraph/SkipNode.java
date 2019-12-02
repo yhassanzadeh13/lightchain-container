@@ -97,13 +97,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @param isInitial
 	 * @throws RemoteException
 	 */
-	public SkipNode(NodeConfig config, String introducer) throws RemoteException{
-		this.RMIPort = config.getRMIPort();
+	public SkipNode(int RMIPort, int maxLevels, String introducer) throws RemoteException{
+		this.RMIPort = RMIPort;
 		initRMI();
-		this.maxLevels = config.getMaxLevels();
-		// numID and nameID will be overwritten by LightChainNode
-		this.numID = config.getNumID();
-		this.nameID = config.getNameID();
+		this.maxLevels = maxLevels;
 		this.introducer = introducer;
 		this.address = IP + ":" + RMIPort;
 

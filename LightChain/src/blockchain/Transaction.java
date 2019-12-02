@@ -19,16 +19,18 @@ public class Transaction extends NodeInfo {
 	private final String hash;// Hash
 	private List<SignedBytes> sigma;
 	private Hasher hasher;
+	private int levels;
 
 	// need to add address to transaction
 
-	public Transaction(String prev, int owner, String cont, String address) {
+	public Transaction(String prev, int owner, String cont, String address, int levels) {
 		super(address, 0, prev);
 		this.prev = prev;
 		this.owner = owner;
 		this.cont = cont;
+		this.levels = levels;
 		hasher = new HashingTools();
-		this.hash = hasher.getHash(prev + owner + cont, Const.TRUNC);
+		this.hash = hasher.getHash(prev + owner + cont, levels);
 		super.setNumID(Integer.parseInt(this.hash, 2));
 	}
 
@@ -40,6 +42,7 @@ public class Transaction extends NodeInfo {
 		this.cont = t.getCont();
 		this.hash = t.getHash();
 		this.sigma = t.getSigma();
+		this.levels = t.getLevels();
 	}
 
 	public List<SignedBytes> getSigma() {
@@ -68,6 +71,10 @@ public class Transaction extends NodeInfo {
 
 	public String toString() {
 		return prev + owner + cont + getAddress();
+	}
+	
+	public int getLevels() {
+		return levels;
 	}
 
 }
