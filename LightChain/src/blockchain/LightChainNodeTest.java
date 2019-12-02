@@ -43,12 +43,12 @@ class LightChainNodeTest {
 	}
 
 	@Ignore
-	void testUpdateViewTable() {
+	void testUpdateView() {
 		fail("Not yet implemented");
 	}
 
 	@Ignore
-	void testViewUpdate() {
+	void testMineAttempt() {
 		fail("Not yet implemented");
 	}
 
@@ -72,7 +72,7 @@ class LightChainNodeTest {
 
 			// Test detecting second block after genesis
 
-			Block blk2 = new Block(blk.getH(), node2.getNumID(), node2.getAddress(), 1);
+			Block blk2 = new Block(blk.getHash(), node2.getNumID(), node2.getAddress(), 1);
 			node2.insertBlock(blk2, blk.getAddress());
 
 			Block b1 = node1.getLatestBlock();
@@ -83,7 +83,7 @@ class LightChainNodeTest {
 
 			// Test detecting third block
 
-			Block blk3 = new Block(blk2.getH(), node3.getNumID(), node3.getAddress(), 2);
+			Block blk3 = new Block(blk2.getHash(), node3.getNumID(), node3.getAddress(), 2);
 			node3.insertBlock(blk3, blk2.getAddress());
 
 			b1 = node1.getLatestBlock();
@@ -93,7 +93,7 @@ class LightChainNodeTest {
 			assertEquals(blk3, b2, "latest block not found");
 			
 			
-			// Test with transactions of similar nameID
+			//TODO: Test with transactions of similar nameID
 			
 
 		} catch (RemoteException e) {

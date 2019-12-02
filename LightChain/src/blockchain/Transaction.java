@@ -16,7 +16,7 @@ public class Transaction extends NodeInfo {
 	private final String prev;
 	private final int owner;
 	private final String cont;// Use random string for this
-	private final String h;// Hash
+	private final String hash;// Hash
 	private List<SignedBytes> sigma;
 	private Hasher hasher;
 
@@ -28,8 +28,8 @@ public class Transaction extends NodeInfo {
 		this.owner = owner;
 		this.cont = cont;
 		hasher = new HashingTools();
-		this.h = hasher.getHash(prev + owner + cont, Const.TRUNC);
-		super.setNumID(Integer.parseInt(this.h, 2));
+		this.hash = hasher.getHash(prev + owner + cont, Const.TRUNC);
+		super.setNumID(Integer.parseInt(this.hash, 2));
 	}
 
 	public Transaction(Transaction t) {
@@ -38,7 +38,7 @@ public class Transaction extends NodeInfo {
 		this.prev = t.getPrev();
 		this.owner = t.getOwner();
 		this.cont = t.getCont();
-		this.h = t.getH();
+		this.hash = t.getHash();
 		this.sigma = t.getSigma();
 	}
 
@@ -58,8 +58,8 @@ public class Transaction extends NodeInfo {
 		return cont;
 	}
 
-	public String getH() {
-		return h;
+	public String getHash() {
+		return hash;
 	}
 
 	public void addSignature(SignedBytes signature) {

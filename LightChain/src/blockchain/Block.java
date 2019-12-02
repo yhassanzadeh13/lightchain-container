@@ -15,8 +15,8 @@ public class Block extends NodeInfo {
 	private static final long serialVersionUID = 1L;
 	private final String prev;
 	private final int owner;
-	private List<Transaction> S;
-	private final String h;
+	private List<Transaction> transactionSet;
+	private final String hash;
 	private List<SignedBytes> sigma;
 	private Hasher hasher;
 	private final int index;
@@ -30,11 +30,11 @@ public class Block extends NodeInfo {
 		this.index = idx;
 		this.prev = prev;
 		this.owner = owner;
-		this.S = new ArrayList<>();
+		this.transactionSet = new ArrayList<>();
 		this.sigma = new ArrayList<>();
 		hasher = new HashingTools();
-		this.h = hasher.getHash(prev + owner, Const.TRUNC);
-		super.setNumID(Integer.parseInt(this.h, 2));
+		this.hash = hasher.getHash(prev + owner, Const.TRUNC);
+		super.setNumID(Integer.parseInt(this.hash, 2));
 	}
 
 	public Block(String prev, int owner, String address, List<Transaction> tList, int idx) {
@@ -42,13 +42,13 @@ public class Block extends NodeInfo {
 		this.index = idx;
 		this.prev = prev;
 		this.owner = owner;
-		this.S = tList;
+		this.transactionSet = tList;
 		hasher = new HashingTools();
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < tList.size(); ++i)
 			sb.append(tList.get(i).toString());
-		this.h = hasher.getHash(prev + owner + sb.toString(), Const.TRUNC);
-		super.setNumID(Integer.parseInt(this.h, 2));
+		this.hash = hasher.getHash(prev + owner + sb.toString(), Const.TRUNC);
+		super.setNumID(Integer.parseInt(this.hash, 2));
 	}
 
 	public Block(Block blk) {
@@ -57,8 +57,8 @@ public class Block extends NodeInfo {
 		this.index = blk.getIndex();
 		this.prev = blk.getPrev();
 		this.owner = blk.getOwner();
-		this.S = blk.getS();
-		this.h = blk.getH();
+		this.transactionSet = blk.getTransactionSet();
+		this.hash = blk.getHash();
 		this.sigma = blk.getSigma();
 	}
 
@@ -70,12 +70,12 @@ public class Block extends NodeInfo {
 		return owner;
 	}
 
-	public List<Transaction> getS() {
-		return S;
+	public List<Transaction> getTransactionSet() {
+		return transactionSet;
 	}
 
-	public String getH() {
-		return h;
+	public String getHash() {
+		return hash;
 	}
 
 	public List<SignedBytes> getSigma() {
@@ -87,7 +87,7 @@ public class Block extends NodeInfo {
 	}
 
 	public void addTransactions(List<Transaction> tList) {
-		S = tList;
+		transactionSet = tList;
 	}
 
 	public int getIndex() {

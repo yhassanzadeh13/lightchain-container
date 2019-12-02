@@ -49,34 +49,38 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		transactions = new ArrayList<>();
 		blocks = new ArrayList<>();
 		view = new View();
-		
+
 		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(), Const.TRUNC);
 		super.setNumID(Integer.parseInt(name, 2));
 		name = hasher.getHash(name, Const.TRUNC);
 		super.setNameID(name);
-		
-		if(isInitial)
+
+		if (isInitial)
 			isInserted = true;
-		
+
 		// adds values of numID and nameID to lookup table
-		NodeInfo peer = new NodeInfo(address,numID,nameID);
+		NodeInfo peer = new NodeInfo(address, numID, nameID);
 		addPeerNode(peer);
-		
+
 		Registry registry = LocateRegistry.createRegistry(RMIPort);
 		registry.rebind("RMIImpl", this);
 		Util.log("Rebinding Successful");
 		if (!isInitial) {
 			insertNode(peer);
 		}
-		
+
 	}
 
 	/**
 	 * This method goes to the tail of the blockchain and iterates over the
 	 * transactions pointing at it, and then updating the entries corresponding to
 	 * the owners of the transactions in the view table.
+	 * 
+	 * TODO: investigate storing only the index of the block in the view table
+	 * instead of its numID
+	 * 
 	 */
-	void updateViewTable() {
+	void updateView() {
 		try {
 			// get the tail of blockchain
 			Block blk = getLatestBlock();
@@ -105,8 +109,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * into a block and the block is sent for validation.
 	 * 
 	 */
-	public void viewUpdate() throws RemoteException {
-
+	public void mineAttempt() throws RemoteException {
 		try {
 
 			Block blk = getLatestBlock();
@@ -130,7 +133,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 
 			// If there are TX_MIN transaction then add them into a new block
-			Block newBlk = new Block(blk.getH(), getNumID(), getAddress(), tList, blk.getIndex() + 1);
+			Block newBlk = new Block(blk.getHash(), getNumID(), getAddress(), tList, blk.getIndex() + 1);
 			// send the new block for PoV validation
 			boolean isValidated = validateBlock(newBlk);
 
@@ -140,7 +143,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 
 			// insert new block after it was validated
-			insertBlock(newBlk,blk.getAddress());	
+			insertBlock(newBlk, blk.getAddress());
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -153,7 +156,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * @param blk the block for which a flag node will be inserted
 	 */
 	private void insertFlagNode(Block blk) {
-		super.insertDataNode(Const.ZERO_ID, blk.getH());
+		super.insertDataNode(Const.ZERO_ID, blk.getHash());
 	}
 
 	/**
@@ -163,46 +166,52 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public void removeFlagNode() throws RemoteException {
 		super.delete(Const.ZERO_ID);
 	}
-	
+
 	/**
+	 * This method creates a transaction of a given content and sends the
+	 * transaction for validation then returns the transaction
 	 * 
-	 * @param cont
+	 * @param cont content of transaction
+	 * 
+	 *             TODO: When validating a transaction as it is being rejected,
+	 *             attempt a constant number of retries until it is accepted or else
+	 *             drop it. TODO: After inserting a transaction
 	 */
-	private Transaction createTransaction() {
+	private Transaction makeTransaction(String cont) {
 		try {
 			Block lstBlk = getLatestBlock();
 			Util.log("The prev found is : " + lstBlk.getNumID());
-			String cont = Util.getRandomString(15);
-			Transaction t = new Transaction(lstBlk.getH(), getNumID(), cont, getAddress());
+			Transaction t = new Transaction(lstBlk.getHash(), getNumID(), cont, getAddress());
 			boolean verified = validateTransaction(t);
 			if (verified == false) {
 				Util.log("Transaction validation Failed");
 				return null;
 			}
-			Util.log("Added transaction with nameID " + lstBlk.getH());
+			Util.log("Added transaction with nameID " + lstBlk.getHash());
 			return t;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}
 	}
-	
+
 	/**
 	 * inserts a new transaction into the overlay
+	 * 
 	 * @param t transaction to be inserted
 	 */
 	private void insertTransaction(Transaction t) {
-		
-		
+
 		super.insertNode(t);
 	}
-	
+
 	/**
 	 * inserts a new block into the overlay
+	 * 
 	 * @param blk block to be inserted into the overlay
 	 */
 	public void insertBlock(Block blk, String prevAddress) throws RemoteException {
-		
+
 		if (prevAddress.equals(getAddress())) {
 			removeFlagNode();
 		} else {
@@ -211,10 +220,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 		// insert flag node for this block
 		insertFlagNode(blk);
-		
+
 		insertNode(blk);
 	}
-	
+
 	/**
 	 * inserts the first block to the blockchain
 	 */
@@ -227,8 +236,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		int index = 0;
 		Block b = new Block(prev, getNumID(), getAddress(), index);
 		insertFlagNode(b);
-		//use current address as prev when inserting genesis block
-		insertBlock(b,getAddress());
+		// use current address as prev when inserting genesis block
+		insertBlock(b, getAddress());
 		return b;
 	}
 
@@ -306,10 +315,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public boolean validateBlock(Block blk) {
 		try {
 
-			List<NodeInfo> validators = getValidators(blk);
+			List<NodeInfo> validators = getValidators(blk.getHash());
 
 			// add the owner's signature to the block
-			SignedBytes mySignature = digitalSignature.signString(blk.getH());
+			SignedBytes mySignature = digitalSignature.signString(blk.getHash());
 
 			blk.addSignature(mySignature);
 			// iterate over validators and ask them to validate the block
@@ -353,10 +362,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		try {
 
 			// obtain validators
-			ArrayList<NodeInfo> validators = getValidators(t);
+			ArrayList<NodeInfo> validators = getValidators(t.getHash());
 
 			// add the owner's signature of the transaction's hash value to the sigma
-			SignedBytes mySignature = digitalSignature.signString(t.getH());
+			SignedBytes mySignature = digitalSignature.signString(t.getHash());
 
 			t.addSignature(mySignature);
 
@@ -406,7 +415,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public SignedBytes PoV(Block blk) throws RemoteException {
 		try {
-			updateViewTable();
+			updateView();
 			Util.log("Validating block for " + blk.getOwner());
 			boolean isAuth = isAuthenticated(blk);
 			boolean isCons = isConsistent(blk);
@@ -414,7 +423,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if (val == false)
 				return new SignedBytes(null, isAuth, true, true, true);
 			// iterate over transactions and check them one by one
-			List<Transaction> ts = blk.getS();
+			List<Transaction> ts = blk.getTransactionSet();
 			for (int i = 0; i < ts.size(); ++i) {
 				if (!isAuthenticated(ts.get(i)) /* || !isSound(ts.get(i)) */) {
 					Util.log("Transaction inside block is not authentic");
@@ -422,7 +431,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				}
 			}
 			Util.log("Block Validation Successful");
-			SignedBytes signedHash = new SignedBytes(digitalSignature.signString(blk.getH()).getBytes(), isAuth, true,
+			SignedBytes signedHash = new SignedBytes(digitalSignature.signString(blk.getHash()).getBytes(), isAuth, true,
 					true, true);
 			return signedHash;
 		} catch (Exception e) {
@@ -444,12 +453,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 			// concatenate the string values of transactions
 			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < blk.getS().size(); ++i) {
-				sb.append(blk.getS().get(i).toString());
+			for (int i = 0; i < blk.getTransactionSet().size(); ++i) {
+				sb.append(blk.getTransactionSet().get(i).toString());
 			}
 			// generate the hash value and then compare it with the block's
 			String hash = hasher.getHash(blk.getPrev() + blk.getOwner() + sb.toString(), Const.TRUNC);
-			if (!hash.equals(blk.getH())) {
+			if (!hash.equals(blk.getHash())) {
 				Util.log("Hash value of block not generated properly");
 				return false;
 			}
@@ -491,7 +500,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		try {
 
 			Block lstBlk = getLatestBlock();
-			boolean res = blk.getPrev().equals(lstBlk.getH());
+			boolean res = blk.getPrev().equals(lstBlk.getHash());
 			if (res == false) {
 				Util.log("Block not consistent");
 			}
@@ -502,32 +511,30 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			return false;
 		}
 	}
-
+	
 	/**
-	 * This method returns the validators of a given block
+	 * This method returns the validators of a given transaction
 	 * 
-	 * @param blk block whose validators are to be found
-	 * @return list of validators of the given block
+	 * @param t transaction whose validators are to be found
+	 * @return a list of validators for the given transactions
 	 */
-	public List<NodeInfo> getValidators(Block blk) {
+	public ArrayList<NodeInfo> getValidators(String hash) {
 		try {
-			// stores the final list of validators
-			List<NodeInfo> validators = new ArrayList<>();
-			// stores the address of the taken nodes so that we make sure we do not take a
-			// node twice
-			Map<String, Integer> taken = new HashMap<>();
-			// To not take the node itself or any data node belonging to it.
-			taken.put(getAddress(), 1);
+			// stores the validators to be returned
+			ArrayList<NodeInfo> validators = new ArrayList<>();
+			// used as a lookup to prevent repeating nodes
+			// because the search might return the same node more than once
+			// so in order to avoid this case, when we find an already added node,
+			// we repeat the search
+			HashMap<String, Integer> taken = new HashMap<>();
+			taken.put(address, 1);// To not take the node itself or any data node belonging to it.
 			int count = 0, i = 0;
-			// TODO: determine what to do in case we have reached ALPHA number of iterations
-			// but not collected enough validators
-			// keep iterating until we get SIGNATURES_THRESHOLD number of validators
-			while (count < Const.SIGNATURES_THRESHOLD && i <= Const.ALPHA) {
-				String hash = blk.getPrev() + blk.getOwner() + blk.getS().toString() + i;
+			while (count < Const.SIGNATURES_THRESHOLD && i <= Const.ALPHA) { // terminates when we get the required
+																				// number of
+				// validators
 				int num = Integer.parseInt(hasher.getHash(hash, Const.TRUNC), 2);
 				NodeInfo node = searchByNumID(num);
 				i++;
-				// if already taken or equals the owner's node, then keep iterating.
 				if (taken.containsKey(node.getAddress()))
 					continue;
 				count++;
@@ -557,7 +564,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		boolean isSound = false;
 		boolean hasBalance = false;
 		try {
-			updateViewTable();
+			updateView();
 			Util.log("Validating Transaction for " + t.getOwner());
 			isAuth = isAuthenticated(t);
 			isCorrect = isCorrect(t);
@@ -568,7 +575,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if (val == false)
 				return new SignedBytes(null, isAuth, isSound, isCorrect, hasBalance);
 			Util.log("Transaction Validation Successful");
-			SignedBytes signedHash = new SignedBytes(digitalSignature.signString(t.getH()).getBytes(), isAuth, isSound,
+			SignedBytes signedHash = new SignedBytes(digitalSignature.signString(t.getHash()).getBytes(), isAuth, isSound,
 					isCorrect, hasBalance);
 			return signedHash;
 		} catch (Exception e) {
@@ -680,7 +687,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// generate the hash using the equation to check if it was generated correctly
 			String hash = hasher.getHash(t.getPrev() + t.getOwner() + t.getCont(), Const.TRUNC);
 			// return false if it was not generated properly
-			if (!hash.equals(t.getH())) {
+			if (!hash.equals(t.getHash())) {
 				Util.log("Transaction hash value not generated properly");
 				return false;
 			}
@@ -732,44 +739,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
-		}
-	}
-
-	/**
-	 * This method returns the validators of a given transaction
-	 * 
-	 * @param t transaction whose validators are to be found
-	 * @return a list of validators for the given transactions
-	 */
-	public ArrayList<NodeInfo> getValidators(Transaction t) {
-		try {
-			// stores the validators to be returned
-			ArrayList<NodeInfo> validators = new ArrayList<>();
-			// used as a lookup to check if a node has been already added to the validators
-			// array
-			// because the search might return the same node more than once
-			// so in order to avoid this case, when we find an already added node,
-			// we repeat the search
-			HashMap<String, Integer> taken = new HashMap<>();
-			taken.put(address, 1);// To not take the node itself or any data node belonging to it.
-			int count = 0, i = 0;
-			while (count < Const.SIGNATURES_THRESHOLD && i <= Const.ALPHA) { // terminates when we get the required
-																				// number of
-				// validators
-				String hash = t.getPrev() + t.getOwner() + t.getCont() + i;
-				int num = Integer.parseInt(hasher.getHash(hash, Const.TRUNC), 2);
-				NodeInfo node = searchByNumID(num);
-				i++;
-				if (taken.containsKey(node.getAddress()))
-					continue;
-				count++;
-				taken.put(node.getAddress(), 1);
-				validators.add(node);
-			}
-			return validators;
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
-			return null;
 		}
 	}
 
@@ -864,9 +833,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 	public void put(Block b) throws RemoteException {
 		blocks.add(b);
-		insertBlock(b,null);
+		insertBlock(b, null);
 	}
-
 
 	public TestingLog startSim(int numTransactions, int pace) throws RemoteException {
 		testLog = new TestingLog(mode == Const.MALICIOUS);
@@ -874,12 +842,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		try {
 			for (int i = 0; i < numTransactions; i++) {
 				Thread.sleep(rnd.nextInt(1000 * pace) / 2);// wait for (pace +- 10 seconds)/2
-				//createNewTransaction(System.currentTimeMillis() + i + "" + rnd.nextDouble());
+				// createNewTransaction(System.currentTimeMillis() + i + "" + rnd.nextDouble());
 				Thread.sleep(rnd.nextInt(1000 * pace) / 2);// wait for (pace +- 10 seconds)/2
-				updateViewTable();
+				updateView();
 				if (i % 1 == 0) {
 					Thread.sleep(rnd.nextInt(rnd.nextInt(4000)));
-					viewUpdate();
+					mineAttempt();
 				}
 				if (i % 5 == 0)
 					System.out.println(100.0 * i / numTransactions + "% done.");
