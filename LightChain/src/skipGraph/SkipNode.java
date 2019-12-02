@@ -24,7 +24,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
 	private static final long serialVersionUID = 1L;
 
-	private NodeInfo peerNode;
+	protected NodeInfo peerNode;
 	protected String address;
 	protected String nameID;
 	protected String IP;
@@ -32,7 +32,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	private int maxLevels;
 	protected int numID;
 	protected int RMIPort;
-	private boolean isInserted = false;
+	protected boolean isInserted = false;
 	private Registry registry;
 
 	private LookupTable lookup;
@@ -60,11 +60,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		this.introducer = introducer;
 		this.address = IP + ":" + RMIPort;
 
-		// TODO: this should be removed when launching LightChainNode
-		registry = LocateRegistry.createRegistry(RMIPort);
-		registry.rebind("RMIImpl", this);
-		Util.log("Rebinding Successful");
-
 		// check if introducer has valid address
 		if (!introducer.equals(Const.DUMMY_INTRODUCER) && !Util.validateIP(introducer)) {
 			Util.log("Invalid introducer address");
@@ -79,11 +74,48 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		lookup = new LookupTable(maxLevels);
 		peerNode = new NodeInfo(address, numID, nameID);
 		lookup.addNode(peerNode);
+		if (isInitial)
+			isInserted = true;
+
+		// TODO: this should be removed when launching LightChainNode
+		registry = LocateRegistry.createRegistry(RMIPort);
+		registry.rebind("RMIImpl", this);
+		Util.log("Rebinding Successful");
 		if (!isInitial) {
 			insertNode(peerNode);
 		}
-		if (isInitial)
-			isInserted = true;
+	}
+	
+	/**
+	 * This version of the constructor is used as long as LightChainNode extends SkipNode
+	 * Because it defers RMI binding and insertion task to LightChainNode after setting
+	 * the correct information (numID and nameID
+	 * @param config
+	 * @param introducer
+	 * @param isInitial
+	 * @throws RemoteException
+	 */
+	public SkipNode(NodeConfig config, String introducer) throws RemoteException{
+		this.RMIPort = config.getRMIPort();
+		initRMI();
+		this.maxLevels = config.getMaxLevels();
+		// numID and nameID will be overwritten by LightChainNode
+		this.numID = config.getNumID();
+		this.nameID = config.getNameID();
+		this.introducer = introducer;
+		this.address = IP + ":" + RMIPort;
+
+		// check if introducer has valid address
+		if (!introducer.equals(Const.DUMMY_INTRODUCER) && !Util.validateIP(introducer)) {
+			Util.log("Invalid introducer address");
+		}
+
+		// check if node address it valid
+		if (!Util.validateIP(address)) {
+			Util.log("Invalid node adress");
+		}
+
+		lookup = new LookupTable(maxLevels);
 	}
 
 	/**
@@ -755,6 +787,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
 	public boolean setRightNode(int num, int level, NodeInfo newNode, NodeInfo oldNode) throws RemoteException {
 		return lookup.put(num, level, Const.RIGHT, Util.assignNode(newNode), oldNode);
+	}
+	
+	public void addPeerNode(NodeInfo node) {
+		peerNode = node;
+		lookup.addNode(node);
 	}
 
 	public int getNumID() {

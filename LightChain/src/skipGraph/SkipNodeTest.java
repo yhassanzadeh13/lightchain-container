@@ -28,8 +28,6 @@ class SkipNodeTest {
 	private String nameID2 = "001";
 	private String nameID3 = "100";
 	private String nameID4 = "111";
-	private String nameID5 = "101";
-	private String nameID6 = "010";
 	private NodeConfig initialConfig;
 	private NodeConfig config1;
 	private NodeConfig config2;

@@ -21,9 +21,8 @@ public class Block extends NodeInfo {
 	private Hasher hasher;
 	private final int index;
 
-	/*
+	/**
 	 * @param prev the address of the previous block
-	 * 
 	 * @param owner the address of the owner of the block
 	 */
 	public Block(String prev, int owner, String address, int idx) {

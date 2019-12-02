@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.net.Inet4Address;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.Scanner;
 
 import blockchain.Block;
@@ -106,6 +107,17 @@ public class Util {
 		else if (node instanceof Block)
 			return new Block((Block)node);
 		return new NodeInfo(node);
+	}
+	
+	public static String getRandomString(int length) {
+		StringBuilder sb = new StringBuilder();
+		
+		for(int i=0 ; i<length ; ++i) {
+			Random rand = new Random();
+			char c = (char)(rand.nextInt(26) + 'a');
+			sb.append(c);
+		}
+		return sb.toString();
 	}
 	
 	
