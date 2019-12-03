@@ -29,6 +29,7 @@ public class Transaction extends NodeInfo {
 		this.owner = owner;
 		this.cont = cont;
 		this.levels = levels;
+		this.sigma = new ArrayList<>();
 		hasher = new HashingTools();
 		this.hash = hasher.getHash(prev + owner + cont, levels);
 		super.setNumID(Integer.parseInt(this.hash, 2));
@@ -70,7 +71,7 @@ public class Transaction extends NodeInfo {
 	}
 
 	public String toString() {
-		return prev + owner + cont + getAddress();
+		return prev + owner + cont;
 	}
 	
 	public int getLevels() {

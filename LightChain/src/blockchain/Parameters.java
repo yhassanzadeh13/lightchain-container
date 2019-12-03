@@ -4,13 +4,13 @@ package blockchain;
 public class Parameters {
 	
 	// default values
-	private int ValidationFees = 1;
-	private int SignaturesThreshold = 5;
-	private int Alpha = 12;
-	private int Levels = 30;
-	private int InitialBalance = 20;
-	private int TxMin = 4;
-	private boolean Mode = true;
+	private int ValidationFees = 1; // reward received by validator
+	private int SignaturesThreshold = 5; // minimum number of signatures to accept a block
+	private int Alpha = 12; // upper limit of attempts to search for validators
+	private int Levels = 30; // length of nameID (levels of skip graph)
+	private int InitialBalance = 20; // balance to start with at launch
+	private int TxMin = 4; // minimum number of Tx in a block
+	private boolean Mode = true; // honest or malicious
 	
 	public Parameters() {
 		
@@ -64,7 +64,7 @@ public class Parameters {
 		TxMin = txMin;
 	}
 
-	public boolean isMode() {
+	public boolean getMode() {
 		return Mode;
 	}
 

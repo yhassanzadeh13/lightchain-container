@@ -16,10 +16,7 @@ import util.Util;
 class LightChainNodeTest {
 
 	private static int port = 7000;
-	private Parameters params1;
-	private Parameters params2;
-	private Parameters params3;
-	private Parameters params4;
+	private Parameters params;
 	private int RMIPort1;
 	private int RMIPort2;
 	private int RMIPort3;
@@ -27,10 +24,8 @@ class LightChainNodeTest {
 
 	@BeforeEach
 	void init() {
-		params1 = new Parameters();
-		params2 = new Parameters();
-		params3 = new Parameters();
-		params4 = new Parameters();
+		params = new Parameters();
+
 		RMIPort1 = port++;
 		RMIPort2 = port++;
 		RMIPort3 = port++;
@@ -43,10 +38,10 @@ class LightChainNodeTest {
 
 			// test view update gotten by 3 transaction pointing at genesis block
 
-			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
-			LightChainNode node4 = new LightChainNode(params4, RMIPort4, node1.getAddress(), false);
+			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
+			LightChainNode node4 = new LightChainNode(params, RMIPort4, node1.getAddress(), false);
 
 			Block blk = node1.insertGenesis();
 
@@ -55,11 +50,11 @@ class LightChainNodeTest {
 			String randStr3 = Util.getRandomString(12);
 
 			Transaction t2 = new Transaction(blk.getHash(), node2.getNumID(), randStr1, node2.getAddress(),
-					params2.getLevels());
+					params.getLevels());
 			Transaction t3 = new Transaction(blk.getHash(), node3.getNumID(), randStr2, node3.getAddress(),
-					params3.getLevels());
+					params.getLevels());
 			Transaction t4 = new Transaction(blk.getHash(), node4.getNumID(), randStr3, node4.getAddress(),
-					params4.getLevels());
+					params.getLevels());
 
 			node2.insertTransaction(t2);
 			node3.insertTransaction(t3);
@@ -78,15 +73,25 @@ class LightChainNodeTest {
 		}
 	}
 
-	@Ignore
+	@Test
 	void testMineAttempt() {
 		try {
-			// test view update gotten by 3 transaction pointing at genesis block
+			/*
+			 * Scenario: with genesis block, 3 nodes each insert a transaction then node1
+			 * attempts to mine a block, using very basic parameters 
+			 * TxMin = 1 : 1 transaction is enough to cast a block 
+			 * Alpha = 10 : give space for extra attempts 
+			 * SignaturesThreshold = 1 : 1 validator is enough. 
+			 * These parameters can be tweaked to test different values
+			 */
+			params.setTxMin(1);
+			params.setAlpha(10);
+			params.setSignaturesThreshold(1);
 
-			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
-			LightChainNode node4 = new LightChainNode(params4, RMIPort4, node1.getAddress(), false);
+			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
+			LightChainNode node4 = new LightChainNode(params, RMIPort4, node1.getAddress(), false);
 
 			Block blk = node1.insertGenesis();
 
@@ -95,15 +100,21 @@ class LightChainNodeTest {
 			String randStr3 = Util.getRandomString(12);
 
 			Transaction t2 = new Transaction(blk.getHash(), node2.getNumID(), randStr1, node2.getAddress(),
-					params2.getLevels());
+					params.getLevels());
 			Transaction t3 = new Transaction(blk.getHash(), node3.getNumID(), randStr2, node3.getAddress(),
-					params3.getLevels());
+					params.getLevels());
 			Transaction t4 = new Transaction(blk.getHash(), node4.getNumID(), randStr3, node4.getAddress(),
-					params4.getLevels());
+					params.getLevels());
 
 			node2.insertTransaction(t2);
 			node3.insertTransaction(t3);
 			node4.insertTransaction(t4);
+
+			Block newBlk = node1.mineAttempt();
+			Block lstBlk = node2.getLatestBlock();
+
+			assertNotNull(newBlk, "block was not mining failed");
+			assertEquals(newBlk, lstBlk, "new block was not properly added");
 
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -116,9 +127,9 @@ class LightChainNodeTest {
 		try {
 
 			// test detecting genesis block
-			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
+			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
 
 			Block blk = node1.insertGenesis();
 
@@ -130,7 +141,7 @@ class LightChainNodeTest {
 
 			// Test detecting second block after genesis
 
-			Block blk2 = new Block(blk.getHash(), node2.getNumID(), node2.getAddress(), 1,params2.getLevels());
+			Block blk2 = new Block(blk.getHash(), node2.getNumID(), node2.getAddress(), 1, params.getLevels());
 			node2.insertBlock(blk2, blk.getAddress());
 
 			Block b1 = node1.getLatestBlock();
@@ -141,7 +152,7 @@ class LightChainNodeTest {
 
 			// Test detecting third block
 
-			Block blk3 = new Block(blk2.getHash(), node3.getNumID(), node3.getAddress(), 2,params3.getLevels());
+			Block blk3 = new Block(blk2.getHash(), node3.getNumID(), node3.getAddress(), 2, params.getLevels());
 			node3.insertBlock(blk3, blk2.getAddress());
 
 			b1 = node1.getLatestBlock();
@@ -160,12 +171,11 @@ class LightChainNodeTest {
 
 	@Ignore
 	void testGetLatestTransaction() {
-		fail("Not yet implemented");
-	}
-
-	@Ignore
-	void testGetTransactionsWithNameID() {
-		fail("Not yet implemented");
+		/*
+		 * Test correctness of returned value by different cases:
+		 * - Make a node insert transaction pointers for several other node and test the
+		 * 	 correctness of the returned result by calling from different nodes
+		 */
 	}
 
 	@Ignore
@@ -194,8 +204,18 @@ class LightChainNodeTest {
 	}
 
 	@Ignore
-	void testGetValidatorsBlock() {
-		fail("Not yet implemented");
+	void testGetValidators() {
+		try {
+			// Test uniqueness of validators
+			LightChainNode node1 = new LightChainNode(params,RMIPort1,Const.DUMMY_INTRODUCER,true);
+			
+			/*
+			 * Test behavior given different parameters of ALPHA
+			 */
+			
+		}catch(RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Ignore
@@ -223,17 +243,13 @@ class LightChainNodeTest {
 		fail("Not yet implemented");
 	}
 
-	@Ignore
-	void testGetValidatorsTransaction() {
-		fail("Not yet implemented");
-	}
 
 	@Test
 	void testGetOwnerPublicKey() {
 		try {
-			LightChainNode node1 = new LightChainNode(params1, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params2, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params3, RMIPort3, node1.getAddress(), false);
+			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
 
 			PublicKey pk2 = node1.getOwnerPublicKey(node2.getNumID());
 			PublicKey pk3 = node1.getOwnerPublicKey(node3.getNumID());

@@ -45,11 +45,9 @@ public class Block extends NodeInfo {
 		this.owner = owner;
 		this.transactionSet = tList;
 		this.levels = levels;
+		this.sigma = new ArrayList<>();
 		hasher = new HashingTools();
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < tList.size(); ++i)
-			sb.append(tList.get(i).toString());
-		this.hash = hasher.getHash(prev + owner + sb.toString(), levels);
+		this.hash = hasher.getHash(prev + owner + getTransactionSetString(), levels);
 		super.setNumID(Integer.parseInt(this.hash, 2));
 	}
 
@@ -100,5 +98,18 @@ public class Block extends NodeInfo {
 	public int getLevels() {
 		return levels;
 	}
+	
+	public String toString() {
+		
+		return prev + owner + getTransactionSetString();
+	}
 
+	private String getTransactionSetString() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < transactionSet.size(); ++i)
+			sb.append(transactionSet.get(i).toString());
+		return sb.toString();
+	}
+	
+	
 }
