@@ -36,8 +36,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	private Registry registry;
 	private LookupTable lookup;
 	
-	// TODO: we do not have a fork-resolving mechanism
-	// TODO: we do not have bootstrapping
+	// TODO: fork-resolving mechanism unimplemented
+	// TODO: bootstrapping unimplemented
 
 	/**
 	 * Constructor for SkipNode class The node requires the following info to be

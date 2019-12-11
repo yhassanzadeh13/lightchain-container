@@ -18,6 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import blockchain.Block;
 import blockchain.LightChainRMIInterface;
 import blockchain.Transaction;
+import simulation.SimLog;
 import skipGraph.NodeInfo;
 import skipGraph.RMIInterface;
 
@@ -432,7 +433,7 @@ public class RemoteAccessTool {
 	private static void printCurrentLog() {
 		TestingLogMap = new ConcurrentHashMap<>();
 		try {
-			TestingLogMap.put(node.getNode(node.getNumID()), node.getTestLog());
+		//	TestingLogMap.put(node.getNode(node.getNumID()), node.getSimLog());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
@@ -451,7 +452,7 @@ public class RemoteAccessTool {
 		for (NodeInfo node : nodeList) {
 			try {
 				LightChainRMIInterface cur = getRMI(node.getAddress());
-				TestingLogMap.put(node, cur.getTestLog());
+				//TestingLogMap.put(node, cur.getTestLog());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -480,9 +481,9 @@ public class RemoteAccessTool {
 				try {
 					log("Node: " + cur);
 					LightChainRMIInterface curRMI = getRMI(cur.getAddress());
-					TestingLog lg = curRMI.getTestLog();// .printExceptionLogs();
-					lg.printExceptionLogs(expw);
-					lg.printOverflowLogs(erpw);
+				//	TestingLog lg = curRMI.getTestLog();// .printExceptionLogs();
+				//	lg.printExceptionLogs(expw);
+				//	lg.printOverflowLogs(erpw);
 				} catch (Exception e) {
 					log("Error printing errors.");
 					e.printStackTrace();
@@ -736,8 +737,8 @@ public class RemoteAccessTool {
 				if (ind == 0) {
 					curRMI.insertGenesis();
 				}
-				TestingLog lg = curRMI.startSim(count, pace);
-				TestingLogMap.put(nodeList.get(ind), lg);
+				SimLog lg = curRMI.startSim(count, pace);
+				//TestingLogMap.put(nodeList.get(ind), lg);
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
