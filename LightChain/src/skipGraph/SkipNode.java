@@ -13,7 +13,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
-
+import org.apache.log4j.Logger;
 import util.Const;
 import util.Util;
 import remoteTest.Configuration;
@@ -35,6 +35,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	protected boolean isInserted = false;
 	private Registry registry;
 	private LookupTable lookup;
+	private Logger logger;
 	
 	// TODO: fork-resolving mechanism unimplemented
 	// TODO: bootstrapping unimplemented
@@ -61,16 +62,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		this.nameID = config.getNameID();
 		this.introducer = introducer;
 		this.address = IP + ":" + RMIPort;
-
+		this.logger = Logger.getLogger(RMIPort + "");
 		// check if introducer has valid address
 		if (!introducer.equals(Const.DUMMY_INTRODUCER) && !Util.validateIP(introducer)) {
-			Util.log("Invalid introducer address");
-
+			logger.error("Invalid introducer address");
 		}
 
 		// check if node address it valid
 		if (!Util.validateIP(address)) {
-			Util.log("Invalid node adress");
+			logger.error("Invalid node adress");
 		}
 
 		lookup = new LookupTable(maxLevels);
@@ -82,7 +82,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		// TODO: this should be removed when launching LightChainNode
 		registry = LocateRegistry.createRegistry(RMIPort);
 		registry.rebind("RMIImpl", this);
-		Util.log("Rebinding Successful");
+		logger.info("Rebinding Successful");
 		if (!isInitial) {
 			insertNode(peerNode);
 		}
@@ -103,15 +103,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		this.maxLevels = maxLevels;
 		this.introducer = introducer;
 		this.address = IP + ":" + RMIPort;
-
+		this.logger = Logger.getLogger(RMIPort + "");
 		// check if introducer has valid address
 		if (!introducer.equals(Const.DUMMY_INTRODUCER) && !Util.validateIP(introducer)) {
-			Util.log("Invalid introducer address");
+			logger.error("Invalid introducer address");
 		}
 
 		// check if node address it valid
 		if (!Util.validateIP(address)) {
-			Util.log("Invalid node adress");
+			logger.error("Invalid node adress");
 		}
 
 		lookup = new LookupTable(maxLevels);
@@ -125,6 +125,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	public void delete(int num) throws RemoteException {
 
 		try {
+			logger.debug("Deleting :" + num);
 			for (int j = lookup.getMaxLevels(); j >= 0; j--) {
 				// if there are no neighbors at level j, just move on
 				NodeInfo lNode = lookup.get(num, j, Const.LEFT);
@@ -170,9 +171,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 */
 	public void insertNode(NodeInfo insertedNode) {
 		try {
-
-			lookup.initializeNode(insertedNode);
-
+			logger.debug("Inserting: " + insertedNode.getNumID());
 			// We search through the introducer node to find the node with
 			// the closest num ID
 			NodeInfo closestNode;
@@ -183,11 +182,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
 				RMIInterface introRMI = getRMI(introducer);
 				closestNode = introRMI.searchByNumID(insertedNode.getNumID());
-				Util.log("Closest Node to " + RMIPort + " is " + closestNode.getAddress());
 			}
+			
+			lookup.initializeNode(insertedNode);
 
 			if (closestNode == null) {
-				Util.log("The address resulting from the search is null");
+				logger.error("The address resulting from the search is null");
 				return;
 			}
 
@@ -381,8 +381,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @see RMIInterface#searchByNumID(java.lang.String)
 	 */
 	public NodeInfo searchByNumID(int searchTarget) {
-		try {
-
+		logger.debug("Searching for " + searchTarget);
+		try { 
 			List<NodeInfo> lst = new ArrayList<NodeInfo>();
 			lst = searchByNumIDHelper(searchTarget, lst);
 			return lst == null ? null : lst.get(lst.size() - 1);
@@ -405,7 +405,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 */
 	public List<NodeInfo> searchByNumIDHelper(int searchTarget, List<NodeInfo> lst) {
 		try {
-
+			
 			int level = lookup.getMaxLevels();
 			// route search to closest data node
 			int num = getBestNum(searchTarget);
@@ -432,24 +432,25 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @return list of nodes on the search path
 	 * @see RMIInterface#searchNum(int, int)
 	 */
-	public List<NodeInfo> searchNumID(int numID, int targetInt, int level, List<NodeInfo> lst) throws RemoteException {
-
+	public List<NodeInfo> searchNumID(int numID, int targetInt, int level, List<NodeInfo> lst) throws RemoteException {	
 		int num;
 		if (numID != lookup.bufferNumID()) {
 			// get the data node (or main node) that is closest to the target search
-			num = getBestNum(targetInt);
+//			num = getBestNum(targetInt);
+			num = numID;
 			// Add the current node's info to the search list
-			lst.add(lookup.get(num));
-			if (num == targetInt) {
-				return lst;
-			}
 		} else {
+			logger.debug(": Accessing Buffered Node ...");
 			num = numID;
 		}
-
+		lst.add(lookup.get(num));
+		
+		if(num == targetInt)
+			return lst;
+		
 		// If the target is greater than the current node then we should search right
 		if (num < targetInt) {
-
+			logger.debug("Going Right from " + num + " to " + targetInt + "...");
 			// Keep going down levels as long as there is either no right neighbor
 			// or the right neighbor has a numID greater than the target
 			while (level >= Const.ZERO_LEVEL && (lookup.get(num, level, Const.RIGHT) == null
@@ -464,14 +465,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			try {
 				return rightRMI.searchNumID(lookup.get(num, level, Const.RIGHT).getNumID(), targetInt, level, lst);
 			} catch (StackOverflowError e) {
-
 				return null;
 			} catch (Exception e) {
 				return lst;
 			}
 		} else {
 			// If the target is less than the current node then we should search left
-
+			logger.debug("Going Left from " + num + " to " + targetInt + "...");
 			// Keep going down levels as long as there is either no right neighbor
 			// or the left neighbor has a numID greater than the target
 			while (level >= Const.ZERO_LEVEL && (lookup.get(num, level, Const.LEFT) == null
@@ -483,9 +483,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			// delegate the search to the left neighbor
 			RMIInterface leftRMI = getRMI(lookup.get(num, level, Const.LEFT).getAddress());
 			try {
-				return leftRMI.searchNumID(lookup.get(num, level, Const.LEFT).getNumID(), targetInt, level, lst);
+					return leftRMI.searchNumID(lookup.get(num, level, Const.LEFT).getNumID(), targetInt, level, lst);
 			} catch (StackOverflowError e) {
-
+				logger.error("StackOverflow",e);
+				StringBuilder sb = new StringBuilder();
+				for(NodeInfo node : lst)
+					sb.append(node.getNumID() + " " + node.getAddress() + "\n");
+					logger.error(sb.toString());
 				return null;
 			} catch (Exception e) {
 				return lst;
@@ -573,7 +577,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 */
 
 	public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException {
-
+		logger.debug("Searching nameID ...");
 		try {
 			// TODO: handle this after finalizing lookupTable
 			if (numID == lookup.bufferNumID()) {
@@ -629,7 +633,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			return null;
 		} catch (Exception e) {
 			e.printStackTrace();
-			Util.log("Error when inserting " + searchTarget + " at address " + address);
+			logger.error("Error when inserting " + searchTarget + " at address " + address);
 			return null;
 		}
 	}
@@ -646,6 +650,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @return list of nodes who have the given name as name ID
 	 */
 	public List<NodeInfo> getNodesWithNameID(String name) {
+		logger.debug("Gathering Node batch ...");
 		try {
 			// find a transaction that has the given nameID
 			NodeInfo ansNode = searchByNameID(name);
@@ -653,7 +658,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			List<NodeInfo> list = new ArrayList<>();
 
 			if (ansNode == null || !ansNode.getNameID().equals(name)) {
-				Util.log("getNodesWithNameID: No Node was found with the given nameID");
+				logger.debug("getNodesWithNameID: No Node was found with the given nameID");
 				return list;
 			}
 
@@ -713,7 +718,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	public RMIInterface getRMI(String adrs) {
 
 		if (!Util.validateIP(adrs)) {
-			Util.log("Error in lookup up RMI. Address " + adrs + " is not a valid address");
+			logger.debug("Error in lookup up RMI. Address " + adrs + " is not a valid address");
 			return null;
 		}
 
@@ -809,7 +814,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		return address;
 	}
 
-	protected int getRMIPort() {
+	public int getRMIPort() {
 		return RMIPort;
 	}
 

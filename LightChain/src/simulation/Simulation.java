@@ -13,6 +13,7 @@ import blockchain.LightChainNode;
 import blockchain.Parameters;
 import skipGraph.NodeInfo;
 import util.Const;
+import util.Util;
 
 public class Simulation {
 
@@ -20,11 +21,11 @@ public class Simulation {
 
 		Parameters params = new Parameters();
 		params.setAlpha(10);
-		params.setTxMin(2);
-		params.setSignaturesThreshold(2);
-
-		int iterations = 3;
-
+		params.setTxMin(1);
+		params.setSignaturesThreshold(1);
+		
+		int iterations = 10;
+		int pace = 1;
 		try {
 			LightChainNode node1 = new LightChainNode(params, 7001, Const.DUMMY_INTRODUCER, true);
 			LightChainNode node2 = new LightChainNode(params, 7002, node1.getAddress(), false);
@@ -40,13 +41,17 @@ public class Simulation {
 			ConcurrentHashMap<NodeInfo, SimLog> map = new ConcurrentHashMap<>();
 			CountDownLatch latch = new CountDownLatch(nodes.size());
 			for (int i = 0; i < nodes.size(); ++i) {
-				SimThread sim = new SimThread(nodes.get(i), latch, map, 10, 1);
+				SimThread sim = new SimThread(nodes.get(i), latch, map, iterations, pace);
 				sim.start();
 			}
 			latch.await();
-
+			
+			Util.log("Simulation Done.");
+			
 			processData(map);
-
+			
+			
+			System.exit(0);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.rmi.RemoteException;
 import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,11 +80,10 @@ class LightChainNodeTest {
 		try {
 			/*
 			 * Scenario: with genesis block, 3 nodes each insert a transaction then node1
-			 * attempts to mine a block, using very basic parameters 
-			 * TxMin = 1 : 1 transaction is enough to cast a block 
-			 * Alpha = 10 : give space for extra attempts 
-			 * SignaturesThreshold = 1 : 1 validator is enough. 
-			 * These parameters can be tweaked to test different values
+			 * attempts to mine a block, using very basic parameters TxMin = 1 : 1
+			 * transaction is enough to cast a block Alpha = 10 : give space for extra
+			 * attempts SignaturesThreshold = 1 : 1 validator is enough. These parameters
+			 * can be tweaked to test different values
 			 */
 			params.setTxMin(1);
 			params.setAlpha(10);
@@ -117,6 +118,53 @@ class LightChainNodeTest {
 			assertEquals(newBlk, lstBlk, "new block was not properly added");
 
 		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	void testGetLatestBlockExtensively() {
+		try {
+
+			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
+			LightChainNode node4 = new LightChainNode(params, RMIPort4, node1.getAddress(), false);
+
+			List<LightChainNode> nodeList = new ArrayList<>();
+			nodeList.add(node1);
+			nodeList.add(node2);
+			nodeList.add(node3);
+			nodeList.add(node4);
+
+			int iterations = 100;
+
+			Block latestBlock = node1.insertGenesis();
+
+			for (int i = 0; i < iterations; ++i) {
+				for (int j = 0; j < nodeList.size(); ++j) {
+					String randStr = Util.getRandomString(10);
+					Transaction t = new Transaction(latestBlock.getHash(), nodeList.get(j).getNumID(), randStr,
+							nodeList.get(j).getAddress(), params.getLevels());
+					nodeList.get(j).insertTransaction(t);
+				}
+				
+				for(int j = 0 ; j < nodeList.size(); ++j) {
+					Block testBlock = nodeList.get(j).getLatestBlock();
+					assertEquals(latestBlock,testBlock,"latest block wrong");
+					Util.log("Comparing " + latestBlock.getNumID() + " and " + testBlock.getNumID());
+				}
+				
+				if (i % 2 == 0) {
+					int index = i % nodeList.size();
+					Block blk = new Block(latestBlock.getHash(), nodeList.get(index).getNumID(),
+							nodeList.get(index).getAddress(), latestBlock.getIndex(), params.getLevels());
+					 nodeList.get(index).insertBlock(blk, latestBlock.getAddress());
+					 latestBlock = blk;
+				}
+			}
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -172,9 +220,9 @@ class LightChainNodeTest {
 	@Ignore
 	void testGetLatestTransaction() {
 		/*
-		 * Test correctness of returned value by different cases:
-		 * - Make a node insert transaction pointers for several other node and test the
-		 * 	 correctness of the returned result by calling from different nodes
+		 * Test correctness of returned value by different cases: - Make a node insert
+		 * transaction pointers for several other node and test the correctness of the
+		 * returned result by calling from different nodes
 		 */
 	}
 
@@ -207,13 +255,13 @@ class LightChainNodeTest {
 	void testGetValidators() {
 		try {
 			// Test uniqueness of validators
-			LightChainNode node1 = new LightChainNode(params,RMIPort1,Const.DUMMY_INTRODUCER,true);
-			
+			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+
 			/*
 			 * Test behavior given different parameters of ALPHA
 			 */
-			
-		}catch(RemoteException e) {
+
+		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
 	}
@@ -242,7 +290,6 @@ class LightChainNodeTest {
 	void testHasBalanceCompliance() {
 		fail("Not yet implemented");
 	}
-
 
 	@Test
 	void testGetOwnerPublicKey() {

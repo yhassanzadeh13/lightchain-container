@@ -77,7 +77,7 @@ public class LookupTable {
 	 * @param nd The node that is to be added the lookup
 	 * @return false if the numID given was added previously, true otherwise.
 	 */
-	public synchronized boolean addNode(NodeInfo node) {
+	public boolean addNode(NodeInfo node) {
 		NodeInfo ret = dataNodes.put(node.getNumID(), node);
 		if (ret == null) {
 			lookup.put(node.getNumID(), new Table());
@@ -95,7 +95,7 @@ public class LookupTable {
 	 * @param node The NodeInfo of the node you want to add to the buffer.
 	 */
 	public void initializeNode(NodeInfo node) {
-		nodeBuffer = node;
+		nodeBuffer = Util.assignNode(node);
 		tableBuffer = new Table();
 		tableBuffer.lockTable();
 	}
@@ -110,14 +110,12 @@ public class LookupTable {
 	public boolean finalizeNode() {
 		if (this.nodeBuffer == null || this.tableBuffer == null)
 			return false;
-		else {
-			dataNodes.put(nodeBuffer.getNumID(), nodeBuffer);
-			lookup.put(nodeBuffer.getNumID(), tableBuffer);
-			tableBuffer.unlockTable();
-			nodeBuffer = null;
-			tableBuffer = null;
-			return true;
-		}
+		dataNodes.put(nodeBuffer.getNumID(), nodeBuffer);
+		lookup.put(nodeBuffer.getNumID(), tableBuffer);
+		tableBuffer.unlockTable();
+		nodeBuffer = null;
+		tableBuffer = null;
+		return true;
 	}
 
 	/**
@@ -126,7 +124,7 @@ public class LookupTable {
 	 * @param numID the numID of the node you want to remove
 	 * @return the stored node info of the given numID.
 	 */
-	public synchronized NodeInfo remove(int numID) {
+	public NodeInfo remove(int numID) {
 		lookup.remove(numID);
 		return dataNodes.remove(numID);
 	}
@@ -137,7 +135,7 @@ public class LookupTable {
 	 * @param numID the numID of the node you want to remove
 	 * @return the stored node info of the given numID
 	 */
-	public synchronized NodeInfo get(int numID) {
+	public NodeInfo get(int numID) {
 		// if the requested node is the one currently in the buffer
 		// then it is okay return its NodeInfo
 		if (nodeBuffer != null && nodeBuffer.getNumID() == numID) {
@@ -157,7 +155,7 @@ public class LookupTable {
 	 * @return The information of the desired neighbour or null if the numID is
 	 *         invalid
 	 */
-	public synchronized NodeInfo get(int numID, int level, int direction) {
+	public NodeInfo get(int numID, int level, int direction) {
 		// if the lookup table of the node in the buffer is to be accessed,
 		// then this will cause a block at this point until finalizeNode is
 		// called to unlock the tableBuffer.
