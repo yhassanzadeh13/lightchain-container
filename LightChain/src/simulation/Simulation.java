@@ -24,7 +24,7 @@ public class Simulation {
 		params.setTxMin(1);
 		params.setSignaturesThreshold(1);
 		
-		int iterations = 10;
+		int iterations = 90;
 		int pace = 1;
 		try {
 			LightChainNode node1 = new LightChainNode(params, 7001, Const.DUMMY_INTRODUCER, true);
@@ -45,6 +45,8 @@ public class Simulation {
 				sim.start();
 			}
 			latch.await();
+			
+			node1.printLevel(0);
 			
 			Util.log("Simulation Done.");
 			
@@ -88,16 +90,14 @@ public class Simulation {
 				sb.append(cur.getNumID() + "," + log.getMode());
 				for (int i = 0; i < validMine.size(); i++) {
 					if (i != 0)
-						sb.append(",,,,");
+						sb.append(",,");
 					sb.append(validMine.get(i));
-					sb.append("\n");
 				}
 
 				for (int i = 0; i < failedMine.size(); i++) {
 					if (i != 0)
-						sb.append(",,,,");
+						sb.append(",,");
 					sb.append(failedMine.get(i));
-					sb.append("\n");
 				}
 			}
 			sb.append('\n');
@@ -136,14 +136,14 @@ public class Simulation {
 						+ log.getValidTransactionTrials() + ",");
 				for (int i = 0; i < validTransactions.size(); i++) {
 					if (i != 0)
-						sb.append(",,,,");
+						sb.append(",,,");
 					sb.append(validTransactions.get(i));
 					sb.append("\n");
 				}
 
 				for (int i = 0; i < failedTransactions.size(); i++) {
 					if (i != 0)
-						sb.append(",,,,");
+						sb.append(",,,");
 					sb.append(failedTransactions.get(i));
 					sb.append("\n");
 				}

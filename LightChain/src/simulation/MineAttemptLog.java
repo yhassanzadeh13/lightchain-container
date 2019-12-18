@@ -38,8 +38,8 @@ public class MineAttemptLog implements Serializable {
 		return validationTime;
 	}
 
-	
+	@Override
 	public String toString() {
-		return totalTime + "," + foundTxMin + "," + validationTime + "," + success;
+		return totalTime + "," + foundTxMin + "," + validationTime + "," + success + "\n";
 	}
 }

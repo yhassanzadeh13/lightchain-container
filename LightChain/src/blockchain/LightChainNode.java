@@ -134,7 +134,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			}
 
 			String name = numToName(blk.getNumID());
-			
+
 			logger.debug("getting transaction batch");
 			// Get all transaction with this nameID
 			List<Transaction> tList = getTransactionsWithNameID(name);
@@ -237,17 +237,20 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * @param blk block to be inserted into the overlay
 	 */
 	public void insertBlock(Block blk, String prevAddress) throws RemoteException {
-
+		
 		if (prevAddress.equals(getAddress())) {
-			removeFlagNode();
+			return ;
+//			removeFlagNode();
+//			insertNode(blk);
+//			insertFlagNode(blk);
 		} else {
+			insertNode(blk);
+			
+			insertFlagNode(blk);
 			LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevAddress);
 			prevOwnerRMI.removeFlagNode();
-		}
-		// insert flag node for this block
-		insertFlagNode(blk);
 
-		insertNode(blk);
+		}
 	}
 
 	/**
@@ -261,9 +264,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		String prev = st.toString();
 		int index = 0;
 		Block b = new Block(prev, getNumID(), getAddress(), index, params.getLevels());
-		insertFlagNode(b);
 		// use current address as prev when inserting genesis block
-		insertBlock(b, getAddress());
+		insertNode(b);
+		insertFlagNode(b);
 		return b;
 	}
 
@@ -277,21 +280,25 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public Block getLatestBlock() throws RemoteException {
 		try {
 			logger.debug("searching for flag");
-			
+
 			NodeInfo flag = searchByNumID(Const.ZERO_ID);
-			
+
 			logger.debug("searching for block");
-			int num = Integer.parseInt(flag.getNameID(),2);
+			int num = Integer.parseInt(flag.getNameID(), 2);
 			NodeInfo blk = searchByNumID(num);
 			if (blk instanceof Block)
 				return (Block) blk;
 			else {
-				logger.error(blk.getNumID() + " was returned when " + num + " was expected, its type is " + blk.getClass());
-				return null;
+				logger.error(
+						blk.getNumID() + " was returned when " + num + " was expected, its type is " + blk.getClass());
+				logLevel(Const.ZERO_LEVEL);
+				Thread.sleep(100);
+				return getLatestBlock();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.error("NullPointer: ",e);
+			logger.error("NullPointer: ", e);
+			logLevel(Const.ZERO_LEVEL);
 			return null;
 		}
 	}
@@ -385,9 +392,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * @return true if transaction is valid, and false if it is not valid
 	 */
 	public boolean validateTransaction(Transaction t) throws RemoteException {
-		
+
 		long start = System.currentTimeMillis();
-		
+
 		int isAuthenticated = 0;
 		int isSound = 0;
 		int isCorrect = 0;
@@ -434,11 +441,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				logger.debug("Valid Transaction");
 			} else
 				logger.debug("Transaction Rejected");
-			
+
 			long end = System.currentTimeMillis();
-			
+
 			simLog.logTransaction(validated, isAuthenticated, isSound, isCorrect, hasBalance, end - start);
-			
+
 			return validated;
 		} catch (Exception e) {
 			e.printStackTrace();

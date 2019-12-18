@@ -322,7 +322,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 */
 	public NodeInfo insertSearch(int level, int direction, int nodeNumID, String target) throws RemoteException {
 		try {
-
+			logger.debug("Inserting " + target + " at level " + level);
 			NodeInfo currentNode = lookup.get(nodeNumID);
 
 			if (currentNode == null)
@@ -353,6 +353,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			logLevel(Const.ZERO_LEVEL);
 			return null;
 		}
 	}
@@ -436,11 +437,11 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		int num;
 		if (numID != lookup.bufferNumID()) {
 			// get the data node (or main node) that is closest to the target search
-//			num = getBestNum(targetInt);
-			num = numID;
+			num = getBestNum(targetInt);
+//			num = numID;
 			// Add the current node's info to the search list
 		} else {
-			logger.debug(": Accessing Buffered Node ...");
+			logger.debug("Accessing Buffered Node " + numID + " ...");
 			num = numID;
 		}
 		lst.add(lookup.get(num));
@@ -735,11 +736,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
 	}
 
-	/*
+	/**
 	 * This method initializes all the RMI system properties required for proper
 	 * functionality
 	 */
-
 	protected void initRMI() {
 		this.IP = Util.grabIP();
 		try {
@@ -751,6 +751,21 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			System.exit(0);
 		}
 	}
+	
+	public void printLevel(int level) {
+		List<NodeInfo> list = lookup.getLevel(level,peerNode);
+		for(NodeInfo n : list) {
+			Util.log(n.getNumID() + " " + n.getNameID() + " " + n.getClass());
+		}
+	}
+	
+	public void logLevel(int level) {
+		List<NodeInfo> list = lookup.getLevel(level, peerNode);
+		for(NodeInfo n : list) {
+			logger.info(n.getNumID() + " " + n.getNameID() + " " + n.getClass());
+		}
+	}
+	
 
 	public void printPeerLookup() {
 		lookup.printLookup(numID);

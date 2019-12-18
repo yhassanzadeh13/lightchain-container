@@ -30,7 +30,8 @@ class TransactionLog implements Serializable {
 		return timeTaken;
 	}
 	
+	@Override
 	public String toString() {
-		return timeTaken+"," + isAuthenticated + "," + isSound + "," + isCorrect + "," + hasBalance + ","+success;
+		return timeTaken+"," + isAuthenticated + "," + isSound + "," + isCorrect + "," + hasBalance + ","+success + "\n";
 	}
 }

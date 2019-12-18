@@ -1,6 +1,9 @@
 package skipGraph;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -248,6 +251,24 @@ public class LookupTable {
 			e.printStackTrace();
 			return 0;
 		}
+	}
+	
+	public List<NodeInfo> getLevel(int level,NodeInfo start) {
+		List<NodeInfo> list = new ArrayList<>();
+		
+		NodeInfo node = start;
+		while(node != null) {
+			list.add(node);
+			node = get(node.getNumID(),level,Const.LEFT);
+		}
+		Collections.reverse(list);
+		node = get(start.getNumID(),level,Const.RIGHT);
+		while(node != null) {
+			list.add(node);
+			node = get(node.getNumID(),level,Const.RIGHT);
+		}
+		
+		return list;
 	}
 
 	/**
