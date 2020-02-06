@@ -19,6 +19,7 @@ public class SimulationDriver {
         int iterations = getIntProperty("iterations", "100");
         int pace = getIntProperty("pace","1");
 
+
         Simulation.startSimulation(params, nodeCount, iterations, pace);
 
     }
