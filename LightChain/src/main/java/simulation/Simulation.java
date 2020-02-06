@@ -74,7 +74,7 @@ public class Simulation {
 
 		try {
 			String logPath = System.getProperty("user.dir") + File.separator + "Logs" + File.separator
-					+ "MineAttemps.csv";
+					+ "MineAttempts.csv";
 			File logFile = new File(logPath);
 
 			logFile.getParentFile().mkdirs();
@@ -99,10 +99,11 @@ public class Simulation {
 				}
 
 				for (int i = 0; i < failedMine.size(); i++) {
+					sb.append(",,");
 					sb.append(failedMine.get(i));
 				}
+				sb.append('\n');
 			}
-			sb.append('\n');
 			writer.write(sb.toString());
 			writer.close();
 		} catch (FileNotFoundException e) {
@@ -115,7 +116,7 @@ public class Simulation {
 
 		try {
 			String logPath = System.getProperty("user.dir") + File.separator + "Logs" + File.separator
-					+ "TransactionValidation.csv";
+					+ "TransactionValidationAttempts.csv";
 			File logFile = new File(logPath);
 
 			logFile.getParentFile().mkdirs();
@@ -146,10 +147,8 @@ public class Simulation {
 					sb.append(",,,,");
 					sb.append(failedTransactions.get(i));
 				}
-
+				sb.append('\n');
 			}
-
-			sb.append('\n');
 			writer.write(sb.toString());
 			writer.close();
 		} catch (FileNotFoundException e) {
