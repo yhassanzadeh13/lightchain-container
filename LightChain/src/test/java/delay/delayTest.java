@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class delayTest {
     @Test
-    public void generateDelays(){
+    public void testWhetherDelayIsSame(){
         String adrs1 = "adrs1";
         String adrs2 = "adrs2";
         String adrs3 = "adrs3";
@@ -17,6 +17,5 @@ public class delayTest {
         int delay12Repeated = dt.getDelay(adrs1, adrs2);
 
         assertEquals(delay12, delay12Repeated);
-        System.out.println(delay21);
     }
 }
