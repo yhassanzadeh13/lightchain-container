@@ -129,10 +129,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			Block blk = getLatestBlock();
 			// Change numID to a nameID string
 			if (blk == null) {
-				logger.error("Failed to get latest block");
+				logger.error("Mining Failed: Failed to get latest block");
 				return null;
 			}
-
+			
+			logger.debug("Found Latest Block: " + blk.getNumID());
+			
 			String name = numToName(blk.getNumID());
 
 			logger.debug("getting transaction batch");
@@ -141,15 +143,18 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			// If number of transactions obtained is less than TX_MIN then we terminate the
 			// process
 			if (tList == null || tList.size() < params.getTxMin()) {
-				logger.debug("not enough transaction found: " + tList.size());
+				logger.debug("Mining Failed: not enough transaction found: " + tList.size());
 				simLog.logMineAttemptLog(false, false, System.currentTimeMillis() - startTotal, -1);
 				return null;
 			}
-
+			
+			
 			// If there are TX_MIN transaction then add them into a new block
 			Block newBlk = new Block(blk.getHash(), getNumID(), getAddress(), tList, blk.getIndex() + 1,
 					params.getLevels());
 			// send the new block for PoV validation
+			logger.debug("Validating new Block ...");
+					
 			long startValid = System.currentTimeMillis();
 			boolean isValidated = validateBlock(newBlk);
 			long endValid = System.currentTimeMillis();
@@ -204,17 +209,23 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public Transaction makeTransaction(String cont) {
 		try {
-			Block lstBlk = getLatestBlock();
-			logger.debug("Prev found: " + lstBlk.getNumID());
-			Transaction t = new Transaction(lstBlk.getHash(), getNumID(), cont, getAddress(), params.getLevels());
-			boolean verified = validateTransaction(t);
-			if (verified == false) {
-				logger.debug("verfication failed");
-				return null;
+			
+			boolean success = false;
+			int waitCount = 5;
+			while(!success && waitCount > 0) {
+				Block lstBlk = getLatestBlock();
+				logger.debug("Prev found: " + lstBlk.getNumID());
+				Transaction t = new Transaction(lstBlk.getHash(), getNumID(), cont, getAddress(), params.getLevels());
+				boolean verified = validateTransaction(t);
+				if (verified) {
+					insertTransaction(t);
+					logger.debug("Transaction Successfully Added");
+					return t;
+				}
+				waitCount--;
 			}
-			insertTransaction(t);
-			logger.debug("Transaction Successfully Added");
-			return t;
+			logger.debug("Transaction Making Failed");
+			return null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -267,6 +278,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		// use current address as prev when inserting genesis block
 		insertNode(b);
 		insertFlagNode(b);
+		logger.debug("Inserting Genesis Block " + b.getNumID());
 		return b;
 	}
 
@@ -412,7 +424,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 			boolean validated = true;
 			int numValidations = 0;
-
+			long timePerValidator = 0;
+			
+			
 			// iterate over validators and use RMI to ask them to validate the transaction
 			for (int i = 0; i < validators.size(); ++i) {
 				LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
@@ -428,14 +442,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 					hasBalance++;
 
 				// if a validators returns null that means the validation has failed
-				if (signature.getBytes() == null) {
-					validated = false;
+				if(signature.getBytes() != null) {
+					numValidations++;
+					timePerValidator += signature.getValidationTime();
 				}
-				numValidations++;
+					
 				t.addSignature(signature);
 			}
 
-			validated &= (numValidations >= params.getSignaturesThreshold());
+			validated = (numValidations >= params.getSignaturesThreshold());
 
 			if (validated) {
 				logger.debug("Valid Transaction");
@@ -443,8 +458,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				logger.debug("Transaction Rejected");
 
 			long end = System.currentTimeMillis();
+			
+			if(numValidations != 0)
+				timePerValidator /= numValidations;
 
-			simLog.logTransaction(validated, isAuthenticated, isSound, isCorrect, hasBalance, end - start);
+			simLog.logTransaction(validated, isAuthenticated, isSound, isCorrect, hasBalance, end - start,timePerValidator);
 
 			return validated;
 		} catch (Exception e) {
@@ -605,6 +623,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		boolean isSound = false;
 		boolean hasBalance = false;
 		try {
+			long startTime = System.currentTimeMillis();
 			updateView();
 			isAuth = isAuthenticated(t);
 			isCorrect = isCorrect(t);
@@ -617,6 +636,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			logger.debug("Transaction Approved");
 			SignedBytes signedHash = new SignedBytes(digitalSignature.signString(t.getHash()).getBytes(), isAuth,
 					isSound, isCorrect, hasBalance);
+			long endTime = System.currentTimeMillis();
+			signedHash.setValidationTime(endTime - startTime);
 			return signedHash;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -864,19 +885,16 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		Random rnd = new Random();
 		try {
 			for (int i = 0; i < numTransactions; i++) {
-				// wait for (pace +- 10 seconds)/2
-//				Thread.sleep(rnd.nextInt(1000 * pace) / 2);
-				Thread.sleep(1000);
+				int randomWait = rnd.nextInt(500) + 500;
+				Thread.sleep(randomWait);
 				logger.debug("Making Transaction ...");
 				makeTransaction(Util.getRandomString(10));
-				// wait for (pace +- 10 seconds)/2
-//				Thread.sleep(rnd.nextInt(1000 * pace) / 2);
-//				updateView();
-				Thread.sleep(1000);
-//				Thread.sleep(rnd.nextInt(rnd.nextInt(4000)));
-				logger.debug("Mining ...");
-				mineAttempt();
-
+				if(true) {
+					randomWait = rnd.nextInt(500) + 500;
+					Thread.sleep(randomWait);
+					logger.debug("Mining ...");
+					mineAttempt();
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

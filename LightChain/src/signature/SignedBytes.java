@@ -15,6 +15,7 @@ public class SignedBytes implements Serializable {
 	private boolean isSound;
 	private boolean isCorrect;
 	private boolean hasBalance;
+	private long validationTime;
 
 	public SignedBytes(byte[] array) {
 		if (array != null)
@@ -51,6 +52,14 @@ public class SignedBytes implements Serializable {
 
 	public boolean hasBalance() {
 		return hasBalance;
+	}
+	
+	public long getValidationTime() {
+		return validationTime;
+	}
+	
+	public void setValidationTime(long time) {
+		validationTime = time;
 	}
 
 }

@@ -256,7 +256,7 @@ public class LookupTable {
 	public List<NodeInfo> getLevel(int level,NodeInfo start) {
 		List<NodeInfo> list = new ArrayList<>();
 		
-		NodeInfo node = start;
+		NodeInfo node = Util.assignNode(start);
 		while(node != null) {
 			list.add(node);
 			node = get(node.getNumID(),level,Const.LEFT);
