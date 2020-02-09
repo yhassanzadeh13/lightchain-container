@@ -1,10 +1,13 @@
 package simulation;
 
 import blockchain.Parameters;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 import util.PropertyManager;
 
 public class SimulationDriver {
     public static void main(String[] args){
+        initializeLogger();
         propMng = new PropertyManager("simulation.config");
         Parameters params = new Parameters();
         params.setAlpha(getIntProperty("alpha", "10"));
@@ -14,14 +17,17 @@ public class SimulationDriver {
         params.setLevels(getIntProperty("levels", "30"));
         params.setValidationFees(getIntProperty("validationFees", "1"));
         params.setMode(getBoolProperty("Mode", "True"));
-
         int nodeCount = getIntProperty("nodeCount", "10");
         int iterations = getIntProperty("iterations", "100");
         int pace = getIntProperty("pace","1");
 
 
         Simulation.startSimulation(params, nodeCount, iterations, pace);
+        System.exit(0);
+    }
 
+    private static void initializeLogger(){
+        PropertyConfigurator.configure("log4j.properties");
     }
 
     private static PropertyManager propMng;
