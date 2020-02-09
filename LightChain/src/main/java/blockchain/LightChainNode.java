@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import delay.LightChainNodeDelayWrapper;
 import org.apache.log4j.Logger;
 
 import hashing.Hasher;
@@ -820,7 +821,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if (adrs.equalsIgnoreCase(getAddress()))
 				return this;
 			try {
-				return (LightChainRMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
+				LightChainRMIInterface lrmi = (LightChainRMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
+				if(lrmi == null) return lrmi;
+				// wrap in delay wrapper
+				if(Util.local){
+					lrmi = new LightChainNodeDelayWrapper(lrmi, this.getAddress(), adrs);
+				}
+				return lrmi;
 			} catch (Exception e) {
 				logger.error("Exception while attempting to lookup RMI located at address: " + adrs);
 				e.printStackTrace();
