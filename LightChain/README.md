@@ -1,4 +1,22 @@
 # Running a Simulation:
+
+## Setting the parameters:
+Modify the simulation parameters in simulation.config, which looks something like this:
+```
+nodeCount = 3 [//The](//the) number of nodes to spawn
+iterations = 100 //The number of transactions to generate
+pace = 1 // The time between every transaction generated (in seconds)
+alpha = 10  // upper limit of attempts to search for validators
+txmin = 1 // minimum number of Tx in a block
+signaturesThreshold = 1 // minimum number of signatures to accept a block
+initialBalance = 20  // balance to start with at launch
+levels = 30  // length of nameID (levels of skip graph)
+Mode = True // honest or malicious
+validationFees = 1 // reward received by validator
+```
+
+## Running the simulation 
+
 First you have to build the container. You need to do this step for any change in the code.
 ```
 make build-container
