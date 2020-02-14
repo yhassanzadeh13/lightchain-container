@@ -21,8 +21,8 @@ public class SimLog {
 	}
 
 	public void logTransaction(boolean success, int isAuthenticated, int isSound, int isCorrect, int hasBalance,
-			long time) {
-		TransactionLog log = new TransactionLog(success, isAuthenticated, isSound, isCorrect, hasBalance, time);
+			long time,long timePerValidator) {
+		TransactionLog log = new TransactionLog(success, isAuthenticated, isSound, isCorrect, hasBalance, time,timePerValidator);
 		if (success)
 			validTransactions.add(log);
 		else

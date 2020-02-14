@@ -1,17 +1,12 @@
 package skipGraph;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import util.Const;
+import util.Util;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import util.Const;
-import util.Util;
 
 /**
  * @author Shadi Hamdan
@@ -256,7 +251,7 @@ public class LookupTable {
 	public List<NodeInfo> getLevel(int level,NodeInfo start) {
 		List<NodeInfo> list = new ArrayList<>();
 		
-		NodeInfo node = start;
+		NodeInfo node = Util.assignNode(start);
 		while(node != null) {
 			list.add(node);
 			node = get(node.getNumID(),level,Const.LEFT);

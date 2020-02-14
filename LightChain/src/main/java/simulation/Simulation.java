@@ -45,6 +45,7 @@ public class Simulation {
 
 			ConcurrentHashMap<NodeInfo, SimLog> map = new ConcurrentHashMap<>();
 			CountDownLatch latch = new CountDownLatch(nodes.size());
+			long startTime = System.currentTimeMillis();
 			for (int i = 0; i < nodes.size(); ++i) {
 				SimThread sim = new SimThread(nodes.get(i), latch, map, iterations, pace);
 				sim.start();
@@ -53,9 +54,11 @@ public class Simulation {
 			
 			initialNode.printLevel(0);
 			
-			Util.log("Simulation Done.");
+			long endTime = System.currentTimeMillis();
+
+			Util.log("Simulation Done. Time Taken " +(endTime - startTime)+ " ms");
 			
-			processData(map);
+			processData(map, iterations);
 
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -65,12 +68,12 @@ public class Simulation {
 	}
 
 
-	private static void processData(ConcurrentHashMap<NodeInfo, SimLog> map) {
-		processTransactions(map);
-		processMineAttempts(map);
+	private static void processData(ConcurrentHashMap<NodeInfo, SimLog> map,int iterations) {
+		processTransactions(map, iterations);
+		processMineAttempts(map, iterations);
 	}
 
-	private static void processMineAttempts(ConcurrentHashMap<NodeInfo, SimLog> map) {
+	private static void processMineAttempts(ConcurrentHashMap<NodeInfo, SimLog> map,int iterations) {
 
 		try {
 			String logPath = System.getProperty("user.dir") + File.separator + "Logs" + File.separator
@@ -86,6 +89,8 @@ public class Simulation {
 
 			sb.append("NumID," + "Honest," + "total time," + "foundTxMin," + "Validation time," + "successful\n");
 
+			int successSum = 0;
+
 			for (NodeInfo cur : map.keySet()) {
 				SimLog log = map.get(cur);
 				List<MineAttemptLog> validMine = log.getValidMineAttemptLog();
@@ -97,22 +102,25 @@ public class Simulation {
 						sb.append(",,");
 					sb.append(validMine.get(i));
 				}
-
+				successSum += validMine.size();
 				for (int i = 0; i < failedMine.size(); i++) {
 					sb.append(",,");
 					sb.append(failedMine.get(i));
 				}
 				sb.append('\n');
 			}
+			double successRate = (double)successSum / (1.0 * iterations * map.keySet().size()) * 100;
+			sb.append("Success Rate = " + successRate + "\n");
+
 			writer.write(sb.toString());
 			writer.close();
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	private static void processTransactions(ConcurrentHashMap<NodeInfo, SimLog> map) {
+	private static void processTransactions(ConcurrentHashMap<NodeInfo, SimLog> map, int iterations) {
 
 		try {
 			String logPath = System.getProperty("user.dir") + File.separator + "Logs" + File.separator
@@ -130,6 +138,8 @@ public class Simulation {
 					+ "Transaction time(per)," + "Authenticated count," + "Sound count," + "Correct count,"
 					+ "Has Balance count," + "Successful\n");
 
+			int successSum = 0;
+
 			for (NodeInfo cur : map.keySet()) {
 				SimLog log = map.get(cur);
 				List<TransactionLog> validTransactions = log.getValidTransactions();
@@ -141,14 +151,18 @@ public class Simulation {
 					if (i != 0)
 						sb.append(",,,,");
 					sb.append(validTransactions.get(i));
+					sb.append("\n");
 				}
-
+				successSum += validTransactions.size();
 				for (int i = 0; i < failedTransactions.size(); i++) {
 					sb.append(",,,,");
 					sb.append(failedTransactions.get(i));
+					sb.append("\n");
 				}
 				sb.append('\n');
 			}
+			double successRate = (double)(successSum * 100.0) / (1.0 * iterations * map.keySet().size());
+			sb.append("Success Rate = " + successRate + "\n");
 			writer.write(sb.toString());
 			writer.close();
 		} catch (FileNotFoundException e) {
