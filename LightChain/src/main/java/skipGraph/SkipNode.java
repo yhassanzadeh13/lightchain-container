@@ -13,6 +13,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
+
+import delay.SkipNodeDelayWrapper;
 import org.apache.log4j.Logger;
 import util.Const;
 import util.Util;
@@ -727,7 +729,12 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			return this;
 
 		try {
-			return (RMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
+			RMIInterface rmi = (RMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
+			if(rmi == null) return rmi;
+			if(Util.local){
+				rmi = new SkipNodeDelayWrapper(rmi, this.getAddress(), adrs);
+			}
+			return rmi;
 
 		} catch (Exception e) {
 			e.printStackTrace();
