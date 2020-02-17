@@ -21,6 +21,8 @@ public class SimulationDriver {
         int iterations = getIntProperty("iterations", "100");
         int pace = getIntProperty("pace","1");
 
+        Logger lg = Logger.getLogger(SimulationDriver.class);
+        lg.info("Starting simulation with parameters: "+ params+" Number of nodes: "+ nodeCount+ "\n Number of iterations: "+ iterations+ "\n Pace: "+ pace);
 
         Simulation.startSimulation(params, nodeCount, iterations, pace);
         System.exit(0);

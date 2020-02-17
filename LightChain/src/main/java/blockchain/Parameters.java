@@ -71,8 +71,17 @@ public class Parameters {
 	public void setMode(boolean mode) {
 		Mode = mode;
 	}
-	
-	
-	
-	
+
+	@Override
+	public String toString() {
+		return "Parameters: \n" +
+				"ValidationFees=" + ValidationFees +
+				"\nSignaturesThreshold=" + SignaturesThreshold +
+				"\nAlpha=" + Alpha +
+				"\nLevels=" + Levels +
+				"\nInitialBalance=" + InitialBalance +
+				"\nTxMin=" + TxMin +
+				"\nMode=" + Mode +
+				'\n';
+	}
 }

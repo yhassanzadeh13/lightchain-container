@@ -31,6 +31,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.PublicKey;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -129,7 +130,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * into a block and the block is sent for validation.
 	 * 
 	 */
-	public Block mineAttempt() throws RemoteException {
+	public Block mineAttempt() {
 		try {
 			long startTotal = System.currentTimeMillis();
 
@@ -901,30 +902,27 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		ReadWriteLock lock = new ReentrantReadWriteLock(true);
 
 		try {
-			Timer timer = new Timer();
+			CountDownLatch cdl = new CountDownLatch(numTransactions);
 			for (int i = 0; i < numTransactions; i++) {
 				int transactionWait = rnd.nextInt(1000 * pace);
 				int miningWait = 1000 * pace - transactionWait;
+				Timer timer = new Timer();
 				timer.schedule(new TimerTask() {
 					@Override
 					public void run() {
 						lock.writeLock().lock();
 						logger.debug("Making Transaction ...");
 						makeTransaction(Util.getRandomString(10));
-						try{
-							Thread.sleep(miningWait);
-							logger.debug("Mining ...");
-							mineAttempt();
-						}catch(Exception e){
-							e.printStackTrace();
-						}
+						logger.debug("Mining ...");
+						mineAttempt();
 						lock.writeLock().unlock();
+						cdl.countDown();
 					}
 				}, transactionWait);
 				Thread.sleep(1000 * pace);
+				System.out.println(i+"/"+numTransactions);
 			}
-			lock.readLock().lock();
-			lock.readLock().unlock();
+			cdl.await();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
