@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -100,7 +101,12 @@ public class LookupTable {
 	public void initializeNode(NodeInfo node) {
 		nodeBuffer = Util.assignNode(node);
 		tableBuffer = new Table();
-		tableBuffer.lockTable();
+		try {
+			tableBuffer.lockTable();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -318,9 +324,10 @@ public class LookupTable {
 
 		/**
 		 * locks the table for write operations
+		 * @throws InterruptedException 
 		 */
-		public void lockTable() {
-			lock.writeLock().lock();
+		public void lockTable() throws InterruptedException {
+			lock.writeLock().tryLock(5,TimeUnit.SECONDS);
 		}
 
 		/**

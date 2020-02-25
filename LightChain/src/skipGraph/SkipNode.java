@@ -434,6 +434,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @see RMIInterface#searchNum(int, int)
 	 */
 	public List<NodeInfo> searchNumID(int numID, int targetInt, int level, List<NodeInfo> lst) throws RemoteException {	
+		
 		int num;
 		if (numID != lookup.bufferNumID()) {
 			// get the data node (or main node) that is closest to the target search
@@ -441,7 +442,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 //			num = numID;
 			// Add the current node's info to the search list
 		} else {
-			logger.debug("Accessing Buffered Node " + numID + " ...");
+			logger.debug("Accessing Buffered Node " + RMIPort + " ...");
 			num = numID;
 		}
 		lst.add(lookup.get(num));
@@ -578,7 +579,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 */
 
 	public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException {
-		logger.debug("Searching nameID ...");
+		logger.debug("Searching nameID at " + RMIPort + "...");
 		try {
 			// TODO: handle this after finalizing lookupTable
 			if (numID == lookup.bufferNumID()) {

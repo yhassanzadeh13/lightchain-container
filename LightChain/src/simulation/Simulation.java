@@ -21,10 +21,10 @@ public class Simulation {
 
 		Parameters params = new Parameters();
 		params.setAlpha(12);
-		params.setTxMin(5);
-		params.setSignaturesThreshold(8);
+		params.setTxMin(10);
+		params.setSignaturesThreshold(10);
 		
-		int iterations = 30;
+		int iterations = 50;
 		int pace = 1;
 		try {
 			
