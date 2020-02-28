@@ -732,7 +732,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		try {
 			RMIInterface rmi = (RMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
 			if(rmi == null) return rmi;
-			if(Utils;dlasa;ldas){
+			if(Util.addArtificialDelay){
 				rmi = new SkipNodeDelayWrapper(rmi, this.getAddress(), adrs);
 			}
 			return rmi;

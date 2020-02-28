@@ -14,10 +14,12 @@ import skipGraph.NodeInfo;
 
 public class Util {
 
-	
-	protected static Scanner in = new Scanner(System.in);
+
+    protected static Scanner in = new Scanner(System.in);
+	// If set to true, it would work fine on local networks
 	public static final boolean local = true;
-	//If set to true, it would work fine on local networks without having to go through the hassle of 
+	// Simulate real world latencies on a local network
+    public static boolean addArtificialDelay = false;
 
 	
 		/*
