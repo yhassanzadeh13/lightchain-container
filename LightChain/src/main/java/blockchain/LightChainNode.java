@@ -600,8 +600,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			List<NodeInfo> validators = new ArrayList<>();
 			// taken is used to gaurantee taking only unique validators
 			Map<String, Integer> taken = new HashMap<>();
+			int validFound = 0;
 			taken.put(address, 1);// To not take the node itself or any data node belonging to it.
-			for (int i = 0; i < params.getAlpha(); ++i) {
+			for (int i = 0; validFound < params.getAlpha() && i < 60; ++i) {
 				String hash = hasher.getHash(str + i, params.getLevels());
 				int num = Integer.parseInt(hash, 2);
 				NodeInfo node = searchByNumID(num);
@@ -609,6 +610,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 					continue;
 				taken.put(node.getAddress(), 1);
 				validators.add(node);
+				validFound++;
 			}
 			return validators;
 		} catch (NumberFormatException e) {
