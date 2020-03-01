@@ -51,7 +51,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 	/**
 	 * 
-	 * @param config     contains necessary information for the node to function
 	 * @param introducer the address of the introducer node
 	 * @param isInitial  a flag signaling whether this node is the first node in the
 	 *                   network
@@ -221,7 +220,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		try {
 
 			boolean success = false;
-			int waitCount = 5;
+			int waitCount = 3;
 			while(!success && waitCount > 0) {
 				Block lstBlk = getLatestBlock();
 				logger.debug("Prev found: " + lstBlk.getNumID());
@@ -305,6 +304,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 			NodeInfo flag = searchByNumID(Const.ZERO_ID);
 
+			while(flag.getNumID() != 0){
+			  logger.debug("No Flag has been found");
+			  flag = searchByNumID(Const.ZERO_ID);
+      }
+
 			logger.debug("searching for block");
 			int num = Integer.parseInt(flag.getNameID(), 2);
 			NodeInfo blk = searchByNumID(num);
@@ -359,6 +363,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		for (NodeInfo t : list) {
 			if (t instanceof Transaction)
 				tList.add((Transaction) t);
+			if(tList.size() == params.getTxMin()) break;
 		}
 		return tList;
 	}
@@ -455,10 +460,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				if(signature.getBytes() != null) {
 					numValidations++;
 					timePerValidator += signature.getValidationTime();
+				  if(numValidations == params.getSignaturesThreshold()) break;
 				}
 
 				t.addSignature(signature);
-			}
+
+ 			}
 
 			validated = (numValidations >= params.getSignaturesThreshold());
 
@@ -591,7 +598,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/**
 	 * This method takes the hash of a transaction or a block and returns
 	 * 
-	 * @param hash hash of transaction or block whose validators are to be fetched
 	 * @return a list of validators for the given transactions
 	 */
 	public List<NodeInfo> getValidators(String str) {
@@ -914,14 +920,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 					public void run() {
 						lock.writeLock().lock();
 						logger.debug("Making Transaction ...");
-						makeTransaction(Util.getRandomString(10));
+						makeTransaction(Util.getRandomString(135));
 						logger.debug("Mining ...");
 						mineAttempt();
 						lock.writeLock().unlock();
 						cdl.countDown();
 					}
-				}, transactionWait);
-				Thread.sleep(1000 * pace);
+				}, 200);
+				Thread.sleep(100 * pace);
 				System.out.println(i+"/"+numTransactions);
 			}
 			cdl.await();
