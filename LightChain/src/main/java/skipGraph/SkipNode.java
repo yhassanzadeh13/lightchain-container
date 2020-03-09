@@ -46,11 +46,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * Constructor for SkipNode class The node requires the following info to be
 	 * able to function:
 	 * 
-	 * @param maxLevels  number of levels of the skip graph
-	 * @param RMIPort    Port on which Skip Node is operating
-	 * @param IP         IP of Skip Node
-	 * @param numID      numerical ID of Skip Node
-	 * @param nameID     name ID of Skip Node
+	 * @param config     node configuration
 	 * @param introducer the node that helps in inserting the current node
 	 * @param isInitial  Indicator that this node is an initial node in the
 	 *                   skipGraph
@@ -94,9 +90,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * This version of the constructor is used as long as LightChainNode extends SkipNode
 	 * Because it defers RMI binding and insertion task to LightChainNode after setting
 	 * the correct information (numID and nameID
-	 * @param config
+	 * @param RMIPort
+	 * @param maxLevels
 	 * @param introducer
-	 * @param isInitial
 	 * @throws RemoteException
 	 */
 	public SkipNode(int RMIPort, int maxLevels, String introducer) throws RemoteException{
@@ -173,7 +169,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 */
 	public void insertNode(NodeInfo insertedNode) {
 		try {
-			logger.debug("Inserting: " + insertedNode.getNumID());
+		//	logger.debug("Inserting: " + insertedNode.getNumID());
 			// We search through the introducer node to find the node with
 			// the closest num ID
 			NodeInfo closestNode;
@@ -316,15 +312,15 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @param level     The level in which a node is being inserted
 	 * @param direction At a certain level, the method go LEFT and RIGHT finding the
 	 *                  neighbors of the inserted node
-	 * @param num       The numerical ID of the node at which the search has arrived
+	 * @param nodeNumID       The numerical ID of the node at which the search has arrived
 	 * @param target    the name ID of the inserted node.
 	 * @return Right neighbor if direction is RIGHT, and left neighbor if direction
 	 *         is LEFT
 	 * @see RMIInterface#insertSearch(int, int, int, java.lang.String)
 	 */
-	public NodeInfo insertSearch(int level, int direction, int nodeNumID, String target) throws RemoteException {
+	public NodeInfo insertSearch(int level, int direction, int nodeNumID, String target) throws RemoteException, FileNotFoundException {
 		try {
-			logger.debug("Inserting " + target + " at level " + level);
+			//logger.debug("Inserting " + target + " at level " + level);
 			NodeInfo currentNode = lookup.get(nodeNumID);
 
 			if (currentNode == null)
@@ -381,10 +377,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @param searchTarget numerical ID of target of search
 	 * @return NodeInfo of the target node if found, or closest node in case it was
 	 *         not found
-	 * @see RMIInterface#searchByNumID(java.lang.String)
 	 */
 	public NodeInfo searchByNumID(int searchTarget) {
-		logger.debug("Searching for " + searchTarget);
+		//logger.debug("Searching for " + searchTarget);
 		try { 
 			List<NodeInfo> lst = new ArrayList<NodeInfo>();
 			lst = searchByNumIDHelper(searchTarget, lst);
@@ -433,7 +428,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @param targetInt the target of search
 	 * @param level     the level of skip graph at which we are searching
 	 * @return list of nodes on the search path
-	 * @see RMIInterface#searchNum(int, int)
 	 */
 	public List<NodeInfo> searchNumID(int numID, int targetInt, int level, List<NodeInfo> lst) throws RemoteException {	
 
@@ -454,7 +448,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		
 		// If the target is greater than the current node then we should search right
 		if (num < targetInt) {
-			logger.debug("Going Right from " + num + " to " + targetInt + "...");
+			//logger.debug("Going Right from " + num + " to " + targetInt + "...");
 			// Keep going down levels as long as there is either no right neighbor
 			// or the right neighbor has a numID greater than the target
 			while (level >= Const.ZERO_LEVEL && (lookup.get(num, level, Const.RIGHT) == null
@@ -475,7 +469,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 			}
 		} else {
 			// If the target is less than the current node then we should search left
-			logger.debug("Going Left from " + num + " to " + targetInt + "...");
+			//logger.debug("Going Left from " + num + " to " + targetInt + "...");
 			// Keep going down levels as long as there is either no right neighbor
 			// or the left neighbor has a numID greater than the target
 			while (level >= Const.ZERO_LEVEL && (lookup.get(num, level, Const.LEFT) == null
@@ -577,11 +571,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @param level        the level at which search is happening
 	 * @param direction    direction of search currently
 	 * @return NodeInfo of result of search
-	 * @see RMIInterface#searchName(java.lang.String, int, int)
 	 */
 
 	public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException {
-		logger.debug("Searching nameID at " + RMIPort + "...");
+	//	logger.debug("Searching nameID at " + RMIPort + "...");
 		try {
 			// TODO: handle this after finalizing lookupTable
 			if (numID == lookup.bufferNumID()) {
@@ -654,7 +647,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 	 * @return list of nodes who have the given name as name ID
 	 */
 	public List<NodeInfo> getNodesWithNameID(String name) {
-		logger.debug("Gathering Node batch ...");
+		//logger.debug("Gathering Node batch ...");
 		try {
 			// find a transaction that has the given nameID
 			NodeInfo ansNode = searchByNameID(name);
@@ -767,11 +760,26 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 		}
 	}
 	
-	public void logLevel(int level) {
-		List<NodeInfo> list = lookup.getLevel(level, peerNode);
-		for(NodeInfo n : list) {
-			logger.info(n.getNumID() + " " + n.getNameID() + " " + n.getClass());
-		}
+	public void logLevel(int level)  {
+
+	  try{
+	    String logPath = System.getProperty("user.dir") + File.separator + "Logs" + File.separator
+					+ "NodeLog.txt";
+			File logFile = new File(logPath);
+			logFile.getParentFile().mkdirs();
+			PrintWriter writer;
+			StringBuilder sb = new StringBuilder();
+
+			writer = new PrintWriter(logFile);
+	    List<NodeInfo> list = lookup.getLevel(level, peerNode);
+		  for(NodeInfo n : list) {
+		    sb.append(n.getNumID() + " " + n.getNameID() + " " + n.getClass() + "\n");
+		  }
+		writer.write(sb.toString());
+		writer.close();
+    }catch(Exception e){
+	    e.printStackTrace();
+    }
 	}
 	
 

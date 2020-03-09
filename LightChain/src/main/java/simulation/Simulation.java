@@ -43,6 +43,8 @@ public class Simulation {
 
 			initialNode.insertGenesis();
 
+			initialNode.logLevel(0);
+
 			ConcurrentHashMap<NodeInfo, SimLog> map = new ConcurrentHashMap<>();
 			CountDownLatch latch = new CountDownLatch(nodes.size());
 			long startTime = System.currentTimeMillis();
@@ -52,8 +54,7 @@ public class Simulation {
 			}
 			latch.await();
 			
-			initialNode.printLevel(0);
-			
+
 			long endTime = System.currentTimeMillis();
 
 			Util.log("Simulation Done. Time Taken " +(endTime - startTime)+ " ms");
@@ -64,8 +65,7 @@ public class Simulation {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		}
-	}
+		}   }
 
 
 	private static void processData(ConcurrentHashMap<NodeInfo, SimLog> map,int iterations) {

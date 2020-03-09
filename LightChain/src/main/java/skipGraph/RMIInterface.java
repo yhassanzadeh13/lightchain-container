@@ -1,5 +1,6 @@
 package skipGraph;
 
+import java.io.FileNotFoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
@@ -62,7 +63,7 @@ public interface RMIInterface extends Remote {
 
 	public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException;
 
-	public NodeInfo insertSearch(int level, int direction, int num, String target) throws RemoteException;
+	public NodeInfo insertSearch(int level, int direction, int num, String target) throws RemoteException, FileNotFoundException;
 
 	// Pinging
 

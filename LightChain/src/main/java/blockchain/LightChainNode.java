@@ -142,11 +142,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				return null;
 			}
 
-			logger.debug("Found Latest Block: " + blk.getNumID());
-
 			String name = numToName(blk.getNumID());
 
-			logger.debug("getting transaction batch");
 			// Get all transaction with this nameID
 			List<Transaction> tList = getTransactionsWithNameID(name);
 			// If number of transactions obtained is less than TX_MIN then we terminate the
@@ -168,7 +165,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			boolean isValidated = validateBlock(newBlk);
 			long endValid = System.currentTimeMillis();
 			// TODO: find a way to avoid this null return
-			if (!isValidated) {
+
+      if(blk.getAddress().equals(getAddress())) isValidated = false;
+
+      if (!isValidated) {
 				logger.debug("Block validation failed");
 				simLog.logMineAttemptLog(true, false, System.currentTimeMillis() - startTotal, endValid - startValid);
 				return null;
@@ -219,9 +219,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public Transaction makeTransaction(String cont) {
 		try {
 
-			boolean success = false;
 			int waitCount = 3;
-			while(!success && waitCount > 0) {
+			while(waitCount > 0) {
 				Block lstBlk = getLatestBlock();
 				logger.debug("Prev found: " + lstBlk.getNumID());
 				Transaction t = new Transaction(lstBlk.getHash(), getNumID(), cont, getAddress(), params.getLevels());
@@ -259,19 +258,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public void insertBlock(Block blk, String prevAddress) throws RemoteException {
 		
 		if (prevAddress.equals(getAddress())) {
-			return ;
-//			removeFlagNode();
-//			insertNode(blk);
-//			insertFlagNode(blk);
-		} else {
-			insertNode(blk);
-			
-			insertFlagNode(blk);
+			removeFlagNode();
+		  logger.info("A node inserted two consecutive blocks");
+    } else {
 			LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevAddress);
 			prevOwnerRMI.removeFlagNode();
-
-		}
-	}
+    }
+    insertNode(blk);
+    insertFlagNode(blk);
+  }
 
 	/**
 	 * inserts the first block to the blockchain
@@ -279,14 +274,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public Block insertGenesis() throws RemoteException {
 		StringBuilder st = new StringBuilder();
 		for (int i = 0; i < params.getLevels(); i++) {
-			st.append("0");
+			st.append("2");
 		}
 		String prev = st.toString();
 		int index = 0;
 		Block b = new Block(prev, getNumID(), getAddress(), index, params.getLevels());
 		// use current address as prev when inserting genesis block
-		insertNode(b);
 		insertFlagNode(b);
+    insertNode(b);
 		logger.debug("Inserting Genesis Block " + b.getNumID());
 		return b;
 	}
@@ -300,13 +295,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public Block getLatestBlock() throws RemoteException {
 		try {
+
 			logger.debug("searching for flag");
 
 			NodeInfo flag = searchByNumID(Const.ZERO_ID);
 
-			while(flag.getNumID() != 0){
-			  logger.debug("No Flag has been found");
-			  flag = searchByNumID(Const.ZERO_ID);
+			if(flag.getNumID() != 0){
+			  logger.debug("Wrong Flag node found");
+			  throw new Exception("Flag Node Not Found");
       }
 
 			logger.debug("searching for block");
@@ -317,14 +313,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			else {
 				logger.error(
 						blk.getNumID() + " was returned when " + num + " was expected, its type is " + blk.getClass());
-				logLevel(Const.ZERO_LEVEL);
 				Thread.sleep(100);
-				return getLatestBlock();
+				return null;//getLatestBlock();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.error("NullPointer: ", e);
-			logLevel(Const.ZERO_LEVEL);
 			return null;
 		}
 	}
