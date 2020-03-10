@@ -12,7 +12,7 @@ public class SimulationDriver {
         Parameters params = new Parameters();
         params.setAlpha(getIntProperty("alpha", "12"));
         params.setTxMin(getIntProperty("txmin","5"));
-        params.setSignaturesThreshold(getIntProperty("sig   naturesThreshold","10"));
+        params.setSignaturesThreshold(getIntProperty("signaturesThreshold","5"));
         params.setInitialBalance(getIntProperty("initialBalance", "20"));
         params.setLevels(getIntProperty("levels", "30"));
         params.setValidationFees(getIntProperty("validationFees", "1"));
