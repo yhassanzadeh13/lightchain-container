@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 # lightchain-container
-=======
-# LightChain
 
 Current Branches
 ----------------
