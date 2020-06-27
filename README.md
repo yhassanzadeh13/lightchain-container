@@ -42,4 +42,4 @@ Running Tests
    - Name of Public Key, which is the name of the file in which you would like to store your public key on disk.  
    - Mode of Node. You will choose whether the node you are running is malicious or honest.  
  After that, you will have the information of the node printed, and you will also see the menu of queries that you would like to test.
->>>>>>> Nazir/Simulation
+
