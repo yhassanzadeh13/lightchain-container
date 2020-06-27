@@ -23,7 +23,7 @@ Installation
 
 * Choose the option: Add, situated to the upper right.  
 
-* Browse for the repository that you have cloned in `C:\Users\USER`, and choose it.  
+* Browse for the repository that you have cloned, and choose it.  
 
 * It will appear in the eclipse page, choose it from there.  
 
