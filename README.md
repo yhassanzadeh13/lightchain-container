@@ -11,7 +11,7 @@ Current Branches
 Installation
 ---------------
 
-* Clone The project to your local machine using:  ``` git clone https://github.com/NazirNayal8/LightChain ```  
+* Clone The project to your local machine using:  ``` git clone https://github.com/yhassanzadeh13/LightChain ```  
 
 * Open Eclipse IDE.  
 
