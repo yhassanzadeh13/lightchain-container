@@ -6,10 +6,10 @@
 	<artifactId>LightChain</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
+		<sourceDirectory>LightChain/src</sourceDirectory>
 		<resources>
 			<resource>
-				<directory>src</directory>
+				<directory>LightChain/src</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>

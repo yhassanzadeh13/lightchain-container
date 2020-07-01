@@ -1,45 +1,38 @@
-# lightchain-container
+# Running a Simulation:
 
-Current Branches
-----------------
-* **Master:** This branch contains the up-to-date blockchain development classes and methods.
+## Setting the parameters:
+Modify the simulation parameters in simulation.config, which looks something like this:
+```
+nodeCount = 3 [//The](//the) number of nodes to spawn
+iterations = 100 //The number of transactions to generate
+pace = 1 // The time between every transaction generated (in seconds)
+alpha = 10  // upper limit of attempts to search for validators
+txmin = 1 // minimum number of Tx in a block
+signaturesThreshold = 1 // minimum number of signatures to accept a block
+initialBalance = 20  // balance to start with at launch
+levels = 30  // length of nameID (levels of skip graph)
+Mode = True // honest or malicious
+validationFees = 1 // reward received by validator
+```
 
-* **Mass_Deployment:** The Mass_Deployment branch includes additional features that make it convenient to test the SkipGraph, like the ability to use config files to set up nodes and a master-slave feature which allows for convenient deployment of a large number of nodes.  
+## Running the simulation 
 
-* **testing:** A branch that contains integration tests for the SkipGraph implementation.  
---- 
-Installation
----------------
+First you have to build the container. You need to do this step for any change in the code.
+```
+make build-container
+```
+Then you run the docker container. If needed, you can change the name of the docker container `simdocker` to anything else, provided you replace all other instances of the name subsequently.
+```
+sudo docker run --name simdocker -d lightchain
+```
+Then, to copy all the logs and the simulation results, use the following command:
+```
+sudo docker cp simdocker:/app/ .
+```
 
-* Clone The project to your local machine using:  ``` git clone https://github.com/NazirNayal8/LightChain ```  
+## Removing existing docker containers
 
-* Open Eclipse IDE.  
-
-* From the upper left side, File section, choose import from the menu.  
-
-* Choose the option: Projects from Git.  
-
-* Choose the option: Existing local repository.  
-
-* Choose the option: Add, situated to the upper right.  
-
-* Browse for the repository that you have cloned in `C:\Users\USER`, and choose it.  
-
-* It will appear in the eclipse page, choose it from there.  
-
-* Tick the "Import Existing Eclipse projects", then press next.  
-
-* Choose Finish, and then the project is installed and ready to be built and run.  
----
-
-Running Tests
---------------
-
-* **In Master Branch:** All the blockchain related methods and functionalities are in the blockchain package. You should run the LightChainNode class in order to test these implementations. In the LightChainNode class there is a method names ask(), which can be used to control the node and perfrom queries such as searching and insertion of blocks and transactions. It can me modified to do more queries depending on what functionalities you would like to test.  Essentially, when you run the LightChainNode class, it will first ask you to enter the following:  
-   - Address of introducer. If this is the first node you can simply enter "none".  
-   - RMI Port. The port to which the RMI registry will be bound.  
-   - Name of Private Key, which is the name of the file in which you would like to store your private key on disk.  
-   - Name of Public Key, which is the name of the file in which you would like to store your public key on disk.  
-   - Mode of Node. You will choose whether the node you are running is malicious or honest.  
- After that, you will have the information of the node printed, and you will also see the menu of queries that you would like to test.
->>>>>>> Nazir/Simulation
+If you have too many containers that are stopped and you want to remove them, the following command is useful:
+```
+sudo docker rm $(sudo docker ps -a -q)
+```
