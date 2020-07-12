@@ -66,6 +66,9 @@ public class LookupTable {
 		return nodeBuffer.getNumID();
 	}
 
+	public Table getLookUpTable(){
+		return tableBuffer;
+	}
 	/**
 	 * Adds a node to the data nodes. Warning: Only use this if the node you are
 	 * adding is properly initialized and ready to be accessed. If you still want to
@@ -343,12 +346,18 @@ public class LookupTable {
 
 			if (!validate(level, direction))
 				return null;
-
-			lock.readLock().lock();
+			boolean locked = false;
+			try {
+				locked = lock.readLock().tryLock(5, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
 			try {
 				return table.get(getIndex(level, direction));
 			} finally {
-				lock.readLock().unlock();
+				if(locked)
+					lock.readLock().unlock();
 			}
 		}
 
