@@ -19,6 +19,8 @@ public class LookupTable {
 	private Map<Integer, NodeInfo> dataNodes;
 	private Map<Integer, Table> lookup;
 
+	public static int lockFailureCount = 0;
+
 	/*
 	 * The buffer is there so we can finalize a node's table and insertion before we
 	 * add it to the other nodes. This prevents any access to it during search etc.
@@ -347,12 +349,17 @@ public class LookupTable {
 			if (!validate(level, direction))
 				return null;
 			boolean locked = false;
+
 			try {
 				locked = lock.readLock().tryLock(5, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			
+
+			if(!locked) {
+				lockFailureCount++;
+				return null;
+			}
 			try {
 				return table.get(getIndex(level, direction));
 			} finally {
