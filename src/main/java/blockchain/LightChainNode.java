@@ -21,6 +21,7 @@ import signature.SignedBytes;
 import simulation.SimLog;
 import skipGraph.NodeConfig;
 import skipGraph.NodeInfo;
+import skipGraph.RMIInterface;
 import skipGraph.SkipNode;
 import util.Const;
 import util.Util;
@@ -255,12 +256,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 //			insertNode(blk);
 //			insertFlagNode(blk);
 		} else {
-			insertNode(blk);
+            LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevAddress);
+            prevOwnerRMI.removeFlagNode();
 
-			insertFlagNode(blk);
-			LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevAddress);
-			prevOwnerRMI.removeFlagNode();
-
+            insertNode(blk);
+            insertFlagNode(blk);
 		}
 	}
 
