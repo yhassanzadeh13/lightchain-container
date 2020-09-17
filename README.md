@@ -18,7 +18,7 @@ ContractMode = False //Mode of lightchain (False -> original || True -> Smartcon
 ```
 ## Pre-requisite redarding smart contract integration
 In solidityContracts folder put your .sol file. 
-Detailed instructions are given in [docs](solidityContracts/smartContract.md).
+Detailed instructions are given in [docs](solidityContracts/smartcontract.md).
 
 ## Running the simulation 
 
