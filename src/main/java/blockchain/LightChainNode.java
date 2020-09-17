@@ -719,7 +719,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				else {
 					tesq.setup();
 					ownerToken = view.getToken(t.getOwner());
-					testt = tesq.testSol(ownerToken,c.contractName,c.functname); 
+					testt = tesq.testSol(ownerToken,c.contractName,c.functname1); 
 					return testt;
 				}
 		} catch(Exception e){

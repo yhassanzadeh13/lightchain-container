@@ -16,8 +16,9 @@ validationFees = 1 // reward received by validator
 Token = 20 //tokens if greater than 10 then passing the current contract ( logic behind transf.sol)
 ContractMode = False //Mode of lightchain (False -> original || True -> Smartcontract)
 ```
-## pre-requisite
+## Pre-requisite redarding smart contract integration
 In solidityContracts folder put your .sol file. 
+Detailed instructions are given in [docs](solidityContracts/smartContract.md).
 
 ## Running the simulation 
 
