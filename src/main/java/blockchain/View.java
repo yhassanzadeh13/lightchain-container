@@ -9,6 +9,7 @@ public class View {
 	private Map<Integer, Integer> state;
 	private Map<Integer, Integer> balance;
 	private Map<Integer, Boolean> mode;
+	private Map<Integer, Integer> token;
 
 	/**
 	 * Constructor for an empty view
@@ -18,6 +19,7 @@ public class View {
 		state = new HashMap<>();
 		balance = new HashMap<>();
 		mode = new HashMap<>();
+		token  = new HashMap<>();
 	}
 
 	/**
@@ -79,4 +81,16 @@ public class View {
 		return mode.containsKey(numID);
 	}
 
+
+	public synchronized int getToken(int numID) {
+		return token.get(numID);
+	}
+
+	public synchronized void updateToken(int numID, int newToken) {
+		token.put(numID, newToken);
+	}
+
+	public synchronized boolean hasTokenEntry(int numID) {
+		return token.containsKey(numID);
+	}
 }

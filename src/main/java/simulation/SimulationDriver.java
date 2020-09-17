@@ -17,6 +17,8 @@ public class SimulationDriver {
         params.setLevels(getIntProperty("levels", "30"));
         params.setValidationFees(getIntProperty("validationFees", "1"));
         params.setMode(getBoolProperty("Mode", "True"));
+        params.setInitialToken(getIntProperty("token", "20"));
+        params.setChain(getBoolProperty("ContractMode", "False"));
         int nodeCount = getIntProperty("nodeCount", "20");
         int iterations = getIntProperty("iterations", "50");
         int pace = getIntProperty("pace","1");

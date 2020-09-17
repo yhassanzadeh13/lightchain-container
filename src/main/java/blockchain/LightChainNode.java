@@ -1,5 +1,5 @@
 package blockchain;
-
+import java.io.IOException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Random;
 
 import org.apache.log4j.Logger;
-
 import hashing.Hasher;
 import hashing.HashingTools;
 import remoteTest.TestingLog;
@@ -25,6 +24,9 @@ import skipGraph.RMIInterface;
 import skipGraph.SkipNode;
 import util.Const;
 import util.Util;
+import evm.Contract;
+import evm.TransferTest;
+
 
 public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
@@ -39,6 +41,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private SimLog simLog = new SimLog(true);
 	private Logger logger;
 	Parameters params;
+	public int ownerToken;
+	public boolean testt;
+	public Contract c = new Contract();
 
 	/**
 	 *
@@ -629,7 +634,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			long startTime = System.currentTimeMillis();
 			updateView();
 			isAuth = isAuthenticated(t);
-			isCorrect = isCorrect(t);
+			if (params.getChain() == false) { isCorrect = isCorrect(t);	}
+			else{	isCorrect = isCorrect(t,c);	}
 			isSound = isSound(t);
 			hasBalance = hasBalanceCompliance(t);
 
@@ -699,6 +705,34 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			return false;
 		}
 	}
+
+	
+		public boolean isCorrect(Transaction t, Contract c) throws IOException { 
+			try {
+
+				TransferTest tesq;
+				tesq = new TransferTest();
+				if (!view.hasTokenEntry(t.getOwner())) {
+					view.updateToken(t.getOwner(), params.getInitialToken());
+					return true;
+				}
+				else {
+					tesq.setup();
+					ownerToken = view.getToken(t.getOwner());
+					testt = tesq.testSol(ownerToken,c.contractName,c.functname); 
+					return testt;
+				}
+		} catch(Exception e){
+			e.printStackTrace();
+			return false;
+		}
+
+	}
+
+
+
+
+
 
 	/**
 	 * Checks correctness of transactionReturns true if both nodes are of same type

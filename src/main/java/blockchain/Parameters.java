@@ -11,7 +11,8 @@ public class Parameters {
 	private int InitialBalance = 20; // balance to start with at launch
 	private int TxMin = 4; // minimum number of Tx in a block
 	private boolean Mode = true; // honest or malicious
-	
+	private int Token = 20; // tokens to start with at launch
+	private boolean Chain = false; //Mode of lightchain (0 -> original || 1 -> Smartcontract)
 	public Parameters() {
 		
 	}
@@ -72,16 +73,34 @@ public class Parameters {
 		Mode = mode;
 	}
 
+	public void setChain(boolean chain) {Chain = chain;	}
+
+	public boolean getChain() {
+		return Chain;
+	}
+
+	public void setInitialToken(int token) {
+		Token = token;
+	}
+	public int getInitialToken() {
+		return Token;
+	}
+
+
+
+
 	@Override
 	public String toString() {
 		return "Parameters: \n" +
-				"ValidationFees=" + ValidationFees +
-				"\nSignaturesThreshold=" + SignaturesThreshold +
-				"\nAlpha=" + Alpha +
-				"\nLevels=" + Levels +
-				"\nInitialBalance=" + InitialBalance +
-				"\nTxMin=" + TxMin +
-				"\nMode=" + Mode +
+				"ValidationFees= " + ValidationFees +
+				"\nSignaturesThreshold= " + SignaturesThreshold +
+				"\nAlpha= " + Alpha +
+				"\nLevels= " + Levels +
+				"\nInitialBalance= " + InitialBalance +
+				"\nTxMin= " + TxMin +
+				"\nMode= " + Mode +
+				"\nTokens= " + Token +
+				"\nContractMode= "+Chain+
 				'\n';
 	}
 }

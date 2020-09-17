@@ -13,11 +13,15 @@ initialBalance = 20  // balance to start with at launch
 levels = 30  // length of nameID (levels of skip graph)
 Mode = True // honest or malicious
 validationFees = 1 // reward received by validator
+Token = 20 //tokens if greater than 10 then passing the current contract ( logic behind transf.sol)
+ContractMode = False //Mode of lightchain (False -> original || True -> Smartcontract)
 ```
+## pre-requisite
+In solidityContracts folder put your .sol file. 
 
 ## Running the simulation 
 
-First you have to build the container. You need to do this step for any change in the code.
+Then you have to build the container. You need to do this step for any change in the code. 
 ```
 make build-container
 ```
