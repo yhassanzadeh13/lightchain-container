@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     #Run on all branches, uncomment this to only run on master
-#    branches: [ master ]
+    branches: [ Nazir-Pipeline ]
   pull_request:
     branches: [ master ]
 
