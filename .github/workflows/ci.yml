@@ -33,5 +33,6 @@ jobs:
       run: mvn test
 
     - name: build docker
-      run: mvn clean compile assembly:single
-      run: sudo docker build -t lightchain .
+      run: |
+        mvn clean compile assembly:single
+        sudo docker build -t lightchain .
