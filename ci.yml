@@ -29,3 +29,6 @@ jobs:
     # run tests
     - name: run tests
       run: mvn test
+
+    - name: build docker
+      run: sudo docker build -t lightchain .
