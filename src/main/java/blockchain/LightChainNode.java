@@ -643,7 +643,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			signedHash.setValidationTime(endTime - startTime);
 			return signedHash;
 		} catch (Exception e) {
-			e.printStackTrace();
+
+		  e.printStackTrace();
 			return new SignedBytes(null, isAuth, isSound, isCorrect, hasBalance);
 		}
 	}
