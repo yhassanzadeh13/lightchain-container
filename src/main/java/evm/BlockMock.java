@@ -12,6 +12,15 @@ public class BlockMock implements Block {
     private long timestamp;
     private long gasLimit;
 
+   /**
+	 * The method is used to form a block when the EVM functions.
+	 *
+	 * @param number 
+	 * @param parentHash
+	 * @param timestamp
+     * @param gasLimit
+	 */
+
     public BlockMock(long number, byte[] parentHash, byte[] coinbase, long timestamp, long gasLimit) {
         this.gasLimit = gasLimit;
         this.parentHash = parentHash;

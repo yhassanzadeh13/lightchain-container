@@ -15,6 +15,19 @@ public class TransactionMock implements Transaction {
     private long gas;
     private BigInteger gasPrice;
 
+    /**
+	 * The method is used to create a psuedo transaction when the EVM functions.
+	 *
+	 * @param isCreate 
+	 * @param from
+	 * @param to
+     * @param nonce
+     * @param value
+	 * @param data
+     * @param gas
+     * @param gasPrice
+	 */
+
     public TransactionMock(boolean isCreate, byte[] from, byte[] to, long nonce, BigInteger value, byte[] data,
                            long gas, BigInteger gasPrice) {
         this.isCreate = isCreate;

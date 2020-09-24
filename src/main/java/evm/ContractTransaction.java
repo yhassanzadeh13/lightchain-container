@@ -19,11 +19,11 @@ import org.ethereum.vm.util.HexUtil;
 import static org.ethereum.vm.util.ByteArrayUtil.merge;
 
 
-public class TransferTest extends vmbase {
+public class ContractTransaction extends vmbase {
 
 
 
-    public final BigInteger premine = BigInteger.valueOf(1L).multiply(Unit.ETH); //each account has 1 ether
+    public final BigInteger premine = BigInteger.valueOf(1L).multiply(Unit.ETH); // each account has 1 ether
     public Transaction transaction;
     public Block block;
 
@@ -78,7 +78,7 @@ public class TransferTest extends vmbase {
                 TransactionReceipt receipt = executor.run();
                 int res = Integer.parseInt(Hex.toHexString(receipt.getReturnData()));
 
-            return res == 1; //return true or false
+            return res == 1; // return true or false
         }
 
 }

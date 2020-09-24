@@ -2,11 +2,11 @@
 
 ## Steps to follow:
 
-1. Compile and check the smart contract before placing it in the folder solidityContract.
+1. Place the smart contract in the folder solidityContract.
 2. The token parameter is just used for the value which is passed to smart contract.
 3. This parameter can be changed according to the use-case.
 4. In the file "src/main/java/evm/Contract.java" name of contract and the function's of contract should be mentioned.
-5. For multiple functions introduce a new variable and pass it as a parameter to the testSol() function of "TransferTest.java".
+5. For multiple functions introduce a new variable and pass it as a parameter to the testSol() function of "Contracttransation.java".
 6. Keep in mind to pass parameters while writing function name (eg. sfunc(uint256,address)).
 
 Important Step:

@@ -1,18 +1,16 @@
 package evm;
 
 import org.ethereum.vm.DataWord;
-//import main.java.evm.BlockStoreMock;
 import org.ethereum.vm.client.BlockStore;
 import org.ethereum.vm.client.Repository;
-//import main.java.evm.RepositoryMock;
-
-//import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-//import org.ethereum.vm.util.HexUtil;
-//import org.junit.Before;
-
 import java.math.BigInteger;
 import java.util.Arrays;
+
+/**
+* This method is the base class for Ethereum Virtual Machine.
+*It set's up all the parameters required for functioning of EVM.
+*/
 
 public class vmbase {
     public final byte[] address = address(1);

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-//Test contract
-contract transf {
+// TestContract receives an uint256 and returns a boolean value 
+contract testcon {
 
     function  check(uint256 nmb) public pure returns(bool val) {
         if (nmb >= 10){

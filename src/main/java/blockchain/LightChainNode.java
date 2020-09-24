@@ -25,7 +25,7 @@ import skipGraph.SkipNode;
 import util.Const;
 import util.Util;
 import evm.Contract;
-import evm.TransferTest;
+import evm.ContractTransaction;
 
 
 public class LightChainNode extends SkipNode implements LightChainRMIInterface {
@@ -41,8 +41,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private SimLog simLog = new SimLog(true);
 	private Logger logger;
 	Parameters params;
-	public int ownerToken;
-	public boolean testt;
+	public int ownerToken; // Store's the value of tokens owned by a node.
+	public boolean value; // The value returned from smartcontract is stored here.
 	public Contract c = new Contract();
 
 	/**
@@ -634,8 +634,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			long startTime = System.currentTimeMillis();
 			updateView();
 			isAuth = isAuthenticated(t);
+			
 			if (params.getChain() == false) { isCorrect = isCorrect(t);	}
 			else{	isCorrect = isCorrect(t,c);	}
+			
 			isSound = isSound(t);
 			hasBalance = hasBalanceCompliance(t);
 
@@ -706,21 +708,30 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 	}
 
+	/**
+	 * Checks correctness of transaction by passing values to smart contracts. 
+	 *Returns true if the conditions are met. 
+	 *
+	 * @param t transaction whose correctness is to be verified
+	 * @param c Contract class object which is used to pass value like name of contract and the function.  
+	 * @return true if transaction is correct, or false if not
+	 */
 	
 		public boolean isCorrect(Transaction t, Contract c) throws IOException { 
 			try {
 
-				TransferTest tesq;
-				tesq = new TransferTest();
+				ContractTransaction tesq = new ContractTransaction();
 				if (!view.hasTokenEntry(t.getOwner())) {
+			    // If the node does not have any initial token balance then it is initialized by token value passed from "simulation.config" file
 					view.updateToken(t.getOwner(), params.getInitialToken());
 					return true;
 				}
 				else {
+			    // If the node has a token value then this value is passed to smart contract interaction class.
 					tesq.setup();
 					ownerToken = view.getToken(t.getOwner());
-					testt = tesq.testSol(ownerToken,c.contractName,c.functname1); 
-					return testt;
+					value = tesq.testSol(ownerToken,c.contractName,c.functname1); 
+					return value;
 				}
 		} catch(Exception e){
 			e.printStackTrace();
@@ -728,10 +739,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 
 	}
-
-
-
-
 
 
 	/**
@@ -742,6 +749,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 * @param t transaction whose correctness is to be verified
 	 * @return true if transaction is correct, or false if not
 	 */
+
 	public boolean isCorrect(Transaction t) {
 		try {
 
