@@ -730,7 +730,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			    // If the node has a token value then this value is passed to smart contract interaction class.
 					tesq.setup();
 					ownerToken = view.getToken(t.getOwner());
-					value = tesq.testSol(ownerToken,c.contractName,c.functname1); 
+					value = tesq.TransctSol(ownerToken,c.contractName,c.functname1); 
 					return value;
 				}
 		} catch(Exception e){

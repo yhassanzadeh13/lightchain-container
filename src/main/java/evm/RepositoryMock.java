@@ -8,6 +8,11 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+ /**
+	 * The method is used to make a repository of the different blocks formed when the EVM functions.
+	 *
+	 */
+
 public class RepositoryMock implements Repository {
 
     private Map<ByteArrayWrapper, Account> accounts = new HashMap<>();

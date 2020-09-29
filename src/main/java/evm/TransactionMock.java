@@ -18,14 +18,14 @@ public class TransactionMock implements Transaction {
     /**
 	 * The method is used to create a psuedo transaction when the EVM functions.
 	 *
-	 * @param isCreate 
-	 * @param from
-	 * @param to
-     * @param nonce
-     * @param value
-	 * @param data
-     * @param gas
-     * @param gasPrice
+	 * @param isCreate checks if the requested transaction is requesting a contract creation or not
+	 * @param from requestor of the transaction
+	 * @param to recipient of the transaction
+     * @param nonce is a random, one-time, whole number
+     * @param value how much ether this transaction pays
+	 * @param data any binary data payload
+     * @param gas refers to the cost necessary to perform a transaction
+     * @param gasPrice price of gas the requestor is willing to pay for this transaction
 	 */
 
     public TransactionMock(boolean isCreate, byte[] from, byte[] to, long nonce, BigInteger value, byte[] data,

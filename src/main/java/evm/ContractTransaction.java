@@ -43,6 +43,8 @@ public class ContractTransaction extends vmbase {
         return createContract(readContract(contractLocation), new byte[0], address, nonce, gas);
     }
 
+    // This function reads a contract by taking the name of contract
+
     public byte[] readContract(String fileName) throws IOException {
         String path3 = fileName;
         System.out.println("path: "+path3);
@@ -50,7 +52,7 @@ public class ContractTransaction extends vmbase {
         return HexUtil.fromHexString(lines.get(0));
     }
 
-
+    // This function creates a contract and also returns the address of created contract
     public byte[] createContract(byte[] code, byte[] args, byte[] address, long nonce, long gas)  {
         byte[] data = merge(code, args);
         byte[] contractAddress = HashUtil.calcNewAddress(address, nonce);
@@ -62,7 +64,9 @@ public class ContractTransaction extends vmbase {
         return contractAddress;
     }
 
-        public boolean testSol(int token, String contractloc,String functname) throws IOException {
+
+    // This function is used to interact EVM with Lightchain
+        public boolean TransctSol(int token, String contractloc,String functname) throws IOException {
                  long nonce = 0;
                  long nonce1 = 1;
                 BigInteger toSend = new BigInteger(String.valueOf(token));

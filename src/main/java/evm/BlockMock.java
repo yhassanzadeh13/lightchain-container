@@ -15,10 +15,10 @@ public class BlockMock implements Block {
    /**
 	 * The method is used to form a block when the EVM functions.
 	 *
-	 * @param number 
-	 * @param parentHash
-	 * @param timestamp
-     * @param gasLimit
+	 * @param number block's serial number
+	 * @param parentHash the hash of the predecessor block
+	 * @param timestamp time in seconds at the time of block formation
+     * @param gasLimit determines how many transactions can fit in a block
 	 */
 
     public BlockMock(long number, byte[] parentHash, byte[] coinbase, long timestamp, long gasLimit) {
