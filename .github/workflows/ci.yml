@@ -3,9 +3,11 @@ name: CI
 on:
   push:
     #Run on all branches, uncomment this to only run on master
-#    branches: [ master ]
+  #  branches:
+  #   - Nazir-Pipeline
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -29,3 +31,8 @@ jobs:
     # run tests
     - name: run tests
       run: mvn test
+
+    - name: build docker
+      run: |
+        mvn clean compile assembly:single
+        sudo docker build -t lightchain .
