@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import mock.MockNetwork;
+import mock.NetworkIntermediary;
 import org.apache.log4j.Logger;
 
 import hashing.Hasher;
@@ -39,6 +41,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private SimLog simLog = new SimLog(true);
 	private Logger logger;
 	Parameters params;
+	MockNetwork mockNetwork;
+	boolean mockMode;
 
 	/**
 	 *
@@ -79,6 +83,14 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		}
 
 	}
+
+	void setMockNetwork(MockNetwork network) {
+	  this.mockNetwork = mockNetwork;
+  }
+
+  void setMockMode(boolean mode) {
+	  this.mockMode = mode;
+  }
 
 	/**
 	 * This method goes to the tail of the blockchain and iterates over the
@@ -844,6 +856,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		if (Util.validateIP(adrs)) {
 			if (adrs.equalsIgnoreCase(getAddress()))
 				return this;
+
+			if(this.mockMode && this.mockNetwork != null) {
+			  return new NetworkIntermediary(mockNetwork, adrs);
+      }
+
 			try {
 				return (LightChainRMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
 			} catch (Exception e) {
