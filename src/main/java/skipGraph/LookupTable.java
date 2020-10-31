@@ -1,5 +1,6 @@
 package skipGraph;
 
+import org.apache.log4j.Logger;
 import util.Const;
 import util.Util;
 
@@ -7,7 +8,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -18,9 +18,7 @@ public class LookupTable {
     private int maxLevels;
     private Map<Integer, NodeInfo> dataNodes;
     private Map<Integer, Table> lookup;
-
-    public static int lockFailureCount = 0;
-
+    private Map<Integer, InsertionLock> locks;
     /*
      * The buffer is there so we can finalize a node's table and insertion before we
      * add it to the other nodes. This prevents any access to it during search etc.
@@ -29,16 +27,19 @@ public class LookupTable {
      */
     private NodeInfo nodeBuffer;
     private Table tableBuffer;
+    private Logger logger;
 
     /**
      * LookupTable constructor
      *
      * @param maxLevels the maximum number of levels in the skip graph
      */
-    public LookupTable(int maxLevels) {
+    public LookupTable(int maxLevels, Logger logger) {
         this.maxLevels = maxLevels;
         this.dataNodes = new HashMap<>();
         this.lookup = new HashMap<>();
+        this.locks = new HashMap<>();
+        this.logger = logger;
     }
 
     /**
@@ -64,10 +65,6 @@ public class LookupTable {
         if (nodeBuffer == null)
             return -1;
         return nodeBuffer.getNumID();
-    }
-
-    public Table getLookUpTable() {
-        return tableBuffer;
     }
 
     /**
@@ -173,30 +170,6 @@ public class LookupTable {
         return lookup.get(numID).get(level, direction);
     }
 
-    public boolean nodeExist(int numID) {
-        return ((nodeBuffer != null && nodeBuffer.getNumID() == numID)) || dataNodes.containsKey(numID);
-    }
-
-    public boolean isLockAvailable(int numID) {
-        if (nodeBuffer != null && nodeBuffer.getNumID() == numID) {
-            boolean tmp = tableBuffer.lock.readLock().tryLock();
-            if (tmp) {
-                tableBuffer.lock.readLock().unlock();
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        boolean tmp = lookup.get(numID).lock.readLock().tryLock();
-        if (tmp) {
-            lookup.get(numID).lock.readLock().unlock();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     /**
      * Put the given newNode as a neighbor of the node with the given numID at the
      * given level and direction if the node in place is the given expectedOldNode
@@ -213,11 +186,12 @@ public class LookupTable {
      * was what it replaced. False and the lookup is not modified otherwise.
      */
     public boolean put(int numID, int level, int direction, NodeInfo newNode, NodeInfo expectedOldNode) {
-        if (nodeBuffer != null && nodeBuffer.getNumID() == numID) {
+        if (nodeBuffer != null && nodeBuffer.getNumID() == numID)
             return tableBuffer.safePut(level, direction, newNode, expectedOldNode);
-        }
+
         if (!lookup.containsKey(numID))
             return false;
+
         return lookup.get(numID).safePut(level, direction, newNode, expectedOldNode);
     }
 
@@ -329,10 +303,29 @@ public class LookupTable {
         return maxLevels;
     }
 
+    public boolean startInsertion(int numId) {
+        if (locks.get(numId) == null)
+            locks.put(numId, new InsertionLock());
+        return locks.get(numId).startInsertion();
+    }
+
+    public void endInsertion(int numId) {
+        locks.get(numId).endInsertion();
+    }
+
+    public boolean tryAcquire(NodeInfo requester, int numId) {
+        if (locks.get(numId) == null)
+            locks.put(numId, new InsertionLock());
+        return locks.get(numId).tryAcquire(requester);
+    }
+
+    public boolean unlockOwned(NodeInfo owner, int numId) {
+        return locks.get(numId).unlockOwned(owner);
+    }
+
     class Table {
 
         ReadWriteLock lock;
-
         private ConcurrentHashMap<Integer, NodeInfo> table;
 
         /**
@@ -341,7 +334,6 @@ public class LookupTable {
         public Table() {
             table = new ConcurrentHashMap<Integer, NodeInfo>();
             lock = new ReentrantReadWriteLock(true);
-
         }
 
         /**
@@ -371,7 +363,6 @@ public class LookupTable {
 
             if (!validate(level, direction))
                 return null;
-
             lock.readLock().lock();
 
             try {

@@ -24,7 +24,6 @@ public class Simulation {
 			Random rnd = new Random();
 			ArrayList<LightChainNode> nodes = new ArrayList<>();
 			LightChainNode initialNode = null;
-			int numFailures;
 			for(int i = 0 ; i < nodeCount ; i++){
 				try{
 					int port = rnd.nextInt(65535);
@@ -57,7 +56,6 @@ public class Simulation {
 			
 
 			long endTime = System.currentTimeMillis();
-			Util.log("the lock could not be obtained " + LookupTable.lockFailureCount + " times");
 			Util.log("Simulation Done. Time Taken " +(endTime - startTime)+ " ms");
 			
 			processData(map, iterations);
