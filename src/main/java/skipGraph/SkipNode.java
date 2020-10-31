@@ -1,5 +1,7 @@
 package skipGraph;
 
+import mock.MockNetwork;
+import mock.NetworkIntermediary;
 import org.apache.log4j.Logger;
 import remoteTest.Configuration;
 import remoteTest.PingLog;
@@ -33,7 +35,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
     private Registry registry;
     private LookupTable lookup;
     private Logger logger;
-
+    protected boolean mockMode;
+    protected MockNetwork mockNetwork;
     // TODO: fork-resolving mechanism unimplemented
     // TODO: bootstrapping unimplemented
 
@@ -587,7 +590,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * @param level        the level at which search is happening
      * @param direction    direction of search currently
      * @return NodeInfo of result of search
-     * @see RMIInterface#searchName(java.lang.String, int, int)
+     * @see RMIInterface# searchName(java.lang.String, int, int)
      */
 
     public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException {
@@ -735,6 +738,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             logger.debug("Error in lookup up RMI. Address " + adrs + " is not a valid address");
             return null;
         }
+
+        if(this.mockMode && this.mockNetwork != null)
+          return new NetworkIntermediary(this.mockNetwork, this.address);
 
         if (adrs.equalsIgnoreCase(address))
             return this;

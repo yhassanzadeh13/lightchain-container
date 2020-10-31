@@ -15,6 +15,7 @@ import util.PropertyManager;
 import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
 import java.security.PublicKey;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,9 +25,14 @@ public class MockNetwork {
   Map<Integer, LightChainNode> nodes;
   boolean mode; // false: sequential, else concurrent
 
+  public MockNetwork(Map<Integer, LightChainNode> nodes) {
+    this.nodes = nodes;
+  }
+
   public MockNetwork() {
 
     propMng = new PropertyManager("mock.config");
+    nodes = new HashMap<>();
 
     Parameters params = new Parameters();
     params.setAlpha(getIntProperty("alpha", "12"));
@@ -52,6 +58,7 @@ public class MockNetwork {
           node = new LightChainNode(params, port, initialNode.getAddress(), false);
         }
         nodes.put(node.getNumID(), node);
+        port++;
       } catch (RemoteException re) {
         i--;
         continue;

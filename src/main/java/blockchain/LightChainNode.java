@@ -41,12 +41,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private SimLog simLog = new SimLog(true);
 	private Logger logger;
 	Parameters params;
-	MockNetwork mockNetwork;
-	boolean mockMode;
 
 	/**
 	 *
-	 * @param config     contains necessary information for the node to function
+	 * @param params     contains necessary information for the node to function
 	 * @param introducer the address of the introducer node
 	 * @param isInitial  a flag signaling whether this node is the first node in the
 	 *                   network
@@ -84,12 +82,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 	}
 
-	void setMockNetwork(MockNetwork network) {
-	  this.mockNetwork = mockNetwork;
+	public void setMockNetwork(MockNetwork network) {
+	  super.mockNetwork = mockNetwork;
   }
 
-  void setMockMode(boolean mode) {
-	  this.mockMode = mode;
+  public void setMockMode(boolean mode) {
+	  super.mockMode = mode;
   }
 
 	/**
@@ -594,7 +592,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	/**
 	 * This method takes the hash of a transaction or a block and returns
 	 *
-	 * @param hash hash of transaction or block whose validators are to be fetched
+	 * @param str hash of transaction or block whose validators are to be fetched
 	 * @return a list of validators for the given transactions
 	 */
 	public List<NodeInfo> getValidators(String str) {
@@ -857,8 +855,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			if (adrs.equalsIgnoreCase(getAddress()))
 				return this;
 
-			if(this.mockMode && this.mockNetwork != null) {
-			  return new NetworkIntermediary(mockNetwork, adrs);
+			if(super.mockMode && super.mockNetwork != null) {
+			  return new NetworkIntermediary(super.mockNetwork, adrs);
       }
 
 			try {

@@ -8,13 +8,14 @@ import remoteTest.PingLog;
 import signature.SignedBytes;
 import simulation.SimLog;
 import skipGraph.NodeInfo;
+import skipGraph.RMIInterface;
 
 import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.List;
 
-public class NetworkIntermediary implements LightChainRMIInterface {
+public class NetworkIntermediary implements LightChainRMIInterface, RMIInterface {
 
   NodeInfo node;
   MockNetwork network;

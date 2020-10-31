@@ -20,11 +20,12 @@ public class SimulationDriver {
         int nodeCount = getIntProperty("nodeCount", "20");
         int iterations = getIntProperty("iterations", "50");
         int pace = getIntProperty("pace","1");
+        boolean mockMode = (getIntProperty("mock", "0") == 1) ? true : false;
 
         Logger lg = Logger.getLogger(SimulationDriver.class);
         lg.info("Starting simulation with parameters: "+ params+" Number of nodes: "+ nodeCount+ "\n Number of iterations: "+ iterations+ "\n Pace: "+ pace);
 
-        simulation.Simulation.startSimulation(params, nodeCount, iterations, pace);
+        simulation.Simulation.startSimulation(params, nodeCount, iterations, pace, mockMode);
         System.exit(0);
     }
 
@@ -33,6 +34,7 @@ public class SimulationDriver {
     }
 
     private static PropertyManager propMng;
+
     private static int getIntProperty(String key, String def){
         return Integer.parseInt(propMng.getProperty(key, def));
     }

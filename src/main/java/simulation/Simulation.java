@@ -2,6 +2,7 @@ package simulation;
 
 import blockchain.LightChainNode;
 import blockchain.Parameters;
+import mock.MockNetwork;
 import skipGraph.LookupTable;
 import skipGraph.NodeInfo;
 import util.Const;
@@ -11,16 +12,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 public class Simulation {
 
-	public static void startSimulation(Parameters params, int nodeCount ,int iterations, int pace){
-		try {
+	public static void startSimulation(Parameters params, int nodeCount ,int iterations, int pace, boolean mockMode){
+
+	  Map<Integer, LightChainNode> nodesMap = new HashMap<>();
+
+	  try {
 			Random rnd = new Random();
 			ArrayList<LightChainNode> nodes = new ArrayList<>();
 			LightChainNode initialNode = null;
@@ -36,11 +38,21 @@ public class Simulation {
 						node = new LightChainNode(params, port, initialNode.getAddress(), false);
 					}
 					nodes.add(node);
+					nodesMap.put(node.getNumID(), node);
 				}catch(RemoteException re){
 					i--;
 					continue;
 				}
 			}
+
+			if(mockMode) {
+        MockNetwork mock = new MockNetwork(nodesMap);
+
+        for(LightChainNode node : nodes) {
+          node.setMockMode(true);
+          node.setMockNetwork(mock);
+        }
+      }
 
 			initialNode.insertGenesis();
 
