@@ -41,9 +41,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private SimLog simLog = new SimLog(true);
 	private Logger logger;
 	Parameters params;
-	public int ownerToken; // Store's the value of tokens owned by a node.
-	public boolean value; // The value returned from smartcontract is stored here.
-	public Contract c = new Contract();
+	private int token; // Store's the value of tokens owned by a node.
+	private boolean value; // The value returned from smartcontract is stored here.
+	protected Contract c = new Contract();
 
 	/**
 	 *
@@ -65,13 +65,16 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		this.mode = params.getMode();
 		this.logger = Logger.getLogger(RMIPort + "");
 		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(), params.getLevels());
+		this.token = params.getInitialToken();
+		
 		super.setNumID(Integer.parseInt(name, 2));
 		name = hasher.getHash(name, params.getLevels());
 		super.setNameID(name);
 
 		if (isInitial)
 			isInserted = true;
-
+		logger.debug("checking if 1st view null");
+		logger.debug(this.view == null );
 		// adds values of numID and nameID to lookup table
 		NodeInfo peer = new NodeInfo(address, numID, nameID);
 		addPeerNode(peer);
@@ -82,6 +85,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		if (!isInitial) {
 			insertNode(peer);
 		}
+		
+		logger.debug("\n numid: "+getNumID());
+		view.updateToken(getNumID(),this.token);
+		logger.debug("\n--get token "+view.getToken(getNumID()));
 
 	}
 
@@ -710,8 +717,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 	/**
 	 * Checks correctness of transaction by passing values to smart contracts. 
-	 *Returns true if the conditions are met. 
-	 *
+	 * Returns true if the conditions are met. 
 	 * @param t transaction whose correctness is to be verified
 	 * @param c Contract class object which is used to pass value like name of contract and the function.  
 	 * @return true if transaction is correct, or false if not
@@ -719,26 +725,36 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	
 		public boolean isCorrect(Transaction t, Contract c) throws IOException { 
 			try {
-
 				ContractTransaction tesq = new ContractTransaction();
-				if (!view.hasTokenEntry(t.getOwner())) {
+		
+				System.out.println ("\n passing tranx owner....."+t.getOwner());
+			
 			    // If the node does not have any initial token balance then it is initialized by token value passed from "simulation.config" file
-					view.updateToken(t.getOwner(), params.getInitialToken());
+					//view.updateToken(t.getOwner(), params.getInitialToken());
+
+					logger.debug("Transaction entered");
+			  // If the node has a token value then this value is passed to smart contract interaction class.
+					//tesq.setup();
+					
+					logger.debug("checking if 2nd view null ");
+					logger.debug(this.view == null ); //false --- view is not null
+					
+					//System.out.println(this.view.hasTokenEntry(t.getOwner())==true); //to check now
+
+					//System.out.println ("\n tranx token  ids...."+view.getToken(t.getOwner())); 
+					
+					//not getting any token
+					
+					//int ownerT = view.getToken(t.getOwner());
+					//value = tesq.TransctSol( ownerT,c.contractName,c.functname1); 
 					return true;
-				}
-				else {
-			    // If the node has a token value then this value is passed to smart contract interaction class.
-					tesq.setup();
-					ownerToken = view.getToken(t.getOwner());
-					value = tesq.TransctSol(ownerToken,c.contractName,c.functname1); 
-					return value;
-				}
+			//	}
 		} catch(Exception e){
 			e.printStackTrace();
 			return false;
 		}
-
 	}
+
 
 
 	/**
@@ -920,7 +936,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	public boolean getMode() throws RemoteException {
 		return mode;
 	}
-
 	// TODO: decide on keeping or removing those after refactoring simulation
 	// approach
 

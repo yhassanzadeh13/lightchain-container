@@ -2,9 +2,10 @@ package blockchain;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.log4j.Logger;
 
 public class View {
-
+	private Logger logger;
 	private Map<Integer, Integer> lastBlk;
 	private Map<Integer, Integer> state;
 	private Map<Integer, Integer> balance;
@@ -83,11 +84,14 @@ public class View {
 
 
 	public synchronized int getToken(int numID) {
+		//System.out.println("Get token "+ token.get(numID));
 		return token.get(numID);
 	}
 
 	public synchronized void updateToken(int numID, int newToken) {
+		//logger.debug("Update Token");
 		token.put(numID, newToken);
+		//logger.debug(getToken(numID)); //Bug occurs here when tring to retrive the stored token value
 	}
 
 	public synchronized boolean hasTokenEntry(int numID) {

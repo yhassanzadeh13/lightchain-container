@@ -81,9 +81,9 @@ public class ContractTransaction extends vmbase {
                 TransactionExecutor executor = new TransactionExecutor(transaction, block, repository, blockStore);
                 TransactionReceipt receipt = executor.run();
                 int res = Integer.parseInt(Hex.toHexString(receipt.getReturnData()));
-
+                System.out.println("\n"+res+"\n");
             return res == 1; // return true or false
         }
-
+     
 }
 
