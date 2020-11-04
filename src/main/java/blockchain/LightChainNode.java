@@ -116,6 +116,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			for (int i = 0; i < tList.size(); ++i) {
 				int owner = tList.get(i).getOwner();
 				view.updateLastBlk(owner, blk.getNumID());
+				//updating token in view
+				view.updateToken(owner,this.token);
 			}
 			logger.debug("view successfully updated");
 			return view;
@@ -727,28 +729,12 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			try {
 				ContractTransaction tesq = new ContractTransaction();
 		
-				System.out.println ("\n passing tranx owner....."+t.getOwner());
-			
-			    // If the node does not have any initial token balance then it is initialized by token value passed from "simulation.config" file
-					//view.updateToken(t.getOwner(), params.getInitialToken());
-
-					logger.debug("Transaction entered");
-			  // If the node has a token value then this value is passed to smart contract interaction class.
-					//tesq.setup();
-					
-					logger.debug("checking if 2nd view null ");
-					logger.debug(this.view == null ); //false --- view is not null
-					
-					//System.out.println(this.view.hasTokenEntry(t.getOwner())==true); //to check now
-
-					//System.out.println ("\n tranx token  ids...."+view.getToken(t.getOwner())); 
-					
-					//not getting any token
-					
-					//int ownerT = view.getToken(t.getOwner());
-					//value = tesq.TransctSol( ownerT,c.contractName,c.functname1); 
-					return true;
-			//	}
+				NodeInfo owner = searchByNumID(t.getOwner());
+			 	LightChainRMIInterface ownerRMI = getLightChainRMI(owner.getAddress());
+				int token1 = ownerRMI.getToken();
+				tesq.setup();					
+					value = tesq.TransctSol( token1,c.contractName,c.functname1); 
+					return value;
 		} catch(Exception e){
 			e.printStackTrace();
 			return false;
@@ -964,6 +950,11 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 	public void shutDown() throws RemoteException {
 		System.exit(0);
+	}
+
+	@Override
+	public int getToken() throws RemoteException {
+		return token;
 	}
 
 }
