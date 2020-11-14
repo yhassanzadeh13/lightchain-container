@@ -721,7 +721,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	 */
 	public boolean isCorrect(Transaction t) {
 		try {
-
 			if (!view.hasModeEntry(t.getOwner())) {
 				LightChainRMIInterface rmi = getLightChainRMI(t.getAddress());
 				boolean ownerMode = rmi.getMode();

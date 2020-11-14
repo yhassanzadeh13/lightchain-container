@@ -12,7 +12,6 @@ public class LocalLookupTable {
   NodeInfo[] left;
   NodeInfo[] right;
   public LocalLookupTable(int levels) {
-
     this.levels = levels;
     this.left = new NodeInfo[levels + 1];
     this.right = new NodeInfo[levels + 1];

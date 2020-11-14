@@ -45,5 +45,4 @@ public class LocalLightChainNode {
     skipGraph.insertNode(blk);
   }
 
-
 }

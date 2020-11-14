@@ -59,14 +59,12 @@ public class LocalSkipGraph {
   }
 
   public void insertNode(NodeInfo node) {
-
     this.nodes.add(node);
     nodesMap.put(node.getNumID(), node);
     build();
   }
 
   public void delete(int numID) {
-
     int index = -1;
     for(int i = 0 ; i < this.nodes.size() ; ++i) {
       if(this.nodes.get(i).getNumID() == numID) {
