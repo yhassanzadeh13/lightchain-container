@@ -69,7 +69,6 @@ public class Simulation {
 			
 
 			long endTime = System.currentTimeMillis();
-			Util.log("the lock could not be obtained " + LookupTable.lockFailureCount + " times");
 			Util.log("Simulation Done. Time Taken " +(endTime - startTime)+ " ms");
 			
 			processData(map, iterations);

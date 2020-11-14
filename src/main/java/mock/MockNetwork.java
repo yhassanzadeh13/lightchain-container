@@ -218,6 +218,15 @@ public class MockNetwork {
   public PingLog retroPingStart(NodeInfo node, int freq, Integer recipient) throws RemoteException {
     return nodes.get(recipient).retroPingStart(node, freq);
   }
+  public void insertIntoTable(NodeInfo node, int minLevel, NodeInfo insertedNode, Integer recipient) throws RemoteException {
+    nodes.get(recipient).insertIntoTable(node, minLevel, insertedNode);
+  }
+  public boolean unlock(NodeInfo insertedNode, int numID, Integer recipient) throws RemoteException {
+    return nodes.get(recipient).unlock(insertedNode, numID);
+  }
+  public boolean tryAcquire(NodeInfo insertedNode, int numID, Integer recipient) throws RemoteException {
+    return nodes.get(recipient).tryAcquire(insertedNode, numID);
+  }
 
 
 }

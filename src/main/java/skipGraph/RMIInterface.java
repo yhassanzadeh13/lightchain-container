@@ -65,6 +65,12 @@ public interface RMIInterface extends Remote {
 
 	public NodeInfo insertSearch(int level, int direction, int num, String target) throws RemoteException, FileNotFoundException;
 
+	public void insertIntoTable(NodeInfo node, int minLevel, NodeInfo insertedNode) throws RemoteException;
+
+	public boolean unlock(NodeInfo insertedNode, int numID) throws RemoteException;
+
+	public boolean tryAcquire(NodeInfo insertedNode, int numID) throws RemoteException;
+
 	// Pinging
 
 	public boolean ping() throws RemoteException;
@@ -72,5 +78,4 @@ public interface RMIInterface extends Remote {
 	public PingLog pingStart(NodeInfo node, int freq) throws RemoteException;
 
 	public PingLog retroPingStart(NodeInfo node, int freq) throws RemoteException;
-
 }

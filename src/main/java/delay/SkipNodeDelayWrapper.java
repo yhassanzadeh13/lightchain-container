@@ -13,17 +13,17 @@ public class SkipNodeDelayWrapper implements RMIInterface {
     private RMIInterface innerNode;
     private int delay;
 
-    public SkipNodeDelayWrapper(RMIInterface innerNode, String senderAddress, String receiverAddress){
+    public SkipNodeDelayWrapper(RMIInterface innerNode, String senderAddress, String receiverAddress) {
         this.innerNode = innerNode;
         delay = DelayTracker.getInstance().getDelay(senderAddress, receiverAddress);
     }
 
     // This method is executed before every method call to the innerNode
-    private void before(){
-        try{
-            if(delay>0)
+    private void before() {
+        try {
+            if (delay > 0)
                 Thread.sleep(delay);
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -62,7 +62,7 @@ public class SkipNodeDelayWrapper implements RMIInterface {
     @Override
     public String getRightNameID(int level, int num) throws RemoteException {
         before();
-        return innerNode.getRightNameID(level,num);
+        return innerNode.getRightNameID(level, num);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class SkipNodeDelayWrapper implements RMIInterface {
     }
 
     @Override
-    public void delete(int num) throws RemoteException{
+    public void delete(int num) throws RemoteException {
         before();
         innerNode.delete(num);
     }
@@ -159,5 +159,23 @@ public class SkipNodeDelayWrapper implements RMIInterface {
     public PingLog retroPingStart(NodeInfo node, int freq) throws RemoteException {
         before();
         return innerNode.retroPingStart(node, freq);
+    }
+
+    @Override
+    public void insertIntoTable(NodeInfo node, int minLevel, NodeInfo insertedNode) throws RemoteException {
+        before();
+        insertIntoTable(node, minLevel, insertedNode);
+    }
+
+    @Override
+    public boolean unlock(NodeInfo insertedNode, int numID) throws RemoteException {
+        before();
+        return unlock(insertedNode, numID);
+    }
+
+    @Override
+    public boolean tryAcquire(NodeInfo insertedNode, int numID) throws RemoteException{
+        before();
+        return tryAcquire(insertedNode, numID);
     }
 }

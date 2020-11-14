@@ -18,6 +18,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
@@ -73,7 +74,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             logger.error("Invalid node adress");
         }
 
-        lookup = new LookupTable(maxLevels);
+        lookup = new LookupTable(maxLevels, logger);
         peerNode = new NodeInfo(address, numID, nameID);
         lookup.addNode(peerNode);
         if (isInitial)
@@ -115,7 +116,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             logger.error("Invalid node adress");
         }
 
-        lookup = new LookupTable(maxLevels);
+        lookup = new LookupTable(maxLevels, logger);
     }
 
     /**
@@ -170,7 +171,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * <p>
      * TODO: investigate using a sparate function for dataNode insertion
      */
-    public void insertNode(NodeInfo insertedNode) {
+    public void insertNodeOld(NodeInfo insertedNode) {
         try {
             logger.debug("Inserting: " + insertedNode.getNumID());
             // We search through the introducer node to find the node with
@@ -302,11 +303,171 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             // and we map its numID with its index in the data array using dataID
             lookup.finalizeNode();
 
-        } catch (RemoteException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private final LinkedBlockingDeque<InsertionLock.NeighborInstance> ownedLocks = new LinkedBlockingDeque<>();
+
+    public void insertNode(NodeInfo insertedNode) {
+        try {
+            logger.debug("Inserting: " + insertedNode.getNumID() + " of type " + insertedNode.getClass().getName());
+            // We search through the introducer node to find the node with
+            // the closest num ID
+            NodeInfo closestNode;
+            if (isInserted) {
+                closestNode = searchByNumID(insertedNode.getNumID());
+            } else {
+                isInserted = true;
+
+                RMIInterface introRMI = getRMI(introducer);
+                closestNode = introRMI.searchByNumID(insertedNode.getNumID());
+            }
+
+            if (closestNode == null) {
+                logger.error("The address resulting from the search is null");
+                return;
+            }
+
+            logger.debug("Initializing node with numId: " + insertedNode.getNumID());
+            lookup.startInsertion(insertedNode.getNumID());
+            lookup.initializeNode(insertedNode);
+
+            while (true) {
+                NodeInfo left;
+                NodeInfo right;
+                logger.debug(insertedNode.getNumID() + " searches for its neighbors...");
+
+                // Get my 0-level left and right neighbors.
+                if (insertedNode.getNumID() < closestNode.getNumID()) {
+                    right = closestNode;
+                    left = getRMI(right.getAddress()).getLeftNode(Const.ZERO_LEVEL, right.getNumID());
+                } else {
+                    left = closestNode;
+                    right = getRMI(left.getAddress()).getRightNode(Const.ZERO_LEVEL, left.getNumID());
+                }
+                if (acquireNeighborLocks(left, right, insertedNode)) break;
+                // When we fail, backoff for a random interval before trying again.
+                int sleepTime = new Random().nextInt(2000);
+                try {
+                    Thread.sleep(sleepTime);
+                } catch (InterruptedException e) {
+                    logger.error("[SkipNode.insert] Could not backoff.");
+                    e.printStackTrace();
+                }
+            }
+
+            logger.debug(insertedNode.getNumID() + " has acquired all the locks: ");
+            // At this point, we should have acquired all of our neighbors. Now, it is time to add them.
+            for (InsertionLock.NeighborInstance n : ownedLocks) {
+                // Insert the neighbor into my own table.
+                insertIntoTable(n.node, n.minLevel, insertedNode);
+                // Let the neighbor insert me in its table.
+                getRMI(n.node.getAddress()).insertIntoTable(insertedNode, n.minLevel, n.node);
+            }
+            // Now, we release all of the locks.
+            List<InsertionLock.NeighborInstance> toRelease = new ArrayList<>();
+            ownedLocks.drainTo(toRelease);
+            // Release the locks.
+            for (InsertionLock.NeighborInstance n : toRelease)
+                getRMI(n.node.getAddress()).unlock(insertedNode, n.node.getNumID());
+
+            logger.debug(insertedNode.getNumID() + " was inserted!");
+            lookup.finalizeNode();
+            lookup.endInsertion(insertedNode.getNumID());
+
+        } catch (RemoteException | FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean unlock(NodeInfo owner, int numID) throws RemoteException {
+        return lookup.unlockOwned(owner, numID);
+    }
+
+    @Override
+    public boolean tryAcquire(NodeInfo requester, int numID) throws RemoteException {
+        return lookup.tryAcquire(requester, numID);
+    }
+
+    @Override
+    public void insertIntoTable(NodeInfo newNode, int minLevel, NodeInfo insertedNode) throws RemoteException {
+        logger.debug(insertedNode.getNumID() + " is updating its table.");
+        int direction = (newNode.getNumID() < insertedNode.getNumID()) ? Const.LEFT : Const.RIGHT;
+        int maxLevel = Util.commonBits(insertedNode.getNameID(), newNode.getNameID());
+        for (int i = minLevel; i <= maxLevel; i++) {
+            if (direction == Const.LEFT) setLeftNode(insertedNode.getNumID(), i, newNode, null);
+            else setRightNode(insertedNode.getNumID(), i, newNode, null);
+        }
+    }
+
+    private boolean acquireNeighborLocks(NodeInfo left, NodeInfo right, NodeInfo insertedNode) throws FileNotFoundException, RemoteException {
+        // Try to acquire the locks for the left and right neighbors at all the levels.
+        NodeInfo leftNeighbor = left;
+        NodeInfo rightNeighbor = right;
+        // This flag will be set to false when we cannot acquire a lock.
+        boolean allAcquired = true;
+        // These flags will be used to detect when a neighbor at an upper level is the same as the lower one.
+        boolean newLeftNeighbor = true;
+        boolean newRightNeighbor = true;
+        // Climb up the levels and acquire the left and right neighbor locks.
+        for (int level = 0; level < maxLevels; level++) {
+            if (leftNeighbor == null && rightNeighbor == null)
+                break;
+
+            if (newLeftNeighbor && leftNeighbor != null) {
+                // Try to acquire the lock for the left neighbor.
+                logger.debug(insertedNode.getNumID() + " is trying to acquire a lock from " + leftNeighbor.getNumID());
+                boolean acquired = getRMI(leftNeighbor.getAddress()).tryAcquire(insertedNode, leftNeighbor.getNumID());
+                if (!acquired) {
+                    allAcquired = false;
+                    break;
+                }
+                // Add the new lock to our list of locks.
+                ownedLocks.add(new InsertionLock.NeighborInstance(leftNeighbor, level));
+            }
+
+            if (newRightNeighbor && rightNeighbor != null) {
+                logger.debug(insertedNode.getNumID() + " is trying to acquire a lock from " + rightNeighbor.getNumID());
+                // Try to acquire the lock for the right neighbor.
+                boolean acquired = getRMI(rightNeighbor.getAddress()).tryAcquire(insertedNode, rightNeighbor.getNumID());
+                if (!acquired) {
+                    allAcquired = false;
+                    break;
+                }
+                // Add the new lock to our list of locks.
+                ownedLocks.add(new InsertionLock.NeighborInstance(rightNeighbor, level));
+            }
+
+            logger.debug(insertedNode.getNumID() + " is climbing up.");
+            // Acquire the ladders (i.e., the neighbors at the upper level) and check if they are new neighbors
+            // or not. If they are not, we won't need to request a lock from them.
+            NodeInfo leftLadder = leftNeighbor == null ? null
+                    : getRMI(leftNeighbor.getAddress()).insertSearch(level, Const.LEFT, leftNeighbor.getNumID(), insertedNode.getNameID());
+            newLeftNeighbor = leftLadder != null && !leftLadder.equals(leftNeighbor);
+
+            NodeInfo rightLadder = rightNeighbor == null ? null
+                    : getRMI(rightNeighbor.getAddress()).insertSearch(level, Const.RIGHT, rightNeighbor.getNumID(), insertedNode.getNameID());
+            newRightNeighbor = rightLadder != null && !rightLadder.equals(rightNeighbor);
+
+            leftNeighbor = leftLadder;
+            rightNeighbor = rightLadder;
+            // It may be the case that we cannot possibly acquire a new neighbor because another concurrent insertion
+            // is locking a potential neighbor. This means we should simply fail and let the insertion procedure backoff.
+            logger.debug(getNumID() + " has climbed up.");
+        }
+        logger.debug(getNumID() + " completed proposal phase.");
+        // If we were not able to acquire all the locks, then release the locks that were acquired.
+        if (!allAcquired) {
+            List<InsertionLock.NeighborInstance> toRelease = new ArrayList<>();
+            ownedLocks.drainTo(toRelease);
+            // Release the locks.
+            for (InsertionLock.NeighborInstance n : toRelease)
+                getRMI(n.node.getAddress()).unlock(insertedNode, n.node.getNumID());
+        }
+        return allAcquired;
     }
 
     /**
@@ -337,13 +498,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             // If the right neighbor is null then at this level the right neighbor of the
             // inserted node is null
 
-            if (!lookup.nodeExist(nodeNumID))
-                return null;
-
             if (direction == Const.RIGHT) {
-
-                if (!lookup.isLockAvailable(nodeNumID))
-                    wait(new Random().nextInt(900) + 100);
 
                 NodeInfo rNode = lookup.get(nodeNumID, level, direction);
                 if (rNode == null)
@@ -590,7 +745,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * @param level        the level at which search is happening
      * @param direction    direction of search currently
      * @return NodeInfo of result of search
-     * @see RMIInterface# searchName(java.lang.String, int, int)
+     * @see RMIInterface#searchName(java.lang.String, int, int)
      */
 
     public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException {
@@ -675,7 +830,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             List<NodeInfo> list = new ArrayList<>();
 
             if (ansNode == null || !ansNode.getNameID().equals(name)) {
-                logger.debug("getNodesWithNameID: No Node was found with the given nameID");
+                logger.debug("getNodesWithNameID: No Node was found with the given nameID : " + name);
                 return list;
             }
 
@@ -740,7 +895,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
         }
 
         if(this.mockMode && this.mockNetwork != null)
-          return new NetworkIntermediary(this.mockNetwork, this.address);
+            return new NetworkIntermediary(this.mockNetwork, this.address);
 
         if (adrs.equalsIgnoreCase(address))
             return this;
