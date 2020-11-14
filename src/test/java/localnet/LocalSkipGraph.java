@@ -58,7 +58,7 @@ public class LocalSkipGraph {
     }
   }
 
-  public void insertNode(NodeInfo node) {
+  public synchronized void insertNode(NodeInfo node) {
 
     logger.info("Inserting node with numID: " + node.getNumID() + " and nameID: " + node.getNameID());
 

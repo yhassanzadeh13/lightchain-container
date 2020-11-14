@@ -89,5 +89,9 @@ public class LocalLightChainNode {
     return numToNode.get(numID);
   }
 
+  public LocalSkipGraph getSkipGraph() {
+    return this.skipGraph;
+  }
+
 
 }
