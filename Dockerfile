@@ -1,7 +1,7 @@
 FROM openjdk:8u242-jre
 
 run mkdir /app
-COPY target/LightChain-*-jar-with-dependencies.jar /app
+COPY target/lightchain-container-*-jar-with-dependencies.jar /app
 # COPY lightchain-container/src/main/resources/log4j.properties /app
 COPY simulation.config /app
 
