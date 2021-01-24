@@ -1,4 +1,3 @@
-**Important note:** This repository has been **archieved**. Please go to [lightchain-java](https://github.com/p2pseala/lightchain-container) for the stable version.  
 
 # Overview
 This repository implements a proof-of-concept version of [LightChain](https://arxiv.org/pdf/1904.00375.pdf) blockchain.
