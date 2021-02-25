@@ -33,12 +33,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private DigitalSignature digitalSignature;
 	private Hasher hasher;
 	private Validator validator;
-	private View view;
-	private boolean mode;
+	public View view;
+	public boolean mode;
 	private int balance = 20;
 	private SimLog simLog = new SimLog(true);
 	private Logger logger;
-	Parameters params;
+	private Parameters params;
+	private int token; // Store's the value of tokens owned by a node.
+	//private boolean value; // The value returned from smartcontract is stored here.
+	private CorrectnessVerifier cv;
 
 	/**
 	 *
@@ -58,6 +61,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		this.transactions = new ArrayList<>();
 		this.view = new View();
 		this.mode = params.getMode();
+		this.token = params.getInitialToken();
 		this.logger = Logger.getLogger(RMIPort + "");
 		String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(), params.getLevels());
 		super.setNumID(Integer.parseInt(name, 2));
@@ -78,6 +82,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			insertNode(peer);
 		}
 
+		view.updateToken(getNumID(),this.token);
+		
+		// This selects the mode for the lightchain working
+		if (params.getChain())  
+		cv = new ContractCV(this); // LightChainCV extends CorrectnessVerifier for native LightChain
+		
+		else  
+		cv = new LightChainCV(this); // ContractCV extends CorrectnessVerifier for the contract mode
+		
 	}
 
 	/**
@@ -104,6 +117,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			for (int i = 0; i < tList.size(); ++i) {
 				int owner = tList.get(i).getOwner();
 				view.updateLastBlk(owner, blk.getNumID());
+				//updating token in view
+				view.updateToken(owner,this.token);
 			}
 			logger.debug("view successfully updated");
 			return view;
@@ -629,7 +644,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 			long startTime = System.currentTimeMillis();
 			updateView();
 			isAuth = isAuthenticated(t);
-			isCorrect = isCorrect(t);
+			isCorrect = cv.isCorrect(t);
 			isSound = isSound(t);
 			hasBalance = hasBalanceCompliance(t);
 
@@ -696,35 +711,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 				logger.debug("Transaction is sound");
 			return tIdx > bIdx;
 		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
-	/**
-	 * Checks correctness of transactionReturns true if both nodes are of same type
-	 * (HONEST,HONEST) or (MALICIOUS,MALICIOUS) and returns false if both are of
-	 * different types.
-	 *
-	 * @param t transaction whose correctness is to be verified
-	 * @return true if transaction is correct, or false if not
-	 */
-	public boolean isCorrect(Transaction t) {
-		try {
-
-			if (!view.hasModeEntry(t.getOwner())) {
-				LightChainRMIInterface rmi = getLightChainRMI(t.getAddress());
-				boolean ownerMode = rmi.getMode();
-				view.updateMode(t.getOwner(), ownerMode);
-				return ownerMode == mode;
-			}
-			boolean ownerMode = view.getMode(t.getOwner());
-			if (ownerMode != mode) {
-				logger.debug("Transaction not correct");
-			}
-
-			return ownerMode == mode;
-		} catch (RemoteException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -910,4 +896,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		System.exit(0);
 	}
 
+	@Override
+	public int getToken() throws RemoteException {
+		return token;
+	}
 }
