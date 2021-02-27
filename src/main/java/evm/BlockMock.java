@@ -1,7 +1,6 @@
 package evm;
 
 import org.ethereum.vm.client.Block;
-
 import java.math.BigInteger;
 
 public class BlockMock implements Block {
@@ -20,7 +19,6 @@ public class BlockMock implements Block {
 	 * @param timestamp time in seconds at the time of block formation
      * @param gasLimit determines how many transactions can fit in a block
 	 */
-
     public BlockMock(long number, byte[] parentHash, byte[] coinbase, long timestamp, long gasLimit) {
         this.gasLimit = gasLimit;
         this.parentHash = parentHash;
