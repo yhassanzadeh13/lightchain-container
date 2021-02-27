@@ -290,6 +290,30 @@ class LightChainNodeTest {
 //		fail("Not yet implemented");
 //	}
 
+
+    //Test for checking the isCorrect() in different modes
+	@Test
+    void testIsCorrect() {
+        try {
+            LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+            LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+            Block blk = node1.insertGenesis();
+            String randStr1 = Util.getRandomString(10);
+            
+            Transaction t2 = new Transaction(blk.getHash(), node2.getNumID(), randStr1, node2.getAddress(), params.getLevels());
+            node2.insertTransaction(t2);
+            
+            LightChainCV cv = new LightChainCV(node2);
+            //Uncomment the next line if want to test ContractCV
+            //ContractCV cv = new ContractCV(node2);
+            
+            assertEquals(true, cv.isCorrect(t2), "working correctly");
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
 	@Test
 	void testGetOwnerPublicKey() {
 		try {
