@@ -8,7 +8,7 @@ class LightChainCV extends CorrectnessVerifier {
     }
    
     /** 
-     * Checks correctness of transactionReturns true if both nodes are of same type
+     * Checks correctness of transaction, returns true if both nodes are of same type
      * (HONEST,HONEST) or (MALICIOUS,MALICIOUS) and returns false if both are of
      * different types.
      * @param t transaction whose correctness is to be verified

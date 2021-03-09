@@ -12,7 +12,7 @@ public class Parameters {
 	private int TxMin = 4; // minimum number of Tx in a block
 	private boolean Mode = true; // honest or malicious
 	private int Token = 20; // a token is a representation of any quantity of an asset which the node owns 
-	private boolean Chain = true; // Mode of lightchain (false -> original || true -> Smartcontract)
+	private boolean CONTRACT_MODE = true; // Mode of lightchain (false -> original || true -> Smartcontract)
 	
 	public Parameters() {
 		
@@ -74,12 +74,14 @@ public class Parameters {
 		Mode = mode;
 	}
 
+	// Is used to set the functionality of the simulation (either lightchain with smart-contract mode or original lightchain mode)
 	public void setChain(boolean chain) {
-        Chain = chain;
+        CONTRACT_MODE = chain;
     }
 
+	// Is used to get the functionality of the simulation (either lightchain with smart-contract mode or original lightchain mode)
     public boolean getChain() {
-        return Chain;
+        return CONTRACT_MODE;
     }
 
 	public void setInitialToken(int token) {
@@ -101,7 +103,7 @@ public class Parameters {
 				"\nTxMin= " + TxMin +
 				"\nMode= " + Mode +
 				"\nTokens= " + Token +
-				"\nContractMode= "+ Chain +
+				"\nContractMode= "+ CONTRACT_MODE +
 				'\n';
 	}
 }

@@ -16,6 +16,10 @@ import org.ethereum.vm.util.HexUtil;
 import static org.ethereum.vm.util.ByteArrayUtil.merge;
 import org.apache.log4j.Logger;
 
+/**
+* This class is used by the lightchain to interact with the Ethereum Virtuam Machine (EVM) 
+* It extends vmbase class for importing all the core functionality related to the EVM. 
+*/
 public class ContractTransaction extends vmbase {
 
     public final BigInteger premine = BigInteger.valueOf(1L).multiply(Unit.ETH); // each account has 1 ether
@@ -52,8 +56,7 @@ public class ContractTransaction extends vmbase {
 	 * @param fileName is the contract name 
 	 */
     public byte[] readContract(String fileName) throws IOException {
-        String path3 = fileName;
-        List<String> lines = Files.readAllLines(Paths.get(path3), StandardCharsets.UTF_8);
+        List<String> lines = Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8);
         return HexUtil.fromHexString(lines.get(0));
     }
 

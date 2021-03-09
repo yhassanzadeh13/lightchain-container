@@ -37,7 +37,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 	private SimLog simLog = new SimLog(true);
 	public Logger logger;
 	private Parameters params;
-	private int token; // Store's the value of tokens owned by a node.
+	private int token; // Is used to store the value of tokens owned by a node.
 	private CorrectnessVerifier cv;
 	public int Tmode; // Defines the mode for every node eg. 1 -> consumer | 2 -> producer
 
@@ -84,12 +84,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 		view.updateToken(getNumID(),this.token);
 		
 		// This selects the mode for the lightchain working
-		if (params.getChain())  
-		cv = new ContractCV(this); // LightChainCV extends CorrectnessVerifier for native LightChain
-		
-		else  
-		cv = new LightChainCV(this); // ContractCV extends CorrectnessVerifier for the contract mode
-		
+		if (params.getChain())  {
+			cv = new ContractCV(this); // LightChainCV extends CorrectnessVerifier for native LightChain
+		}
+
+		else  {
+			cv = new LightChainCV(this); // ContractCV extends CorrectnessVerifier for the contract mode
+		}
 	}
 
 	/**
