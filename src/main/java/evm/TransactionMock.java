@@ -3,6 +3,10 @@ package evm;
 import org.ethereum.vm.client.Transaction;
 import java.math.BigInteger;
 
+/**
+* This method is the class containing TransactionMock() function
+* which is used to create a psuedo transaction when the EVM functions.
+*/
 public class TransactionMock implements Transaction {
 
     private boolean isCreate;

@@ -8,11 +8,15 @@ import java.util.HashMap;
 import java.util.Map;
 
     /**
-	 * The method is used to make a repository of the different blocks formed when the EVM functions.
+	 * This class is used to make a repository of the different blocks formed 
+     * when the EVM functions. It contains various functions like addBalance(), getBalance() 
+     * which are used to add amount to the different addresses or get their current balance information respectively.
+     * 
 	 */
     public class RepositoryMock implements Repository {
 
-        private Map<ByteArrayWrapper, Account> accounts = new HashMap<>();
+        
+        private Map<ByteArrayWrapper, Account> accounts = new HashMap<>(); // We use this hashmap to store the different addresses and relate them to their accounts which contain their respective data.
         private RepositoryMock parent;
 
         public RepositoryMock() {
@@ -33,17 +37,16 @@ import java.util.Map;
                 Account accountTrack = new Account(account);
                 accounts.put(key, accountTrack);
                 return accountTrack;
-            } else {
-                return null;
-            }
+            } 
+            return null;
         }
 
         @Override
         public boolean exists(byte[] address) {
             ByteArrayWrapper key = new ByteArrayWrapper(address);
 
-            if (accounts.containsKey(new ByteArrayWrapper(address))) {
-                return accounts.get(key) != null;
+            if (accounts.containsKey(key)) {
+                return true;
             } else if (parent != null) {
                 return parent.exists(address);
             } else {
@@ -60,7 +63,7 @@ import java.util.Map;
 
         @Override
         public void delete(byte[] address) {
-            accounts.put(new ByteArrayWrapper(address), null);
+            accounts.remove(new ByteArrayWrapper(address));
         }
 
         @Override
