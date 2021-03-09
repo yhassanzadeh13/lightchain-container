@@ -5,14 +5,15 @@ import evm.ContractTransaction;
 import skipGraph.NodeInfo;
 import java.rmi.RemoteException;
 
+/** 
+* ContractCV contains the isCorrect() function which is used to 
+* interact with the wrapper function TransctSol() 
+*/
 class ContractCV extends CorrectnessVerifier {
 
     Contract ct = new Contract();
     ContractTransaction tesq = new ContractTransaction();
-    /** 
-    * ContractCV contains the isCorrect() function which is used to 
-    * interact with the wrapper function TransctSol() 
-    */
+
     public ContractCV(LightChainNode owner) throws RemoteException {
         super(owner);
     }

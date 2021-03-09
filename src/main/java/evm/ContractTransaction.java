@@ -131,7 +131,7 @@ public class ContractTransaction extends vmbase {
             Transaction transaction = new TransactionMock(false, caller, contractAddress2, nonce1, value, data, gas, gasPrice);
             TransactionExecutor executor = new TransactionExecutor(transaction, block, repository, blockStore);
             TransactionReceipt receipt = executor.run();
-            //logger.debug("\n reciept string: "+receipt.toString());
+            logger.debug("\n reciept string: "+receipt.toString());
             String res = Hex.toHexString(receipt.getReturnData());
             int opt = Integer.parseInt(res, 16);
             logger.debug("output from contract: "+opt); 
