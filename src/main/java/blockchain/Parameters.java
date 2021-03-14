@@ -11,7 +11,7 @@ public class Parameters {
 	private int InitialBalance = 20; // balance to start with at launch
 	private int TxMin = 4; // minimum number of Tx in a block
 	private boolean Mode = true; // honest or malicious
-	private int Token = 20; // a token is a representation of any quantity of an asset which the node owns 
+	private int Token = 20; // a token is a representation of any quantity of an asset which the node owns
 	private boolean CONTRACT_MODE = true; // Mode of lightchain (false -> original || true -> Smartcontract)
 	
 	public Parameters() {

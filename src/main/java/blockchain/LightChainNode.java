@@ -43,7 +43,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
     public int Tmode; // Defines the mode for every node eg. 1 -> consumer | 2 -> producer
 
     /**
-     * @param config     contains necessary information for the node to function
+     * @param params     contains necessary information for the node to function
      * @param introducer the address of the introducer node
      * @param isInitial  a flag signaling whether this node is the first node in the
      *                   network
@@ -464,18 +464,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             }
 
             validated = (numValidations >= params.getSignaturesThreshold());
-			/*
-			if (validated) {
-				logger.debug("Valid Transaction");
-			} else
-				logger.debug("Transaction Rejected");
-			*/
             long end = System.currentTimeMillis();
 
             if (numValidations != 0)
                 timePerValidator /= numValidations;
 
             simLog.logTransaction(validated, isAuthenticated, isSound, isCorrect, hasBalance, end - start, timePerValidator);
+
+            if(validated) logger.debug("valid transaction");
+            else logger.debug("invalid transaction");
 
             return validated;
         }
@@ -595,7 +592,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
     /**
      * This method takes the hash of a transaction or a block and returns
      *
-     * @param hash hash of transaction or block whose validators are to be fetched
+     * @param str hash of transaction or block whose validators are to be fetched
      * @return a list of validators for the given transactions
      */
     public List<NodeInfo> getValidators(String str) {
@@ -704,12 +701,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
             int tIdx = prevBlk.getIndex();
             int bIdx = thisBlk.getIndex();
-			/*
-			if (tIdx <= bIdx) {
-				logger.debug("Transaction not sound, Prev: " + tIdx + ", Latest: " + bIdx);
-			} else
-				logger.debug("Transaction is sound");
-				*/
+
+			if (tIdx <= bIdx) logger.debug("Transaction not sound, Prev: " + tIdx + ", Latest: " + bIdx);
+			else logger.debug("Transaction is sound");
             return tIdx > bIdx;
         }
         catch (Exception e) {
