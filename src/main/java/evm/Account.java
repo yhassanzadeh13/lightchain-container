@@ -5,6 +5,10 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+* This class is used to represent all the data related to an account address. 
+* It is further used by the RepositoryMock class.
+*/
 class Account {
         public long nonce = 0;
         public BigInteger balance = BigInteger.ZERO;
