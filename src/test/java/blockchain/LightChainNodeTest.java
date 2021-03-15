@@ -26,6 +26,7 @@ class LightChainNodeTest {
 	private int RMIPort3;
 	private int RMIPort4;
 	private RepositoryMock repository = new RepositoryMock();
+	private ContractTransaction tesq = new ContractTransaction();
 	
 	@BeforeEach
 	void init() {
@@ -299,9 +300,11 @@ class LightChainNodeTest {
 	* Scenario: We create two nodes, one generating a block, and the other one generating a transaction.
 	* Then we evaluate that the transaction should be correct from the view point of node 2. This test is for checking the isCorrect() method in smart-contract mode.
 	* We will be checking if our contract sends back correct value to the wrapper function.
+	* 
+	* Here we test ContractCV.
 	*/
 	@Test
-    void testIsCorrectContract() {
+    void testIsCorrectContractMode() {
         try {
             LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
             LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
@@ -324,9 +327,11 @@ class LightChainNodeTest {
 	* Scenario: We create two nodes, one generating a block, and the other one generating a transaction.
 	* Then we evaluate that the transaction should be correct from the view point of node 2. 
 	* This test is for checking the isCorrect() method in original Lightchain mode.
+	*
+	* Here we test LightChainCV.
 	*/
 	@Test
-    void testIsCorrectOriginal() {
+    void testIsCorrectOriginalMode() {
         try {
             LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
             LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
@@ -354,7 +359,7 @@ class LightChainNodeTest {
 	* Finally we have checked if all the values are returned correctly or not.
 	*/
 	@Test
-    public void testRepository() {
+    void testRepository() {
         DataWord key1 = DataWord.of(999);
         DataWord value1 = DataWord.of(3);
 		BigInteger balance = BigInteger.TEN.pow(18);
@@ -376,6 +381,23 @@ class LightChainNodeTest {
         assertEquals(codeB,repository.getCode(addressB), "stored code correctly");
         assertEquals(value1,repository.getStorageRow(addressB,key1), "stored data correctly");
     }
+
+	/**
+	* Scenario: We will be passing the contract name as well as the function in the contract that we want to test.
+	* Here the check() function takes a single parameter which is a integer (token) and checks weather the provided 
+	* value is greater than 10. If so then returns TRUE.
+	*/
+	@Test
+	void testContractTransaction1() throws IOException {
+		// For testcon.sol
+		tesq.setup();
+		String contractName1 = "testcon.bin";
+		String functname1 = "check(uint256)";
+		int token = 25;
+		
+		boolean value = tesq.TransctSol(token, contractName1, functname1);
+		assertEquals(true, value);
+	}
 
 	@Test
 	void testGetOwnerPublicKey() {
