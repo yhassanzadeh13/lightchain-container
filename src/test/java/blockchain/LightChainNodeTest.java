@@ -1,11 +1,15 @@
 package blockchain;
 
 //import jdk.nashorn.internal.ir.annotations.Ignore;
+import evm.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.Const;
 import util.Util;
-
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.util.BytecodeCompiler;
+import org.ethereum.vm.util.HexUtil;
+import java.math.BigInteger;
 import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -21,7 +25,8 @@ class LightChainNodeTest {
 	private int RMIPort2;
 	private int RMIPort3;
 	private int RMIPort4;
-
+	private RepositoryMock repository = new RepositoryMock();
+	
 	@BeforeEach
 	void init() {
 		params = new Parameters();
@@ -338,6 +343,38 @@ class LightChainNodeTest {
         } catch (RemoteException e) {
             e.printStackTrace();
         }
+    }
+
+	/**
+	* Scenario: We have passed an account address to create a new account, 
+	* then we have complied a solidity contract code and saved it using saveCode() function,
+	* we have passed a value using the putStorageRow() function, 
+	* also we have added some balance to the address using the addBalance() function.
+	*
+	* Finally we have checked if all the values are returned correctly or not.
+	*/
+	@Test
+    public void testRepository() {
+        DataWord key1 = DataWord.of(999);
+        DataWord value1 = DataWord.of(3);
+		BigInteger balance = BigInteger.TEN.pow(18);
+
+        // Set contract into Database
+        String address = "77045e71a7a2c50903d88e564cd72fab11e82051";
+        String code = "PUSH2 0x03e7 SLOAD PUSH1 0x00 MSTORE PUSH1 0x00 PUSH1 0x00 MLOAD GT ISZERO PUSH4 0x0000004c JUMPI PUSH1 0x01 PUSH1 0x00 MLOAD SUB PUSH2 0x03e7 SSTORE PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH20 0x"+ address + " PUSH1 0x08 PUSH1 0x0a GAS DIV MUL CALL PUSH4 0x0000004c STOP JUMP JUMPDEST STOP";
+
+        byte[] addressB = HexUtil.fromHexString(address);
+        byte[] codeB = BytecodeCompiler.compile(code);
+
+        repository.createAccount(addressB);
+        repository.saveCode(addressB, codeB);
+        repository.putStorageRow(addressB, key1, value1); // Setting value
+        repository.addBalance(addressB,balance); // Adding balance to the address
+
+		assertEquals(balance,repository.getBalance(addressB), "working correctly");
+        assertTrue(repository.exists(addressB), "working correctly");
+        assertEquals(codeB,repository.getCode(addressB), "stored code correctly");
+        assertEquals(value1,repository.getStorageRow(addressB,key1), "stored data correctly");
     }
 
 	@Test

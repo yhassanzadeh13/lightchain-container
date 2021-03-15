@@ -29,6 +29,8 @@ import java.util.Map;
 
         /**
         * This method is used to get the account details by passing an address. 
+        *
+        * @param address the account address
         */
         protected Account getAccount(byte[] address) {
             ByteArrayWrapper key = new ByteArrayWrapper(address);
@@ -45,7 +47,10 @@ import java.util.Map;
         }
 
         /**
-        * This method is used to check if an account exists or not, we pass the address to this method.
+        * Returns an account if exists.
+        *
+        * @param address the account address
+        * @return an account if exists, NULL otherwise
         */
         @Override
         public boolean exists(byte[] address) {
