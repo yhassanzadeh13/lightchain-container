@@ -84,7 +84,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         view.updateToken(getNumID(), this.token);
 
         // This selects the mode for the lightchain working
-        if (params.getChain()) {
+        if (params.getChain() == params.CONTRACT_MODE) {
             cv = new ContractCV(this); // LightChainCV extends CorrectnessVerifier for native LightChain
         }
 
