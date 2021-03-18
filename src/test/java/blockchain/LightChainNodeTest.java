@@ -400,6 +400,40 @@ class LightChainNodeTest {
 		assertEquals(true, value);
 	}
 
+	/**
+	* Scenario: 
+	*/
+	@Test
+	void testContractTransaction2() throws IOException {
+		// For basicTransfer.sol --> For consumer
+		tesq.setup();
+        int token = 25;
+        String contractName = "basicTransfer.bin";
+        String functname = "tnkDeduct(uint256,uint256,uint256)";
+        int nodeMode = 1;
+        int amt = 5;
+
+        int val = tesq.basicTransfer(token, contractName, functname, 1, 5); 
+        assertEquals(20, val); // For consumer value will be reduced by 5
+	}
+
+	/**
+	* Scenario: 
+	*/
+	@Test
+	void testContractTransaction3() throws IOException {
+		// For basicTransfer.sol --> For producer
+		tesq.setup();
+        int token = 25;
+        String contractName = "basicTransfer.bin";
+        String functname = "tnkDeduct(uint256,uint256,uint256)";
+        int nodeMode = 1;
+        int amt = 5;
+
+        int val = tesq.basicTransfer(token, contractName, functname, 0, 5);
+        assertEquals(30, val); // For producer value will be increased by 5
+	}
+
 	@Test
 	void testGetOwnerPublicKey() {
 		try {
