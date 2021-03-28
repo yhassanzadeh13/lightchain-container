@@ -26,7 +26,7 @@ ContractMode = False
 ```
 ## Pre-requisite redarding smart contract integration
 In solidityContracts folder put your .sol file. 
-Detailed instructions are given in [docs](solidityContracts/smartcontract.md).
+Detailed instructions are given in [docs](contracts/smartcontract.md).
 
 ## Running the simulation 
 
