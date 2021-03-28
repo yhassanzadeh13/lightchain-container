@@ -17,10 +17,12 @@ public class SimulationDriver {
         params.setLevels(getIntProperty("levels", "30"));
         params.setValidationFees(getIntProperty("validationFees", "1"));
         params.setMode(getBoolProperty("Mode", "True"));
+        params.setInitialToken(getIntProperty("token", "20"));
+        params.setChain(getBoolProperty("ContractMode", "True"));
         int nodeCount = getIntProperty("nodeCount", "20");
         int iterations = getIntProperty("iterations", "50");
         int pace = getIntProperty("pace","1");
-
+        
         Logger lg = Logger.getLogger(SimulationDriver.class);
         lg.info("Starting simulation with parameters: "+ params+" Number of nodes: "+ nodeCount+ "\n Number of iterations: "+ iterations+ "\n Pace: "+ pace);
 

@@ -1,11 +1,16 @@
 package blockchain;
 
 //import jdk.nashorn.internal.ir.annotations.Ignore;
+import java.io.*;
+import evm.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.Const;
 import util.Util;
-
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.util.BytecodeCompiler;
+import org.ethereum.vm.util.HexUtil;
+import java.math.BigInteger;
 import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -21,7 +26,9 @@ class LightChainNodeTest {
 	private int RMIPort2;
 	private int RMIPort3;
 	private int RMIPort4;
-
+	private RepositoryMock repository = new RepositoryMock();
+	private ContractTransaction tesq = new ContractTransaction();
+	
 	@BeforeEach
 	void init() {
 		params = new Parameters();
@@ -289,6 +296,109 @@ class LightChainNodeTest {
 //	void testHasBalanceCompliance() {
 //		fail("Not yet implemented");
 //	}
+
+	/**
+	* Scenario: We create two nodes, one generating a block, and the other one generating a transaction.
+	* Then we evaluate that the transaction should be correct from the view point of node 2. This test is for checking the isCorrect() method in smart-contract mode.
+	* We will be checking if our contract sends back correct value to the wrapper function.
+	* 
+	* Here we test ContractCV.
+	*/
+	@Test
+    void testIsCorrectContractMode() {
+        try {
+            LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+            LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+            Block blk = node1.insertGenesis();
+            String randStr1 = Util.getRandomString(10);
+            
+            Transaction t2 = new Transaction(blk.getHash(), node2.getNumID(), randStr1, node2.getAddress(), params.getLevels());
+            node2.insertTransaction(t2);
+            
+            ContractCV cv = new ContractCV(node2);
+            assertEquals(true, cv.isCorrect(t2), "working correctly");
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+	/**
+	* Scenario: We create two nodes, one generating a block, and the other one generating a transaction.
+	* Then we evaluate that the transaction should be correct from the view point of node 2. 
+	* This test is for checking the isCorrect() method in original Lightchain mode.
+	*
+	* Here we test LightChainCV.
+	*/
+	@Test
+    void testIsCorrectOriginalMode() {
+        try {
+            LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
+            LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
+            Block blk = node1.insertGenesis();
+            String randStr1 = Util.getRandomString(10);
+            
+            Transaction t2 = new Transaction(blk.getHash(), node2.getNumID(), randStr1, node2.getAddress(), params.getLevels());
+            node2.insertTransaction(t2);
+            
+            LightChainCV cv = new LightChainCV(node2);
+            
+            assertEquals(true, cv.isCorrect(t2), "working correctly");
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+	/**
+	* Scenario: We have passed an account address to create a new account, 
+	* then we have complied a solidity contract code and saved it using saveCode() function,
+	* we have passed a value using the putStorageRow() function, 
+	* also we have added some balance to the address using the addBalance() function.
+	*
+	* Finally we have checked if all the values are returned correctly or not.
+	*/
+	@Test
+    void testRepository() {
+        DataWord key1 = DataWord.of(999);
+        DataWord value1 = DataWord.of(3);
+		BigInteger balance = BigInteger.TEN.pow(18);
+
+        // Set contract into Database
+        String address = "77045e71a7a2c50903d88e564cd72fab11e82051";
+        String code = "PUSH2 0x03e7 SLOAD PUSH1 0x00 MSTORE PUSH1 0x00 PUSH1 0x00 MLOAD GT ISZERO PUSH4 0x0000004c JUMPI PUSH1 0x01 PUSH1 0x00 MLOAD SUB PUSH2 0x03e7 SSTORE PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH1 0x00 PUSH20 0x"+ address + " PUSH1 0x08 PUSH1 0x0a GAS DIV MUL CALL PUSH4 0x0000004c STOP JUMP JUMPDEST STOP";
+
+        byte[] addressB = HexUtil.fromHexString(address);
+        byte[] codeB = BytecodeCompiler.compile(code);
+
+        repository.createAccount(addressB);
+        repository.saveCode(addressB, codeB);
+        repository.putStorageRow(addressB, key1, value1); // Setting value
+        repository.addBalance(addressB,balance); // Adding balance to the address
+
+		assertEquals(balance,repository.getBalance(addressB), "working correctly");
+        assertTrue(repository.exists(addressB), "working correctly");
+        assertEquals(codeB,repository.getCode(addressB), "stored code correctly");
+        assertEquals(value1,repository.getStorageRow(addressB,key1), "stored data correctly");
+    }
+
+	/**
+	* Scenario: We will be passing the contract name as well as the function in the contract that we want to test.
+	* Here the check() function takes a single parameter which is a integer (token) and checks weather the provided 
+	* value is greater than 10. If so then returns TRUE.
+	*/
+	@Test
+	void testContractTransaction1() throws IOException {
+		// For testcon.sol
+		tesq.setup();
+		String contractName1 = "testcon.bin";
+		String functname1 = "check(uint256)";
+		int token = 25;
+		
+		boolean value = tesq.TransctSol(token, contractName1, functname1);
+		assertEquals(true, value);
+	}
 
 	@Test
 	void testGetOwnerPublicKey() {

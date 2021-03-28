@@ -84,4 +84,10 @@ public class LightChainNodeDelayWrapper extends SkipNodeDelayWrapper implements 
         before();
         innerNode.shutDown();
     }
+
+    @Override
+    public int getToken() throws RemoteException {
+        before();
+        return innerNode.getToken();
+    }
 }
