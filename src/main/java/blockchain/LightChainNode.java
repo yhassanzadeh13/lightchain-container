@@ -22,8 +22,11 @@ import skipGraph.NodeConfig;
 import skipGraph.NodeInfo;
 import skipGraph.RMIInterface;
 import skipGraph.SkipNode;
+import underlay.Underlay;
 import util.Const;
 import util.Util;
+
+import static underlay.requests.RequestType.removeFlagNode;
 
 public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
@@ -41,6 +44,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
     private int token; // Is used to store the value of tokens owned by a node.
     private CorrectnessVerifier cv;
     public int Tmode; // Defines the mode for every node eg. 1 -> consumer | 2 -> producer
+
+    // new instance variables
+    private Underlay underlay;
 
     /**
      * @param params     contains necessary information for the node to function
@@ -81,6 +87,15 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             insertNode(peer);
         }
 
+        // new code
+        // the above should be handled by the underlay
+        // and maybe the lightchainnode should not know of the rmiport
+
+        // init underlay
+        underlay = new Underlay(RMIPort);
+
+
+
         view.updateToken(getNumID(), this.token);
 
         // This selects the mode for the lightchain working
@@ -91,6 +106,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         else {
             cv = new LightChainCV(this); // ContractCV extends CorrectnessVerifier for the contract mode
         }
+
     }
 
     /**
@@ -269,6 +285,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevAddress);
             prevOwnerRMI.removeFlagNode();
 
+            // new version
+            underlay.sendMessage(address=prevAddress, request=removeFlagNode);
+
             insertNode(blk);
             insertFlagNode(blk);
         }
@@ -388,8 +407,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             // iterate over validators and ask them to validate the block
             for (int i = 0; i < validators.size(); ++i) {
                 LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
+
+                // new code
+                underlay(to=validators.get(i).getAddress(), PoV, blk)
+
                 // TODO: add a dummy signedBytes value
                 SignedBytes signature = node.PoV(blk);
+
                 // if one validator returns null, then validation has failed
                 if (signature == null) {
                     logger.debug("Block Rejected");
@@ -444,6 +468,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             for (int i = 0; i < validators.size(); ++i) {
                 LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
                 SignedBytes signature = node.PoV(t);
+
+                // new code
+                underlay(to=validators.get(i).getAddress(), idea=PoV, t);
+
 
                 if (signature.isAuth())
                     isAuthenticated++;
@@ -809,6 +837,13 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             LightChainRMIInterface ownerRMI = getLightChainRMI(owner.getAddress());
             // get the owner'r Public key through RMI
             PublicKey pk = ownerRMI.getPublicKey();
+
+
+            // new code
+            PublicKey pk2 = underlay(to=owner.getAddress(), getPublicKey);
+
+
+
             // Hash the public key and store the hash value as int
             int hashedKey = Integer.parseInt(hasher.getHash(pk.getEncoded(), params.getLevels()), 2);
             // if hashedKey is not equal to the provided numID, then there is a problem
@@ -825,6 +860,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         }
     }
 
+    // this method should be handled by the Underlay
     public LightChainRMIInterface getLightChainRMI(String adrs) {
         if (Util.validateIP(adrs)) {
             if (adrs.equalsIgnoreCase(getAddress()))
