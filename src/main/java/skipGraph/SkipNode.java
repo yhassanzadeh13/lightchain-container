@@ -4,6 +4,9 @@ import org.apache.log4j.Logger;
 import remoteTest.Configuration;
 import remoteTest.PingLog;
 import remoteTest.TestingLog;
+import underlay.Underlay;
+import underlay.requests.SearchByNameIDRequest;
+import underlay.requests.SetLeftNodeRequest;
 import util.Const;
 import util.Util;
 
@@ -33,6 +36,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
     private Registry registry;
     private LookupTable lookup;
     private Logger logger;
+
+    // underlay
+    private Underlay underlay;
 
     // TODO: fork-resolving mechanism unimplemented
     // TODO: bootstrapping unimplemented
@@ -138,16 +144,30 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                     // Set it to null only if the current node to the left is this node (don't
                     // change it if its something else)
                     rightRMI.setLeftNode(rNode.getNumID(), j, lNode, thisNode);
+
+                    // new code
+                    // underlay.sendMessage(new SetLeftNodeRequest(rNode.getNumID(), j, lNode, thisNode), rNode.getAddress())
+
                     // if right is null, update left
                 } else if (rNode == null) {
                     RMIInterface leftRMI = getRMI(lNode.getAddress());
                     leftRMI.setRightNode(lNode.getNumID(), j, rNode, thisNode);
+
+                    // new code
+                    // underlay.sendMessage(new SetRightNodeRequest(lNode.getNumID(), j, rNode, thisNode), lNode.getAddress())
+
+
                     // otherwise update both sides and connect them to each other.
                 } else {
                     RMIInterface rightRMI = getRMI(rNode.getAddress());
                     RMIInterface leftRMI = getRMI(lNode.getAddress());
                     rightRMI.setLeftNode(rNode.getNumID(), j, lNode, thisNode);
                     leftRMI.setRightNode(lNode.getNumID(), j, rNode, thisNode);
+
+                    // new code
+                    // underlay.sendMessage(new SetLeftNodeRequest(rNode.getNumID(), j, lNode, thisNode), rNode.getAddress())
+                    // underlay.sendMessage(new SetRightNodeRequest(lNode.getNumID(), j, rNode, thisNode), lNode.getAddress())
+
                 }
             }
             // Delete the node from the lookup.
@@ -180,6 +200,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
                 RMIInterface introRMI = getRMI(introducer);
                 closestNode = introRMI.searchByNumID(insertedNode.getNumID());
+
+                // new version
+                // closestNode = underlay.sendMessage(new searchByNumIDRequest(insertedNode.getNumID()), introducer);
             }
 
             lookup.initializeNode(insertedNode);

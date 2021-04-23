@@ -92,7 +92,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         // and maybe the lightchainnode should not know of the rmiport
 
         // init underlay
-        underlay = new Underlay(RMIPort);
+        //underlay = new Underlay(RMIPort);
 
 
 
@@ -286,7 +286,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             prevOwnerRMI.removeFlagNode();
 
             // new version
-            underlay.sendMessage(address=prevAddress, request=removeFlagNode);
+            //underlay.sendMessage(address=prevAddress, request=removeFlagNode);
 
             insertNode(blk);
             insertFlagNode(blk);
@@ -409,7 +409,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
                 LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
 
                 // new code
-                underlay(to=validators.get(i).getAddress(), PoV, blk)
+                //underlay(to=validators.get(i).getAddress(), PoV, blk);
 
                 // TODO: add a dummy signedBytes value
                 SignedBytes signature = node.PoV(blk);
@@ -470,7 +470,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
                 SignedBytes signature = node.PoV(t);
 
                 // new code
-                underlay(to=validators.get(i).getAddress(), idea=PoV, t);
+                //underlay(to=validators.get(i).getAddress(), idea=PoV, t);
 
 
                 if (signature.isAuth())
@@ -840,7 +840,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
 
             // new code
-            PublicKey pk2 = underlay(to=owner.getAddress(), getPublicKey);
+            //PublicKey pk2 = underlay(to=owner.getAddress(), getPublicKey);
 
 
 
