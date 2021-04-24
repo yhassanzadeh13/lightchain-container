@@ -1,14 +1,12 @@
 package underlay;
 
-import skipGraph.LookupTable;
 import skipGraph.NodeInfo;
 import underlay.requests.*;
-import underlay.responses.GenericResponse;
-import underlay.responses.SearchResponse;
-import util.Const;
+import underlay.responses.*;
 import util.Util;
 import skipGraph.RMIInterface;
 
+import java.io.FileNotFoundException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import org.apache.log4j.Logger;
@@ -21,26 +19,64 @@ public class Underlay {
     private Logger logger;
     private String RMIPort;
 
-    public GenericResponse sendMessage(GenericRequest req, String targetAddress) throws RemoteException {
+    public GenericResponse sendMessage(GenericRequest req, String targetAddress) throws RemoteException, FileNotFoundException {
         RMIInterface targetRMI = getRMI(targetAddress);
         switch(req.type){
             case SetLeftNodeRequest: {
                 SetLeftNodeRequest r = (SetLeftNodeRequest) req;
-                targetRMI.setLeftNode(r.num, r.level, r.newNode, r.oldNode);
-                return null;               /// what should I return here?
+                return new BooleanResponse(targetRMI.setLeftNode(r.num, r.level, r.newNode, r.oldNode));
             }
             case SetRightNodeRequest: {
                 SetRightNodeRequest r = (SetRightNodeRequest) req;
-                targetRMI.setLeftNode(r.num, r.level, r.newNode, r.oldNode);
-                return null;
+                return new BooleanResponse(targetRMI.setRightNode(r.num, r.level, r.newNode, r.oldNode));
             }
             case SearchByNumIDRequest: {
-
+                SearchByNumIDRequest r = (SearchByNumIDRequest) req;
+                NodeInfo result =  targetRMI.searchByNumID(r.num);
+                return new NodeInfoResponse(result);
             }
             case SearchByNameIDRequest: {
                 SearchByNameIDRequest r = (SearchByNameIDRequest) req;
-                NodeInfo rightResult = targetRMI.searchByNameID(r.targetString);
-                return new SearchResponse(rightResult);
+                NodeInfo result = targetRMI.searchByNameID(r.targetString);
+                return new NodeInfoResponse(result);
+            }
+            case GetRightNodeRequest: {
+                GetRightNodeRequest r = (GetRightNodeRequest) req;
+                NodeInfo result = targetRMI.getRightNode(r.level, r.num);
+                return new NodeInfoResponse(result);
+            }
+            case GetLeftNodeRequest: {
+                GetLeftNodeRequest r = (GetLeftNodeRequest) req;
+                NodeInfo result = targetRMI.getLeftNode(r.level, r.num);
+                return new NodeInfoResponse(result);
+            }
+            case GetNumIDRequest: {
+                return new NumIDResponse(targetRMI.getNumID());
+            }
+            case InsertSearchRequest: {
+                InsertSearchRequest r = (InsertSearchRequest) req;
+                NodeInfo result = targetRMI.insertSearch(r.level, r.direction, r.num, r.target);
+                return new NodeInfoResponse(result);
+            }
+            case SearchNumIDRequest: {
+                SearchNumIDRequest r =  (SearchNumIDRequest) req;
+                return new NodeInfoListResponse(targetRMI.searchNumID(r.numID, r.searchTarget, r.level, r.lst));
+            }
+            case SearchNameRequest: {
+                SearchNameRequest r =  (SearchNameRequest) req;
+                return new NodeInfoResponse(targetRMI.searchName(r.numID, r.searchTarget, r.level, r.direction));
+            }
+            case GetRightNumIDRequest: {
+                GetRightNumIDRequest r = (GetRightNumIDRequest) req;
+                return new NumIDResponse(targetRMI.getRightNumID(r.level, r.num));
+            }
+            case GetLeftNumIDRequest: {
+                GetLeftNumIDRequest r = (GetLeftNumIDRequest) req;
+                return new NumIDResponse(targetRMI.getLeftNumID(r.level, r.num));
+            }
+            case GetNodeRequest: {
+                GetNodeRequest r = (GetNodeRequest) req;
+                return new NodeInfoResponse(targetRMI.getNode(r.num));
             }
             default:
                 return null;
