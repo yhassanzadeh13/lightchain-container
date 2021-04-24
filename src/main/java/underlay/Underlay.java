@@ -102,21 +102,4 @@ public class Underlay {
     }
 
 
-    /**
-     * This method initializes all the RMI system properties required for proper
-     * functionality
-     */
-    protected void initRMI() {
-        this.IP = Util.grabIP();
-        try {
-            System.setProperty("java.rmi.server.hostname", IP);
-            System.setProperty("java.rmi.server.useLocalHostname", "false");
-            System.out.println("RMI Server proptery set. Inet4Address: " + IP + ":" + RMIPort);
-        } catch (Exception e) {
-            System.err.println("Exception in initialization. Please try running the program again.");
-            System.exit(0);
-        }
-    }
-
-
 }

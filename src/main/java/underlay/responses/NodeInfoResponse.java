@@ -2,10 +2,10 @@ package underlay.responses;
 
 import skipGraph.NodeInfo;
 
-public class SearchResponse extends GenericResponse{
+public class NodeInfoResponse extends GenericResponse{
     public NodeInfo responseResult;
 
-    public SearchResponse(NodeInfo responseResult) {
+    public NodeInfoResponse(NodeInfo responseResult) {
         this.responseResult = responseResult;
     }
 }
