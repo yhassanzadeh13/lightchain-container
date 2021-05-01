@@ -23,6 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+
+/**
+ * Underlay Unit Tests to make sure messages are sent/received correctly.
+ */
 public class UnderlayTest {
     private final Underlay underlay = new Underlay();
 

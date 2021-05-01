@@ -395,7 +395,7 @@ class LightChainNodeTest {
 		String contractName1 = "testcon.bin";
 		String functname1 = "check(uint256)";
 		int token = 25;
-		
+
 		boolean value = tesq.TransctSol(token, contractName1, functname1);
 		assertEquals(true, value);
 	}
