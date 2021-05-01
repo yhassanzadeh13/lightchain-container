@@ -67,12 +67,7 @@
             <artifactId>checkstyle</artifactId>
             <version>8.42</version>
         </dependency>
-        <dependency>
-            <groupId>Lightchain-container</groupId>
-            <artifactId>lightchain-container</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
+
     </dependencies>
     <repositories>
 		<repository>
