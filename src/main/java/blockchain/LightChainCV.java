@@ -1,8 +1,16 @@
 package blockchain;
 
+import underlay.InterfaceTypes;
+import underlay.Underlay;
+import underlay.requests.GetModeRequest;
+import underlay.responses.BooleanResponse;
+
+import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
 
 class LightChainCV extends CorrectnessVerifier {
+    Underlay underlay = new Underlay();
+
       public LightChainCV(LightChainNode owner) throws RemoteException {
       super(owner);
     }
@@ -18,9 +26,9 @@ class LightChainCV extends CorrectnessVerifier {
     public boolean isCorrect(Transaction t) {
         try {
                 if (!owner.view.hasModeEntry(t.getOwner())) {
-                    LightChainRMIInterface rmi = owner.getLightChainRMI(t.getAddress());
-                    boolean ownerMode = rmi.getMode();
+                    boolean ownerMode = ((BooleanResponse) underlay.sendMessage(new GetModeRequest(), t.getAddress(), InterfaceTypes.LightChainInterface)).getResult();
                     owner.view.updateMode(t.getOwner(), ownerMode);
+
                     return ownerMode == owner.mode;
                 }
                 boolean ownerMode = owner.view.getMode(t.getOwner());
@@ -28,7 +36,7 @@ class LightChainCV extends CorrectnessVerifier {
                     owner.logger.debug("Transaction not correct");
                 }
                 return ownerMode == owner.mode;
-        } catch (RemoteException e) {
+        } catch (RemoteException | FileNotFoundException e) {
             e.printStackTrace();
             return false;
         }

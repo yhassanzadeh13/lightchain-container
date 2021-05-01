@@ -1,6 +1,6 @@
 package blockchain;
 
-import java.rmi.Naming;
+import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -14,19 +14,20 @@ import java.util.Random;
 import org.apache.log4j.Logger;
 import hashing.Hasher;
 import hashing.HashingTools;
-import remoteTest.TestingLog;
 import signature.DigitalSignature;
 import signature.SignedBytes;
 import simulation.SimLog;
-import skipGraph.NodeConfig;
 import skipGraph.NodeInfo;
-import skipGraph.RMIInterface;
 import skipGraph.SkipNode;
+import underlay.InterfaceTypes;
 import underlay.Underlay;
+import underlay.requests.GetPublicKeyRequest;
+import underlay.requests.PoVRequest;
+import underlay.requests.RemoveFlagNodeRequest;
+import underlay.responses.PublicKeyResponse;
+import underlay.responses.SignatureResponse;
 import util.Const;
 import util.Util;
-
-import static underlay.requests.RequestType.removeFlagNode;
 
 public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
@@ -46,7 +47,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
     public int Tmode; // Defines the mode for every node eg. 1 -> consumer | 2 -> producer
 
     // new instance variables
-    private Underlay underlay;
+    private Underlay underlay = new Underlay();
 
     /**
      * @param params     contains necessary information for the node to function
@@ -92,7 +93,6 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         // and maybe the lightchainnode should not know of the rmiport
 
         // init underlay
-        //underlay = new Underlay(RMIPort);
 
 
 
@@ -280,13 +280,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
      *
      * @param blk block to be inserted into the overlay
      */
-    public void insertBlock(Block blk, String prevAddress) throws RemoteException {
+    public void insertBlock(Block blk, String prevAddress) throws FileNotFoundException, RemoteException {
         if (!prevAddress.equals(getAddress())) {
-            LightChainRMIInterface prevOwnerRMI = getLightChainRMI(prevAddress);
-            prevOwnerRMI.removeFlagNode();
-
-            // new version
-            //underlay.sendMessage(address=prevAddress, request=removeFlagNode);
+            underlay.sendMessage(new RemoveFlagNodeRequest(), prevAddress, InterfaceTypes.LightChainInterface);
 
             insertNode(blk);
             insertFlagNode(blk);
@@ -406,13 +402,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             blk.addSignature(mySignature);
             // iterate over validators and ask them to validate the block
             for (int i = 0; i < validators.size(); ++i) {
-                LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
-
-                // new code
-                //underlay(to=validators.get(i).getAddress(), PoV, blk);
-
                 // TODO: add a dummy signedBytes value
-                SignedBytes signature = node.PoV(blk);
+
+                SignedBytes signature = ((SignatureResponse) underlay.sendMessage(new PoVRequest(blk), validators.get(i).getAddress(), InterfaceTypes.LightChainInterface)).response;
 
                 // if one validator returns null, then validation has failed
                 if (signature == null) {
@@ -466,11 +458,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
             // iterate over validators and use RMI to ask them to validate the transaction
             for (int i = 0; i < validators.size(); ++i) {
-                LightChainRMIInterface node = getLightChainRMI(validators.get(i).getAddress());
-                SignedBytes signature = node.PoV(t);
-
-                // new code
-                //underlay(to=validators.get(i).getAddress(), idea=PoV, t);
+                SignedBytes signature = ((SignatureResponse) underlay.sendMessage(new PoVRequest(t), validators.get(i).getAddress(), InterfaceTypes.LightChainInterface)).response;
 
 
                 if (signature.isAuth())
@@ -833,16 +821,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
                 return null;
             }
 
-            // Contact the owner through RMI
-            LightChainRMIInterface ownerRMI = getLightChainRMI(owner.getAddress());
-            // get the owner'r Public key through RMI
-            PublicKey pk = ownerRMI.getPublicKey();
-
-
-            // new code
-            //PublicKey pk2 = underlay(to=owner.getAddress(), getPublicKey);
-
-
+            PublicKey pk = ((PublicKeyResponse) underlay.sendMessage(new GetPublicKeyRequest(), owner.getAddress(), InterfaceTypes.LightChainInterface)).response;
 
             // Hash the public key and store the hash value as int
             int hashedKey = Integer.parseInt(hasher.getHash(pk.getEncoded(), params.getLevels()), 2);
@@ -854,29 +833,10 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
             }
             return pk;
         }
-        catch (NumberFormatException e) {
+        catch (NumberFormatException | FileNotFoundException e) {
             e.printStackTrace();
             return null;
         }
-    }
-
-    // this method should be handled by the Underlay
-    public LightChainRMIInterface getLightChainRMI(String adrs) {
-        if (Util.validateIP(adrs)) {
-            if (adrs.equalsIgnoreCase(getAddress()))
-                return this;
-            try {
-                return (LightChainRMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
-            }
-            catch (Exception e) {
-                logger.error("Exception while attempting to lookup RMI located at address: " + adrs);
-                e.printStackTrace();
-            }
-        }
-        else {
-            logger.error("Error in looking up RMI. Address: " + adrs + " is not a valid address.");
-        }
-        return null;
     }
 
     public PublicKey getPublicKey() throws RemoteException {

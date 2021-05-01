@@ -2,10 +2,11 @@ package underlay.requests;
 
 
 public enum RequestType {
-    PoV, getMode, getPublicKey, removeFlagNode, getConf, startSim, insertGenesis, shutDown, getToken,
+    PoVRequest, GetModeRequest, GetPublicKeyRequest, RemoveFlagNodeRequest, getConfRequest,
+    StartSimRequest, InsertGenesisRequest, ShutDownRequest, GetTokenRequest,
     SearchByNameIDRequest, SetLeftNodeRequest, SetRightNodeRequest, SearchByNumIDRequest, GetNumIDRequest,
     GetLeftNodeRequest, GetRightNodeRequest, InsertSearchRequest, SearchNumIDRequest, SearchNameRequest,
-    GetLeftNumIDRequest, GetRightNumIDRequest, GetNodeRequest,
+    GetLeftNumIDRequest, GetRightNumIDRequest, GetNodeRequest, PingRequest
 
 
 }

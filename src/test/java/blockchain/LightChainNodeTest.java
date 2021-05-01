@@ -217,7 +217,7 @@ class LightChainNodeTest {
 
 			// TODO: Test with transactions of similar nameID
 
-		} catch (RemoteException e) {
+		} catch (RemoteException | FileNotFoundException e) {
 			e.printStackTrace();
 		}
 

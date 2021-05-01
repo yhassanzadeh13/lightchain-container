@@ -1,9 +1,27 @@
 package underlay.responses;
 
-public class BooleanResponse extends GenericResponse {
-    public boolean result;
+/**
+Represents a response which returns a boolean.
+ */
+public final class BooleanResponse extends GenericResponse {
+    /** The variable that'll be returned. */
+    private final boolean result;
 
-    public BooleanResponse(boolean result) {
-        this.result = result;
+    /**
+     * The constructor.
+     * @param res
+     * The boolean value which will be returned.
+     */
+    public BooleanResponse(final boolean res) {
+        this.result = res;
+    }
+
+    /**
+     *  Accessor method
+     * @return result
+     * Returns the result
+     **/
+    public boolean getResult() {
+        return this.result;
     }
 }

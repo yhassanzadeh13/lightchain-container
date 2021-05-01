@@ -3,6 +3,11 @@ package blockchain;
 import evm.Contract;
 import evm.ContractTransaction;
 import skipGraph.NodeInfo;
+import underlay.InterfaceTypes;
+import underlay.Underlay;
+import underlay.requests.GetTokenRequest;
+import underlay.responses.IntegerResponse;
+
 import java.rmi.RemoteException;
 
 /** 
@@ -10,7 +15,7 @@ import java.rmi.RemoteException;
 * interact with the wrapper function TransctSol() 
 */
 class ContractCV extends CorrectnessVerifier {
-
+    Underlay underlay = new Underlay();
     Contract ct = new Contract();
     ContractTransaction tesq = new ContractTransaction();
 
@@ -28,8 +33,7 @@ class ContractCV extends CorrectnessVerifier {
     public boolean isCorrect(Transaction t) {
         try {
             NodeInfo ndowner = owner.searchByNumID(t.getOwner());
-            LightChainRMIInterface ownerRMI = owner.getLightChainRMI(ndowner.getAddress());
-            int token1 = ownerRMI.getToken();
+            int token1 = ((IntegerResponse) underlay.sendMessage(new GetTokenRequest(), ndowner.getAddress(), InterfaceTypes.LightChainInterface)).result;
             tesq.setup();
             boolean value = tesq.TransctSol(token1, ct.contractName1, ct.functname1);
             return value; 
