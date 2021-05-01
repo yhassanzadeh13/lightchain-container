@@ -18,9 +18,10 @@ public class Underlay {
     protected String IP;
     private Logger logger;
     private String RMIPort;
+    private RMIInterface targetRMI;
+
 
     public GenericResponse sendMessage(GenericRequest req, String targetAddress) throws RemoteException, FileNotFoundException {
-        RMIInterface targetRMI = getRMI(targetAddress);
         switch(req.type){
             case SetLeftNodeRequest: {
                 SetLeftNodeRequest r = (SetLeftNodeRequest) req;
@@ -99,6 +100,10 @@ public class Underlay {
             return null;
         }
 
+    }
+
+    public void setTargetRMI(RMIInterface r){
+        this.targetRMI = r;
     }
 
 
