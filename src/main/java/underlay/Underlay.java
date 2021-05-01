@@ -11,17 +11,20 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import org.apache.log4j.Logger;
 
+/**
+ * The underlay class is used to abstract away the RMI primitives used in the skipGraph and lightchain nodes.
+ * */
 
 public class Underlay {
 
-    protected String address;
-    protected String IP;
-    private Logger logger;
-    private String RMIPort;
+    /**
+     * The underlying RMIInterface instance.
+     */
     private RMIInterface targetRMI;
-
+    private Logger logger = Logger.getLogger("");
 
     public GenericResponse sendMessage(GenericRequest req, String targetAddress) throws RemoteException, FileNotFoundException {
+        getRMI(targetAddress);
         switch(req.type){
             case SetLeftNodeRequest: {
                 SetLeftNodeRequest r = (SetLeftNodeRequest) req;
@@ -85,19 +88,15 @@ public class Underlay {
         }
     }
 
-    public RMIInterface getRMI(String adrs) {
-
+    public void getRMI(String adrs) {
         if (!Util.validateIP(adrs)) {
             logger.debug("Error in lookup up RMI. Address " + adrs + " is not a valid address");
-            return null;
         }
 
         try {
-            return (RMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
-
+            targetRMI = (RMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
 
     }
