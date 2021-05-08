@@ -1,9 +1,6 @@
 package remoteTest;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.*;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -21,6 +18,12 @@ import blockchain.Transaction;
 import simulation.SimLog;
 import skipGraph.NodeInfo;
 import skipGraph.RMIInterface;
+import underlay.Underlay;
+import underlay.requests.GetNodeRequest;
+import underlay.requests.GetNumIDRequest;
+import underlay.requests.GetRightNodeRequest;
+import underlay.responses.IntegerResponse;
+import underlay.responses.NodeInfoResponse;
 
 public class RemoteAccessTool {
 	static String ip;
@@ -33,6 +36,7 @@ public class RemoteAccessTool {
 	static int numID;
 	static boolean skipInit = false;
 	static LightChainRMIInterface node;
+	static Underlay underlay = new Underlay();
 
 	private static ArrayList<TestingLog> TestLogs;
 
@@ -506,10 +510,9 @@ public class RemoteAccessTool {
 			System.out.println();
 			while (curNode != null) {
 				nodeList.add(curNode);
-				RMIInterface curRMI = getRMI(curNode.getAddress());
-				curNode = curRMI.getRightNode(0, curNode.getNumID());
+				curNode = ((NodeInfoResponse) underlay.sendMessage(new GetRightNodeRequest(0, curNode.getNumID()), curNode.getAddress())).responseResult;
 			}
-		} catch (RemoteException e) {
+		} catch (RemoteException | FileNotFoundException e) {
 			e.printStackTrace();
 			return;
 		}
@@ -525,14 +528,12 @@ public class RemoteAccessTool {
 			curNode = node.searchByNumID(0);
 			while (curNode != null) {
 				addresses.add(curNode.getAddress());
-				RMIInterface curRMI = getRMI(curNode.getAddress());
-				curNode = curRMI.getRightNode(0, curNode.getNumID());
+				curNode = ((NodeInfoResponse) underlay.sendMessage(new GetRightNodeRequest(0, curNode.getNumID()), curNode.getAddress())).responseResult;
 			}
 			for (String adrs : addresses) {
-				RMIInterface curRMI = getRMI(adrs);
-				nodeList.add(curRMI.getNode(curRMI.getNumID()));
+				nodeList.add(((NodeInfoResponse) underlay.sendMessage(new GetNodeRequest(((IntegerResponse) underlay.sendMessage(new GetNumIDRequest(), adrs)).result), adrs)).responseResult);
 			}
-		} catch (RemoteException e) {
+		} catch (RemoteException | FileNotFoundException e) {
 			e.printStackTrace();
 			return;
 		}
