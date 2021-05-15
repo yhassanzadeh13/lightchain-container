@@ -1,6 +1,8 @@
-package underlay.requests;
+package underlay.requests.skipgraph;
 
-public class SearchNameRequest extends GenericRequest {
+import underlay.requests.RequestType;
+
+public class SearchNameRequest extends GenericSkipGraphRequest {
   public int numID;
   public String searchTarget;
   public int level;

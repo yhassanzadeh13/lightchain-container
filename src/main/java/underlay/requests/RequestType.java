@@ -1,6 +1,6 @@
 package underlay.requests;
 
-/** All of the different Request Types used in the Underlay. */
+/** All of the different Request Types used in the RMIUnderlay. */
 public enum RequestType {
   PoVRequest,
   GetModeRequest,

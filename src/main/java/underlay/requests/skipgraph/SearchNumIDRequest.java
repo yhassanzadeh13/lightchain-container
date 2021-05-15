@@ -1,10 +1,11 @@
-package underlay.requests;
+package underlay.requests.skipgraph;
 
 import skipGraph.NodeInfo;
+import underlay.requests.RequestType;
 
 import java.util.List;
 
-public class SearchNumIDRequest extends GenericRequest {
+public class SearchNumIDRequest extends GenericSkipGraphRequest {
   public int numID;
   public int searchTarget;
   public int level;

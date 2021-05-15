@@ -1,9 +1,10 @@
-package underlay.requests;
+package underlay.requests.lightchain;
 
 import blockchain.Block;
 import blockchain.Transaction;
+import underlay.requests.RequestType;
 
-public class PoVRequest extends GenericRequest {
+public class PoVRequest extends GenericLightChainRequest {
   public Block blk;
   public Transaction t;
 

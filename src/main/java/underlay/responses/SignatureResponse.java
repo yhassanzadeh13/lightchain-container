@@ -4,9 +4,13 @@ import signature.SignedBytes;
 
 /** Represents a response which returns SignedBytes. */
 public class SignatureResponse extends GenericResponse {
-  public SignedBytes response;
+  public final SignedBytes result;
 
-  public SignatureResponse(SignedBytes response) {
-    this.response = response;
+  public SignatureResponse(SignedBytes result) {
+    this.result = result;
   }
+  public static SignatureResponse SignatureResponseOf(GenericResponse response) {
+    return (SignatureResponse) response;
+  }
+
 }

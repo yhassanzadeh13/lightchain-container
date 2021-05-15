@@ -1,6 +1,8 @@
-package underlay.requests;
+package underlay.requests.skipgraph;
 
-public class InsertSearchRequest extends GenericRequest {
+import underlay.requests.RequestType;
+
+public class InsertSearchRequest extends GenericSkipGraphRequest {
   public int level;
   public int direction;
   public int num;

@@ -3,7 +3,7 @@ package underlay.responses;
 /** Represents a response which returns a boolean. */
 public final class BooleanResponse extends GenericResponse {
   /** The variable that'll be returned. */
-  private final boolean result;
+  public final boolean result;
 
   /**
    * The constructor.
@@ -14,12 +14,7 @@ public final class BooleanResponse extends GenericResponse {
     this.result = res;
   }
 
-  /**
-   * Accessor method
-   *
-   * @return result Returns the result
-   */
-  public boolean getResult() {
-    return this.result;
+  public static BooleanResponse BooleanResponseOf(GenericResponse response){
+    return (BooleanResponse) response;
   }
 }

@@ -1,6 +1,8 @@
-package underlay.requests;
+package underlay.requests.skipgraph;
 
-public class GetRightNodeRequest extends GenericRequest {
+import underlay.requests.RequestType;
+
+public class GetRightNodeRequest extends GenericSkipGraphRequest {
   public int level;
   public int num;
 

@@ -4,8 +4,8 @@ import org.apache.log4j.Logger;
 import remoteTest.Configuration;
 import remoteTest.PingLog;
 import remoteTest.TestingLog;
-import underlay.Underlay;
-import underlay.requests.*;
+import underlay.RMIUnderlay;
+import underlay.requests.skipgraph.*;
 import underlay.responses.NodeInfoListResponse;
 import underlay.responses.NodeInfoResponse;
 import underlay.responses.IntegerResponse;
@@ -13,7 +13,6 @@ import util.Const;
 import util.Util;
 
 import java.io.*;
-import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -21,6 +20,10 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static underlay.responses.IntegerResponse.IntegerResponseOf;
+import static underlay.responses.NodeInfoListResponse.NodeInfoListResponseOf;
+import static underlay.responses.NodeInfoResponse.NodeInfoResponseOf;
 
 public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
@@ -39,8 +42,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
     private LookupTable lookup;
     private Logger logger;
 
-    // underlay
-    private Underlay underlay = new Underlay();
+    // RMIUnderlay
+    private RMIUnderlay RMIUnderlay = new RMIUnderlay();
 
     // TODO: fork-resolving mechanism unimplemented
     // TODO: bootstrapping unimplemented
@@ -49,11 +52,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * Constructor for SkipNode class The node requires the following info to be
      * able to function:
      *
-     * @param maxLevels  number of levels of the skip graph
-     * @param RMIPort    Port on which Skip Node is operating
-     * @param IP         IP of Skip Node
-     * @param numID      numerical ID of Skip Node
-     * @param nameID     name ID of Skip Node
      * @param introducer the node that helps in inserting the current node
      * @param isInitial  Indicator that this node is an initial node in the
      *                   skipGraph
@@ -100,9 +98,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * Because it defers RMI binding and insertion task to LightChainNode after setting
      * the correct information (numID and nameID
      *
-     * @param config
      * @param introducer
-     * @param isInitial
      * @throws RemoteException
      */
     public SkipNode(int RMIPort, int maxLevels, String introducer) throws RemoteException {
@@ -144,17 +140,17 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                     continue;
                     // if left is null, then update right
                 } else if (lNode == null) {
-                    underlay.sendMessage(new SetLeftNodeRequest(rNode.getNumID(), j, lNode, thisNode), rNode.getAddress());
+                    RMIUnderlay.sendMessage(new SetLeftNodeRequest(rNode.getNumID(), j, lNode, thisNode), rNode.getAddress());
 
                     // if right is null, update left
                 } else if (rNode == null) {
-                    underlay.sendMessage(new SetRightNodeRequest(lNode.getNumID(), j, rNode, thisNode), lNode.getAddress());
+                    RMIUnderlay.sendMessage(new SetRightNodeRequest(lNode.getNumID(), j, rNode, thisNode), lNode.getAddress());
 
 
                     // otherwise update both sides and connect them to each other.
                 } else {
-                    underlay.sendMessage(new SetLeftNodeRequest(rNode.getNumID(), j, lNode, thisNode), rNode.getAddress());
-                    underlay.sendMessage(new SetRightNodeRequest(lNode.getNumID(), j, rNode, thisNode), lNode.getAddress());
+                    RMIUnderlay.sendMessage(new SetLeftNodeRequest(rNode.getNumID(), j, lNode, thisNode), rNode.getAddress());
+                    RMIUnderlay.sendMessage(new SetRightNodeRequest(lNode.getNumID(), j, rNode, thisNode), lNode.getAddress());
                 }
             }
             // Delete the node from the lookup.
@@ -184,7 +180,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                 closestNode = searchByNumID(insertedNode.getNumID());
             } else {
                 isInserted = true;
-                closestNode = ((NodeInfoResponse) underlay.sendMessage(new SearchByNumIDRequest(insertedNode.getNumID()), introducer)).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new SearchByNumIDRequest(insertedNode.getNumID()), introducer));
+                closestNode = response.result;
             }
 
             lookup.initializeNode(insertedNode);
@@ -207,27 +204,27 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
             // if the closest node is to the right
             if (insertedNode.getNumID() < closestNodeNumID) {
-
-                //leftNode = closestNodeRMI.getLeftNode(Const.ZERO_LEVEL, closestNodeNumID);
-                leftNode = ((NodeInfoResponse) underlay.sendMessage(new GetLeftNodeRequest(Const.ZERO_LEVEL, closestNodeNumID), closestNode.getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetLeftNodeRequest(Const.ZERO_LEVEL, closestNodeNumID), closestNode.getAddress()));
+                leftNode = response.result;
 
                 rightNode = Util.assignNode(closestNode);
                 // we need the numID to be able to access it
                 rightNodeNumID = rightNode.getNumID();
                 // insert the current node in the lookup table of my left node if it exists
                 if (leftNode != null) {
-                    leftNodeNumID = ((IntegerResponse) underlay.sendMessage(new GetNumIDRequest(), leftNode.getAddress())).result;
+                    IntegerResponse leftNodeNumIDResponse = IntegerResponseOf(RMIUnderlay.sendMessage(new GetNumIDRequest(), leftNode.getAddress()));
+                    leftNodeNumID = leftNodeNumIDResponse.result;
                     // null because the lookup table is empty
                     lookup.put(insertedNode.getNumID(), Const.ZERO_LEVEL, Const.LEFT, Util.assignNode(leftNode), null);
-                    underlay.sendMessage(new SetRightNodeRequest(leftNodeNumID, Const.ZERO_LEVEL, insertedNode, rightNode), leftNode.getAddress());
+                    RMIUnderlay.sendMessage(new SetRightNodeRequest(leftNodeNumID, Const.ZERO_LEVEL, insertedNode, rightNode), leftNode.getAddress());
                 }
                 lookup.put(insertedNode.getNumID(), Const.ZERO_LEVEL, Const.RIGHT, Util.assignNode(rightNode), null);
                 // insert the current node in the lookup table of its right neighbor
-                underlay.sendMessage(new SetLeftNodeRequest(closestNodeNumID, Const.ZERO_LEVEL, insertedNode, leftNode), closestNode.getAddress());
+                RMIUnderlay.sendMessage(new SetLeftNodeRequest(closestNodeNumID, Const.ZERO_LEVEL, insertedNode, leftNode), closestNode.getAddress());
 
             } else { // if the closest node is to the left
-
-                rightNode = ((NodeInfoResponse) underlay.sendMessage(new GetRightNodeRequest(Const.ZERO_LEVEL, closestNodeNumID), closestNode.getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetRightNodeRequest(Const.ZERO_LEVEL, closestNodeNumID), closestNode.getAddress()));
+                rightNode = response.result;
 
                 leftNode = closestNode;
                 leftNodeNumID = leftNode.getNumID(); // we need the numID to be able to access it
@@ -235,13 +232,13 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                 lookup.put(insertedNode.getNumID(), Const.ZERO_LEVEL, Const.LEFT, Util.assignNode(leftNode), null);
                 // insert the current node in the lookup table of its right neighbor
 
-                underlay.sendMessage(new SetRightNodeRequest(closestNodeNumID, Const.ZERO_LEVEL, insertedNode, rightNode), closestNode.getAddress());
+                RMIUnderlay.sendMessage(new SetRightNodeRequest(closestNodeNumID, Const.ZERO_LEVEL, insertedNode, rightNode), closestNode.getAddress());
                 if (rightNode != null) { // insert current node in the lookup table of its right neighbor if it exists
                     rightNodeNumID = rightNode.getNumID();
                     // null because the lookup table is empty
                     lookup.put(insertedNode.getNumID(), Const.ZERO_LEVEL, Const.RIGHT, Util.assignNode(rightNode),
                             null);
-                    underlay.sendMessage(new SetLeftNodeRequest(rightNodeNumID, Const.ZERO_LEVEL, insertedNode, leftNode), rightNode.getAddress());
+                    RMIUnderlay.sendMessage(new SetLeftNodeRequest(rightNodeNumID, Const.ZERO_LEVEL, insertedNode, leftNode), rightNode.getAddress());
                 }
             }
 
@@ -253,11 +250,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             while (level < maxLevels) {
 
                 if (leftNode != null) {
-                    NodeInfo lft = ((NodeInfoResponse)
-                            underlay.sendMessage(
-                                    new InsertSearchRequest(level, Const.LEFT, leftNodeNumID, insertedNode.getNameID()),
-                                    leftNode.getAddress())).responseResult;
-
+                    NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(
+                            new InsertSearchRequest(level, Const.LEFT, leftNodeNumID, insertedNode.getNameID()),
+                            leftNode.getAddress()));
+                    NodeInfo lft = response.result;
                     lookup.put(insertedNode.getNumID(), level + 1, Const.LEFT, Util.assignNode(lft), null);
 
                     // set left and leftNum to default values (null,-1)
@@ -267,16 +263,16 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                     leftNodeNumID = Const.UNASSIGNED_INT;
 
                     if (lft != null) {
-                        underlay.sendMessage(new SetRightNodeRequest(lft.getNumID(), level + 1, insertedNode, null), lft.getAddress());
+                        RMIUnderlay.sendMessage(new SetRightNodeRequest(lft.getNumID(), level + 1, insertedNode, null), lft.getAddress());
 
                         leftNode = lft;
                         leftNodeNumID = lft.getNumID();
                     }
                 }
                 if (rightNode != null) {
-
-                    NodeInfo rit = ((NodeInfoResponse) underlay.sendMessage(
-                            new InsertSearchRequest(level, Const.RIGHT, rightNodeNumID, insertedNode.getNameID()), rightNode.getAddress())).responseResult;
+                    NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(
+                            new InsertSearchRequest(level, Const.RIGHT, rightNodeNumID, insertedNode.getNameID()), rightNode.getAddress()));
+                    NodeInfo rit = response.result;
 
                     lookup.put(insertedNode.getNumID(), level + 1, Const.RIGHT, Util.assignNode(rit), null);
 
@@ -287,7 +283,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                     rightNodeNumID = Const.UNASSIGNED_INT;
 
                     if (rit != null) {
-                        underlay.sendMessage(new SetLeftNodeRequest(rit.getNumID(), level + 1, insertedNode, null), rit.getAddress());
+                        RMIUnderlay.sendMessage(new SetLeftNodeRequest(rit.getNumID(), level + 1, insertedNode, null), rit.getAddress());
 
                         rightNode = rit;
                         rightNodeNumID = rit.getNumID();
@@ -315,7 +311,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * @param level     The level in which a node is being inserted
      * @param direction At a certain level, the method go LEFT and RIGHT finding the
      *                  neighbors of the inserted node
-     * @param num       The numerical ID of the node at which the search has arrived
+     * @param nodeNumID       The numerical ID of the node at which the search has arrived
      * @param target    the name ID of the inserted node.
      * @return Right neighbor if direction is RIGHT, and left neighbor if direction
      * is LEFT
@@ -348,7 +344,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                 NodeInfo rNode = lookup.get(nodeNumID, level, direction);
                 if (rNode == null)
                     return null;
-                return ((NodeInfoResponse) underlay.sendMessage(new InsertSearchRequest(level, direction, rNode.getNumID(), target), rNode.getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new InsertSearchRequest(level, direction, rNode.getNumID(), target), rNode.getAddress()));
+                return response.result;
             } else {
 
                 // If search is to the left then delegate the search left neighbor if it exists
@@ -357,7 +354,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                 NodeInfo lNode = lookup.get(nodeNumID, level, direction);
                 if (lNode == null)
                     return null;
-                return ((NodeInfoResponse) underlay.sendMessage(new InsertSearchRequest(level, direction, lNode.getNumID(), target), lNode.getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new InsertSearchRequest(level, direction, lNode.getNumID(), target), lNode.getAddress()));
+                return response.result;
 
             }
         } catch (Exception e) {
@@ -389,7 +387,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * @param searchTarget numerical ID of target of search
      * @return NodeInfo of the target node if found, or closest node in case it was
      * not found
-     * @see RMIInterface#searchByNumID(java.lang.String)
      */
     public NodeInfo searchByNumID(int searchTarget) {
         logger.debug("Searching for " + searchTarget);
@@ -445,7 +442,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * @param targetInt the target of search
      * @param level     the level of skip graph at which we are searching
      * @return list of nodes on the search path
-     * @see RMIInterface#searchNum(int, int)
      */
     public List<NodeInfo> searchNumID(int numID, int targetInt, int level, List<NodeInfo> lst) throws RemoteException {
 
@@ -478,9 +474,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             }
             // delegate the search to the right neighbor
             try {
-                 return ((NodeInfoListResponse) underlay.sendMessage(
+                NodeInfoListResponse response = NodeInfoListResponseOf(RMIUnderlay.sendMessage(
                         new SearchNumIDRequest(lookup.get(num, level, Const.RIGHT).getNumID(), targetInt, level, lst)
-                        , lookup.get(num, level, Const.RIGHT).getAddress())).responseResultList;
+                        , lookup.get(num, level, Const.RIGHT).getAddress()));
+                 return response.result;
             } catch (StackOverflowError e) {
                 return null;
             } catch (Exception e) {
@@ -499,9 +496,10 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                 return lst;
             // delegate the search to the left neighbor
             try {
-                return ((NodeInfoListResponse) underlay.sendMessage(
-                       new SearchNumIDRequest(lookup.get(num, level, Const.LEFT).getNumID(), targetInt, level, lst)
-                       , lookup.get(num, level, Const.LEFT).getAddress())).responseResultList;
+                NodeInfoListResponse response = NodeInfoListResponseOf(RMIUnderlay.sendMessage(
+                        new SearchNumIDRequest(lookup.get(num, level, Const.LEFT).getNumID(), targetInt, level, lst)
+                        , lookup.get(num, level, Const.LEFT).getAddress()));
+                return response.result;
             } catch (StackOverflowError e) {
                 logger.error("StackOverflow", e);
                 StringBuilder sb = new StringBuilder();
@@ -556,16 +554,18 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
             // First execute the search in the right direction and see the result it returns
             if (lookup.get(bestNum, newLevel, Const.RIGHT) != null) {
-                NodeInfo rightResult = ((NodeInfoResponse) underlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, Const.RIGHT).getNumID(),
-                        searchTarget, newLevel, Const.RIGHT), lookup.get(bestNum, newLevel, Const.RIGHT).getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, Const.RIGHT).getNumID(),
+                        searchTarget, newLevel, Const.RIGHT), lookup.get(bestNum, newLevel, Const.RIGHT).getAddress()));
+                NodeInfo rightResult = response.result;
                 int commonRight = Util.commonBits(rightResult.getNameID(), searchTarget);
                 if (commonRight > newLevel)
                     ansNode = Util.assignNode(rightResult);
             }
             // If the desired result was not found try to search to the left
             if (lookup.get(bestNum, newLevel, Const.LEFT) != null) {
-                NodeInfo leftResult = ((NodeInfoResponse) underlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, Const.LEFT).getNumID(),
-                                        searchTarget, newLevel, Const.LEFT), lookup.get(bestNum, newLevel, Const.LEFT).getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, Const.LEFT).getNumID(),
+                        searchTarget, newLevel, Const.LEFT), lookup.get(bestNum, newLevel, Const.LEFT).getAddress()));
+                NodeInfo leftResult = response.result;
 
                 int commonLeft = Util.commonBits(leftResult.getNameID(), searchTarget);
                 if (commonLeft > newLevel)
@@ -590,7 +590,6 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
      * @param level        the level at which search is happening
      * @param direction    direction of search currently
      * @return NodeInfo of result of search
-     * @see RMIInterface#searchName(java.lang.String, int, int)
      */
 
     public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException {
@@ -617,8 +616,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                 // If no more nodes in this direction return the current node
                 if (lookup.get(bestNum, level, direction) == null)
                     return ansNode;
-                 return ((NodeInfoResponse) underlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, level, direction).getNumID(), searchTarget, level,
-                        direction), lookup.get(bestNum, level, direction).getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, level, direction).getNumID(), searchTarget, level,
+                        direction), lookup.get(bestNum, level, direction).getAddress()));
+                 return response.result;
             }
             // If the number of common bits is more than the current level
             // then the search will be continued on the new level
@@ -627,8 +627,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             // First we start the search on the same given direction and wait for the result
             // it returns
             if (lookup.get(bestNum, newLevel, direction) != null) {
-                NodeInfo curNode = ((NodeInfoResponse) underlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, direction).getNumID(), searchTarget,
-                                        newLevel, direction), lookup.get(bestNum, newLevel, direction).getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, direction).getNumID(), searchTarget,
+                        newLevel, direction), lookup.get(bestNum, newLevel, direction).getAddress()));
+                NodeInfo curNode = response.result;
 
                 int common = Util.commonBits(curNode.getNameID(), searchTarget);
                 if (common > newLevel)
@@ -637,8 +638,9 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
 
             // Continue the search on the opposite direction
             if (lookup.get(bestNum, newLevel, 1 - direction) != null) {
-                NodeInfo otherNode =((NodeInfoResponse) underlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, 1 - direction).getNumID(),
-                                        searchTarget, newLevel, 1 - direction), lookup.get(bestNum, newLevel, 1 - direction).getAddress())).responseResult;
+                NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new SearchNameRequest(lookup.get(bestNum, newLevel, 1 - direction).getNumID(),
+                        searchTarget, newLevel, 1 - direction), lookup.get(bestNum, newLevel, 1 - direction).getAddress()));
+                NodeInfo otherNode = response.result;
 
 
                 int common = Util.commonBits(otherNode.getNameID(), searchTarget);
@@ -692,37 +694,48 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
             int ansNodeNumID = ansNode.getNumID();
 
             // get addresses of left and right nodes, as well as their numIDs
-            leftNode = ((NodeInfoResponse) underlay.sendMessage(new GetLeftNodeRequest(maxLevels, ansNodeNumID), ansNode.getAddress())).responseResult;
+            NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetLeftNodeRequest(maxLevels, ansNodeNumID), ansNode.getAddress()));
+            leftNode = response.result;
 
-            if (leftNode != null)
-                leftNumID = ((IntegerResponse) underlay.sendMessage(new GetLeftNumIDRequest(maxLevels, ansNodeNumID), ansNode.getAddress())).result;
+            if (leftNode != null) {
+                IntegerResponse integerResponse = IntegerResponseOf(RMIUnderlay.sendMessage(new GetLeftNumIDRequest(maxLevels, ansNodeNumID), ansNode.getAddress()));
+                leftNumID = integerResponse.result;
+            }
 
-            rightNode = ((NodeInfoResponse) underlay.sendMessage(new GetRightNodeRequest(maxLevels, ansNodeNumID), ansNode.getAddress())).responseResult;
+            NodeInfoResponse rightNodeResponse = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetRightNodeRequest(maxLevels, ansNodeNumID), ansNode.getAddress()));
+            rightNode = rightNodeResponse.result;
 
-            if (rightNode != null)
-                rightNumID = ((IntegerResponse) underlay.sendMessage(new GetRightNumIDRequest(maxLevels, ansNodeNumID), ansNode.getAddress())).result;
+            if (rightNode != null){
+                IntegerResponse rightNumIDResponse = IntegerResponseOf(RMIUnderlay.sendMessage(new GetRightNumIDRequest(maxLevels, ansNodeNumID), ansNode.getAddress()));
+                rightNumID = rightNumIDResponse.result;
+            }
 
 
             // now in the last level of the skip graph, we go left and right
             while (leftNode != null) {
                 String addr = leftNode.getAddress();
-
-                NodeInfo curNode = ((NodeInfoResponse) underlay.sendMessage(new GetNodeRequest(leftNumID), addr)).responseResult;
+                NodeInfoResponse curNodeResponse = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetNodeRequest(leftNumID), addr));
+                NodeInfo curNode = curNodeResponse.result;
                 list.add(curNode);
-                leftNode = ((NodeInfoResponse) underlay.sendMessage(new GetLeftNodeRequest(lookup.getMaxLevels(), leftNumID), addr)).responseResult;
+                NodeInfoResponse leftNodeResponse = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetLeftNodeRequest(lookup.getMaxLevels(), leftNumID), addr));
+                leftNode = leftNodeResponse.result;
 
-                if (leftNode != null)
-                    leftNumID = ((IntegerResponse) underlay.sendMessage(new GetLeftNumIDRequest(lookup.getMaxLevels(), leftNumID), addr)).result;
-
+                if (leftNode != null){
+                    IntegerResponse leftNumIDResponse = IntegerResponseOf(RMIUnderlay.sendMessage(new GetLeftNumIDRequest(lookup.getMaxLevels(), leftNumID), addr));
+                    leftNumID = leftNumIDResponse.result;
+                }
             }
             while (rightNode != null) {
                 String addr = rightNode.getAddress();
-                NodeInfo curNode = ((NodeInfoResponse) underlay.sendMessage(new GetNodeRequest(rightNumID), addr)).responseResult;
+                NodeInfoResponse curNodeResponse = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetNodeRequest(rightNumID), addr));
+                NodeInfo curNode = curNodeResponse.result;
                 list.add(curNode);
-                rightNode = ((NodeInfoResponse) underlay.sendMessage(new GetRightNodeRequest(lookup.getMaxLevels(), rightNumID), addr)).responseResult;
+                rightNodeResponse = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetRightNodeRequest(lookup.getMaxLevels(), rightNumID), addr));
+                rightNode = rightNodeResponse.result;
 
                 if (rightNode != null) {
-                    rightNumID = ((IntegerResponse) underlay.sendMessage(new GetRightNumIDRequest(lookup.getMaxLevels(), rightNumID), addr)).result;
+                    IntegerResponse rightNumIDResponse = IntegerResponseOf(RMIUnderlay.sendMessage(new GetRightNumIDRequest(lookup.getMaxLevels(), rightNumID), addr));
+                    rightNumID = rightNumIDResponse.result;
                 }
 
             }
@@ -945,7 +958,7 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
         while (freq-- > 0) {
             try {
                 befTime = System.currentTimeMillis();
-                underlay.sendMessage(new PingRequest(), node.getAddress());
+                RMIUnderlay.sendMessage(new PingRequest(), node.getAddress());
                 afrTime = System.currentTimeMillis();
                 lg.Log((double) afrTime - befTime);
             } catch (RemoteException | FileNotFoundException e) {
@@ -989,7 +1002,8 @@ public class SkipNode extends UnicastRemoteObject implements RMIInterface {
                 System.out.println();
                 while (curNode != null) {
                     nodeList.add(curNode);
-                    curNode = ((NodeInfoResponse) underlay.sendMessage(new GetRightNodeRequest(0, curNode.getNumID()), curNode.getAddress())).responseResult;
+                    NodeInfoResponse response = NodeInfoResponseOf(RMIUnderlay.sendMessage(new GetRightNodeRequest(0, curNode.getNumID()), curNode.getAddress()));
+                    curNode = response.result;
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();
