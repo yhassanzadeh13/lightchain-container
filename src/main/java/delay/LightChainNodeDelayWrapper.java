@@ -2,17 +2,16 @@ package delay;
 
 import blockchain.Block;
 import blockchain.LightChainNode;
-import blockchain.LightChainRMIInterface;
+import blockchain.LightChainInterface;
 import blockchain.Transaction;
 import remoteTest.Configuration;
 import signature.SignedBytes;
 import simulation.SimLog;
-import skipGraph.RMIInterface;
 
 import java.rmi.RemoteException;
 import java.security.PublicKey;
 
-public class LightChainNodeDelayWrapper extends SkipNodeDelayWrapper implements LightChainRMIInterface {
+public class LightChainNodeDelayWrapper extends SkipNodeDelayWrapper implements LightChainInterface {
     private LightChainNode innerNode;
     private int delay;
 

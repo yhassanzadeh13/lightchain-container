@@ -9,7 +9,7 @@ import simulation.SimLog;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 import underlay.InterfaceType;
-import underlay.RMIUnderlay;
+import underlay.rmi.RMIUnderlay;
 import underlay.requests.lightchain.GetPublicKeyRequest;
 import underlay.requests.lightchain.PoVRequest;
 import underlay.requests.lightchain.RemoveFlagNodeRequest;
@@ -20,15 +20,13 @@ import util.Util;
 
 import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.security.PublicKey;
 import java.util.*;
 
 import static underlay.responses.PublicKeyResponse.PublicKeyResponseOf;
 import static underlay.responses.SignatureResponse.SignatureResponseOf;
 
-public class LightChainNode extends SkipNode implements LightChainRMIInterface {
+public class LightChainNode extends SkipNode implements LightChainInterface {
 
   private static final long serialVersionUID = 1L;
   private List<Transaction> transactions;
@@ -45,11 +43,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
   private CorrectnessVerifier cv;
   public int Tmode; // Defines the mode for every node eg. 1 -> consumer | 2 -> producer
 
-  // new instance variables
-  private final RMIUnderlay RMIUnderlay = new RMIUnderlay();
-
   public RMIUnderlay getUnderlay() {
-    return RMIUnderlay;
+    return underlay;
   }
 
   /**
@@ -58,9 +53,9 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
    * @param isInitial a flag signaling whether this node is the first node in the network
    *     <p>TODO: add a specific LightChain config that includes Mode and remove it from params
    */
-  public LightChainNode(Parameters params, int RMIPort, String introducer, boolean isInitial)
+  public LightChainNode(Parameters params, int port, String introducer, boolean isInitial)
       throws RemoteException {
-    super(RMIPort, params.getLevels(), introducer);
+    super(port, params.getLevels(), introducer);
     this.params = params;
     this.digitalSignature = new DigitalSignature();
     this.hasher = new HashingTools();
@@ -68,7 +63,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
     this.view = new View();
     this.mode = params.getMode();
     this.token = params.getInitialToken();
-    this.logger = Logger.getLogger(RMIPort + "");
+    this.logger = Logger.getLogger(port + "");
     Tmode = (int) Math.round(Math.random());
     String name = hasher.getHash(digitalSignature.getPublicKey().getEncoded(), params.getLevels());
     super.setNumID(Integer.parseInt(name, 2));
@@ -81,9 +76,8 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
     NodeInfo peer = new NodeInfo(address, numID, nameID);
     addPeerNode(peer);
 
-    Registry registry = LocateRegistry.createRegistry(RMIPort);
-    registry.rebind("RMIImpl", this);
-    logger.info("Rebinding Successful");
+    underlay = new RMIUnderlay(super.IP, port,this);
+
     if (!isInitial) {
       insertNode(peer);
     }
@@ -268,7 +262,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
   public void insertBlock(Block blk, String prevAddress)
       throws FileNotFoundException, RemoteException {
     if (!prevAddress.equals(getAddress())) {
-      RMIUnderlay.sendMessage(
+      underlay.sendMessage(
           new RemoveFlagNodeRequest(), prevAddress, InterfaceType.LightChainInterface);
 
       insertNode(blk);
@@ -384,7 +378,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
       // iterate over validators and ask them to validate the block
       for (int i = 0; i < validators.size(); ++i) {
         // TODO: add a dummy signedBytes value
-        SignatureResponse response = SignatureResponseOf(RMIUnderlay.sendMessage(
+        SignatureResponse response = SignatureResponseOf(underlay.sendMessage(
                 new PoVRequest(blk),
                 validators.get(i).getAddress(),
                 InterfaceType.LightChainInterface));
@@ -440,7 +434,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
 
       // iterate over validators and use RMI to ask them to validate the transaction
       for (int i = 0; i < validators.size(); ++i) {
-        SignatureResponse response = SignatureResponseOf(RMIUnderlay.sendMessage(
+        SignatureResponse response = SignatureResponseOf(underlay.sendMessage(
                 new PoVRequest(t),
                 validators.get(i).getAddress(),
                 InterfaceType.LightChainInterface));
@@ -791,7 +785,7 @@ public class LightChainNode extends SkipNode implements LightChainRMIInterface {
         return null;
       }
 
-      PublicKeyResponse response = PublicKeyResponseOf(RMIUnderlay.sendMessage(
+      PublicKeyResponse response = PublicKeyResponseOf(underlay.sendMessage(
               new GetPublicKeyRequest(),
               owner.getAddress(),
               InterfaceType.LightChainInterface));

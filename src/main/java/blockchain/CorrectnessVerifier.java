@@ -1,6 +1,6 @@
 package blockchain;
 
-import underlay.RMIUnderlay;
+import underlay.rmi.RMIUnderlay;
 
 import java.rmi.RemoteException;
 

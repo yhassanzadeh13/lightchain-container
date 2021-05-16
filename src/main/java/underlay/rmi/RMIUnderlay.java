@@ -1,10 +1,12 @@
-package underlay;
+package underlay.rmi;
 
-import blockchain.LightChainRMIInterface;
+import blockchain.LightChainInterface;
 import org.apache.log4j.Logger;
 import skipGraph.NodeInfo;
-import skipGraph.RMIInterface;
-import underlay.requests.*;
+import skipGraph.SkipNodeInterface;
+import underlay.InterfaceType;
+import underlay.Underlay;
+import underlay.requests.GenericRequest;
 import underlay.requests.lightchain.GenericLightChainRequest;
 import underlay.requests.lightchain.PoVRequest;
 import underlay.requests.skipgraph.*;
@@ -14,105 +16,150 @@ import util.Util;
 import java.io.FileNotFoundException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 
 /**
  * The underlay class is used to abstract away the RMI primitives used in the skipGraph and
  * lightchain nodes.
  */
-public class RMIUnderlay extends Underlay{
+public class RMIUnderlay extends Underlay {
 
-  /** The underlying RMIInterface instance. Is used for skipnode calls */
-  private RMIInterface targetRMI;
+  /** The underlying SkipNodeInterface instance. Is used for skipnode calls */
+  private SkipNodeInterface skipNode;
 
-  /** The underlying LightChainRMIInterface instance. Is used for lightchainnode class */
-  private LightChainRMIInterface targetLightChainRMI;
+  /** The underlying LightChainInterface instance. Is used for lightchainnode class */
+  private LightChainInterface lightChainNode;
 
-  private final Logger logger = Logger.getLogger("");
+  private String IP;
+  private int port;
+  private String address;
+  JavaRMIHost host;
+
+  private final Logger logger = Logger.getLogger("" + port);
+
+  public RMIUnderlay(String IP, int port, SkipNodeInterface skipNode) {
+    this.IP = IP;
+    this.port = port;
+    this.address = IP + ":" + port;
+    this.skipNode = skipNode;
+    try {
+      initRMI();
+      host = new JavaRMIHost(this);
+      LocateRegistry.createRegistry(port).rebind("RMIImpl", host);
+    } catch (Exception e) {
+      System.err.println("[RMIUnderlay] Error while initializing at port " + port);
+      e.printStackTrace();
+    }
+    logger.info("Rebinding Successful");
+  }
+
+  public RMIUnderlay(String IP, int port, LightChainInterface lightChainNode) {
+    this.IP = IP;
+    this.port = port;
+    this.address = IP + ":" + port;
+    this.skipNode = lightChainNode;
+    this.lightChainNode = lightChainNode;
+    try {
+      initRMI();
+      host = new JavaRMIHost(this);
+      LocateRegistry.createRegistry(port).rebind("RMIImpl", host);
+      System.out.println("rebind");
+    } catch (Exception e) {
+      System.err.println("[RMIUnderlay] Error while initializing at port " + port);
+      e.printStackTrace();
+    }
+    logger.info("Rebinding Successful");
+  }
 
   public GenericResponse sendMessage(
       GenericRequest req, String targetAddress, InterfaceType interfaceType)
       throws RemoteException, FileNotFoundException {
-    getRMI(targetAddress, interfaceType);
+    RMIService underlay = getRMI(targetAddress);
+    return underlay.answer(req);
+  }
+
+  public GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException {
     switch (req.type) {
       case PingRequest:
         {
-          targetRMI.ping();
+          skipNode.ping();
           return new EmptyResponse();
         }
       case SetLeftNodeRequest:
         {
           SetLeftNodeRequest r = (SetLeftNodeRequest) req;
-          return new BooleanResponse(targetRMI.setLeftNode(r.num, r.level, r.newNode, r.oldNode));
+          return new BooleanResponse(skipNode.setLeftNode(r.num, r.level, r.newNode, r.oldNode));
         }
       case SetRightNodeRequest:
         {
           SetRightNodeRequest r = (SetRightNodeRequest) req;
-          return new BooleanResponse(targetRMI.setRightNode(r.num, r.level, r.newNode, r.oldNode));
+          return new BooleanResponse(skipNode.setRightNode(r.num, r.level, r.newNode, r.oldNode));
         }
       case SearchByNumIDRequest:
         {
           SearchByNumIDRequest r = (SearchByNumIDRequest) req;
-          NodeInfo result = targetRMI.searchByNumID(r.num);
+          NodeInfo result = skipNode.searchByNumID(r.num);
           return new NodeInfoResponse(result);
         }
       case SearchByNameIDRequest:
         {
           SearchByNameIDRequest r = (SearchByNameIDRequest) req;
-          NodeInfo result = targetRMI.searchByNameID(r.targetString);
+          NodeInfo result = skipNode.searchByNameID(r.targetString);
           return new NodeInfoResponse(result);
         }
       case GetRightNodeRequest:
         {
           GetRightNodeRequest r = (GetRightNodeRequest) req;
-          NodeInfo result = targetRMI.getRightNode(r.level, r.num);
+          NodeInfo result = skipNode.getRightNode(r.level, r.num);
           return new NodeInfoResponse(result);
         }
       case GetLeftNodeRequest:
         {
           GetLeftNodeRequest r = (GetLeftNodeRequest) req;
-          NodeInfo result = targetRMI.getLeftNode(r.level, r.num);
+          NodeInfo result = skipNode.getLeftNode(r.level, r.num);
           return new NodeInfoResponse(result);
         }
       case GetNumIDRequest:
         {
-          return new IntegerResponse(targetRMI.getNumID());
+          return new IntegerResponse(skipNode.getNumID());
         }
       case InsertSearchRequest:
         {
           InsertSearchRequest r = (InsertSearchRequest) req;
-          NodeInfo result = targetRMI.insertSearch(r.level, r.direction, r.num, r.target);
+          NodeInfo result = skipNode.insertSearch(r.level, r.direction, r.num, r.target);
           return new NodeInfoResponse(result);
         }
       case SearchNumIDRequest:
         {
           SearchNumIDRequest r = (SearchNumIDRequest) req;
           return new NodeInfoListResponse(
-              targetRMI.searchNumID(r.numID, r.searchTarget, r.level, r.lst));
+              skipNode.searchNumID(r.numID, r.searchTarget, r.level, r.lst));
         }
       case SearchNameRequest:
         {
           SearchNameRequest r = (SearchNameRequest) req;
           return new NodeInfoResponse(
-              targetRMI.searchName(r.numID, r.searchTarget, r.level, r.direction));
+              skipNode.searchName(r.numID, r.searchTarget, r.level, r.direction));
         }
       case GetRightNumIDRequest:
         {
           GetRightNumIDRequest r = (GetRightNumIDRequest) req;
-          return new IntegerResponse(targetRMI.getRightNumID(r.level, r.num));
+          return new IntegerResponse(skipNode.getRightNumID(r.level, r.num));
         }
       case GetLeftNumIDRequest:
         {
           GetLeftNumIDRequest r = (GetLeftNumIDRequest) req;
-          return new IntegerResponse(targetRMI.getLeftNumID(r.level, r.num));
+          return new IntegerResponse(skipNode.getLeftNumID(r.level, r.num));
         }
       case GetNodeRequest:
         {
           GetNodeRequest r = (GetNodeRequest) req;
-          return new NodeInfoResponse(targetRMI.getNode(r.num));
+          return new NodeInfoResponse(skipNode.getNode(r.num));
         }
+
       case RemoveFlagNodeRequest:
         {
-          targetLightChainRMI.removeFlagNode();
+          lightChainNode.removeFlagNode();
           return new EmptyResponse();
         }
       case PoVRequest:
@@ -120,22 +167,23 @@ public class RMIUnderlay extends Underlay{
           PoVRequest r = (PoVRequest) req;
           // PoV Request is either with a block or a transaction
           if (r.blk != null) {
-            return new SignatureResponse(targetLightChainRMI.PoV(r.blk));
+            return new SignatureResponse(lightChainNode.PoV(r.blk));
           }
-          return new SignatureResponse(targetLightChainRMI.PoV(r.t));
+          return new SignatureResponse(lightChainNode.PoV(r.t));
         }
       case GetPublicKeyRequest:
         {
-          return new PublicKeyResponse(targetLightChainRMI.getPublicKey());
+          return new PublicKeyResponse(lightChainNode.getPublicKey());
         }
       case GetModeRequest:
         {
-          return new BooleanResponse(targetLightChainRMI.getMode());
+          return new BooleanResponse(lightChainNode.getMode());
         }
       case GetTokenRequest:
         {
-          return new IntegerResponse(targetLightChainRMI.getToken());
+          return new IntegerResponse(lightChainNode.getToken());
         }
+
       default:
         return null;
     }
@@ -165,32 +213,30 @@ public class RMIUnderlay extends Underlay{
    * This method returns the underlying RMI of the given address based on the type.
    *
    * @param adrs A string which specifies the address of the target node.
-   * @param type The type (SkipNodeInterface or LightChainInterface)
    */
-  public void getRMI(String adrs, InterfaceType type) {
+  public RMIService getRMI(String adrs) {
     if (!Util.validateIP(adrs)) {
       logger.debug("Error in lookup up RMI. Address " + adrs + " is not a valid address");
     }
 
     try {
-      switch (type) {
-        case SkipNodeInterface:
-          setTargetRMI((RMIInterface) Naming.lookup("//" + adrs + "/RMIImpl"));
-          break;
-        case LightChainInterface:
-          setLightChainRMI((LightChainRMIInterface) Naming.lookup("//" + adrs + "/RMIImpl"));
-          break;
-      }
+      return (RMIService) Naming.lookup("//" + adrs + "/RMIImpl");
     } catch (Exception e) {
       e.printStackTrace();
+      return null;
     }
   }
 
-  public void setTargetRMI(RMIInterface r) {
-    this.targetRMI = r;
-  }
-
-  public void setLightChainRMI(LightChainRMIInterface r) {
-    this.targetLightChainRMI = r;
+  /** This method initializes all the RMI system properties required for proper functionality */
+  protected void initRMI() {
+    try {
+      System.setProperty("java.rmi.server.hostname", IP);
+      System.setProperty("java.rmi.server.useLocalHostname", "false");
+      System.out.println("RMI Server proptery set. Inet4Address: " + IP + ":" + port);
+    } catch (Exception e) {
+      System.err.println(e);
+      System.err.println("Exception in initialization. Please try running the program again.");
+      System.exit(0);
+    }
   }
 }

@@ -1,5 +1,7 @@
 package underlay.responses;
 
-/** A Generic Response class. The base class of Responses. */
-public abstract class GenericResponse {
+import java.io.Serializable;
+
+/** A Generic Response class. The base class of Responses. It's serializable because JavaRMI requires it to be so */
+public abstract class GenericResponse implements Serializable {
 }

@@ -29,8 +29,8 @@ public class Fixtures {
 
     public NodeInfo NodeInfoFixture(){
         String IP = IPAddressFixture();
-        int numID = r.nextInt(100);
-        String nameID = r.nextInt(100)+"";
+        int numID = r.nextInt(32);
+        String nameID = r.nextInt(32)+"";
         return new NodeInfo(IP, numID, nameID);
     }
 
@@ -41,10 +41,10 @@ public class Fixtures {
 
     public Transaction TransactionFixture(){
         String IP = IPAddressFixture();
-        int numID = r.nextInt(100);
+        int numID = r.nextInt(32);
         String randStr1 = randomString();
         String randStr2 = randomString();
-        int levels = r.nextInt(100);
+        int levels = r.nextInt(32);
         return new Transaction(randStr1, numID, randStr2, IP, levels);
     }
 

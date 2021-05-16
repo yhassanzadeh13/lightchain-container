@@ -2,14 +2,14 @@ package delay;
 
 import remoteTest.PingLog;
 import skipGraph.NodeInfo;
-import skipGraph.RMIInterface;
+import skipGraph.SkipNodeInterface;
 import skipGraph.SkipNode;
 
 import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
 import java.util.List;
 
-public class SkipNodeDelayWrapper implements RMIInterface {
+public class SkipNodeDelayWrapper implements SkipNodeInterface {
 
     private SkipNode innerNode;
     private int delay;

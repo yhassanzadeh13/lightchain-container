@@ -392,7 +392,7 @@ class LightChainNodeTest {
 	void testContractTransaction1() throws IOException {
 		// For testcon.sol
 		tesq.setup();
-		String contractName1 = "testcon.bin";
+		String contractName1 = "testcon.sol";
 		String functname1 = "check(uint256)";
 		int token = 25;
 

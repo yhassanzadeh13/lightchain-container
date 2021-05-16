@@ -4,7 +4,7 @@ import evm.Contract;
 import evm.ContractTransaction;
 import skipGraph.NodeInfo;
 import underlay.InterfaceType;
-import underlay.RMIUnderlay;
+import underlay.rmi.RMIUnderlay;
 import underlay.requests.lightchain.GetTokenRequest;
 import underlay.responses.IntegerResponse;
 

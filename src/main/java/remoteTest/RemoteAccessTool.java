@@ -1,10 +1,10 @@
 package remoteTest;
 
-import blockchain.LightChainRMIInterface;
+import blockchain.LightChainInterface;
 import simulation.SimLog;
 import skipGraph.NodeInfo;
-import skipGraph.RMIInterface;
-import underlay.RMIUnderlay;
+import skipGraph.SkipNodeInterface;
+import underlay.rmi.RMIUnderlay;
 import underlay.requests.skipgraph.GetNodeRequest;
 import underlay.requests.skipgraph.GetNumIDRequest;
 import underlay.requests.skipgraph.GetRightNodeRequest;
@@ -34,7 +34,7 @@ public class RemoteAccessTool {
   static String nameID;
   static int numID;
   static boolean skipInit = false;
-  static LightChainRMIInterface node;
+  static LightChainInterface node;
   static RMIUnderlay RMIUnderlay;
 
   private static ArrayList<TestingLog> TestLogs;
@@ -490,7 +490,7 @@ public class RemoteAccessTool {
     TestingLogMap = new ConcurrentHashMap<>();
     for (NodeInfo node : nodeList) {
       try {
-        LightChainRMIInterface cur = getRMI(node.getAddress());
+        LightChainInterface cur = getRMI(node.getAddress());
         // TestingLogMap.put(node, cur.getTestLog());
       } catch (Exception e) {
         e.printStackTrace();
@@ -533,7 +533,7 @@ public class RemoteAccessTool {
       for (NodeInfo cur : nodeList) {
         try {
           log("Node: " + cur);
-          LightChainRMIInterface curRMI = getRMI(cur.getAddress());
+          LightChainInterface curRMI = getRMI(cur.getAddress());
           //	TestingLog lg = curRMI.getTestLog();// .printExceptionLogs();
           //	lg.printExceptionLogs(expw);
           //	lg.printOverflowLogs(erpw);
@@ -606,7 +606,7 @@ public class RemoteAccessTool {
     boolean flag = false;
     for (NodeInfo cur : nodeList) {
       try {
-        RMIInterface nd = getRMI(cur.getAddress());
+        SkipNodeInterface nd = getRMI(cur.getAddress());
         //				curlookup = nd.getLookupTable();
         //				for(int i=0;i<curlookup.length;i++) {
         //					for(int j=0;j<curlookup[0].length;j++) {
@@ -710,10 +710,10 @@ public class RemoteAccessTool {
     return true;
   }
 
-  public static LightChainRMIInterface getRMI(String adrs) {
+  public static LightChainInterface getRMI(String adrs) {
     if (validateIP(adrs))
       try {
-        return (LightChainRMIInterface) Naming.lookup("//" + adrs + "/RMIImpl");
+        return (LightChainInterface) Naming.lookup("//" + adrs + "/RMIImpl");
       } catch (Exception e) {
         log("Exception while attempting to lookup RMI located at address: " + adrs);
       }
@@ -743,7 +743,7 @@ public class RemoteAccessTool {
     }
 
     public void run() {
-      RMIInterface curRMI = getRMI(pinger);
+      SkipNodeInterface curRMI = getRMI(pinger);
       for (int i = 0; i < nodeList.size(); i++) {
         if (i == index) continue;
         PingLog current;
@@ -791,7 +791,7 @@ public class RemoteAccessTool {
     }
 
     public void run() {
-      LightChainRMIInterface curRMI = getRMI(nodeList.get(ind).getAddress());
+      LightChainInterface curRMI = getRMI(nodeList.get(ind).getAddress());
       try {
         if (ind == 0) {
           curRMI.insertGenesis();
@@ -816,7 +816,7 @@ public class RemoteAccessTool {
     }
 
     public void run() {
-      LightChainRMIInterface curRMI = getRMI(nodeList.get(ind).getAddress());
+      LightChainInterface curRMI = getRMI(nodeList.get(ind).getAddress());
       try {
         curRMI.shutDown();
       } catch (Exception e) {

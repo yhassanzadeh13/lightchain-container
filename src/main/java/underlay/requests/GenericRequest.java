@@ -1,6 +1,10 @@
 package underlay.requests;
 
-public class GenericRequest {
+import java.io.Serializable;
+
+// javarmi requires serializability
+// javarmi requires serializability
+public class GenericRequest implements Serializable {
   public RequestType type;
 
   public GenericRequest(RequestType type) {
