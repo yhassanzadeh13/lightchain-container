@@ -2,9 +2,8 @@ name: CI
 
 on:
   push:
-    #Run on all branches, uncomment this to only run on master
-  #  branches:
-  #   - Nazir-Pipeline
+    branches:
+      - main
   pull_request:
     branches:
       - master
@@ -27,6 +26,10 @@ jobs:
     # compile
     - name: compile project
       run: mvn compile
+    
+    - name: build maven
+      run: mvn --batch-mode --update-snapshots verify
+
 
     # run tests
     - name: run tests
