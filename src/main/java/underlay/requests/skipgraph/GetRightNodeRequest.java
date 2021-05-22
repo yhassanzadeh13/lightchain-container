@@ -3,8 +3,8 @@ package underlay.requests.skipgraph;
 import underlay.requests.RequestType;
 
 public class GetRightNodeRequest extends GenericSkipGraphRequest {
-  public int level;
-  public int num;
+  public final int level;
+  public final int num;
 
   public GetRightNodeRequest(int level, int num) {
     super(RequestType.GetRightNodeRequest);

@@ -6,10 +6,10 @@ import underlay.requests.RequestType;
 import java.util.List;
 
 public class SearchNumIDRequest extends GenericSkipGraphRequest {
-  public int numID;
-  public int searchTarget;
-  public int level;
-  public List<NodeInfo> lst;
+  public final int numID;
+  public final int searchTarget;
+  public final int level;
+  public final List<NodeInfo> lst;
 
   public SearchNumIDRequest(int numID, int searchTarget, int level, List<NodeInfo> lst) {
     super(RequestType.SearchNumIDRequest);
