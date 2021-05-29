@@ -25,10 +25,7 @@ public abstract class Underlay {
     this.lightChainNode = lightChainNode;
   }
 
-  public abstract GenericResponse sendMessage(GenericSkipGraphRequest req, String targetAddress)
-      throws RemoteException, FileNotFoundException;
-
-  public abstract GenericResponse sendMessage(GenericLightChainRequest req, String targetAddress)
+  public abstract GenericResponse sendMessage(GenericRequest req, String targetAddress)
       throws RemoteException, FileNotFoundException;
 
   public abstract GenericResponse answer(GenericRequest req)

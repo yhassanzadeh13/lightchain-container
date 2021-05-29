@@ -563,7 +563,7 @@ public class RemoteAccessTool {
                 new GetRightNodeRequest(0, curNode.getNumID()), curNode.getAddress()));
         curNode = response.result;
       }
-    } catch (RemoteException | FileNotFoundException e) {
+    } catch (RemoteException e) {
       e.printStackTrace();
       return;
     }
@@ -592,7 +592,7 @@ public class RemoteAccessTool {
         NodeInfo nodeInfo = nodeInfoResponse.result;
         nodeList.add(nodeInfo);
       }
-    } catch (RemoteException | FileNotFoundException e) {
+    } catch (RemoteException e) {
       e.printStackTrace();
       return;
     }

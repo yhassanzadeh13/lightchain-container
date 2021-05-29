@@ -43,8 +43,7 @@ public class RMIUnderlay extends Underlay {
     logger.info("Rebinding Successful");
   }
 
-  public GenericResponse sendMessage(GenericSkipGraphRequest req, String targetAddress)
-      throws RemoteException, FileNotFoundException {
+  public GenericResponse sendMessage(GenericRequest req, String targetAddress){
     RMIService remote = getRMI(targetAddress);
     if (remote == null)
       return null;
@@ -135,55 +134,38 @@ public class RMIUnderlay extends Underlay {
           GetNodeRequest r = (GetNodeRequest) req;
           return new NodeInfoResponse(skipNode.getNode(r.num));
         }
-
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * This method returns a response after calling the underlying RMI implementation based on the
-   * request type.
-   *
-   * @param req The request
-   * @param targetAddress A string which specifies the address of the target node
-   * @return GenericResponse, the base class for all responses.
-   * @throws RemoteException
-   * @throws FileNotFoundException
-   */
-  public GenericResponse sendMessage(GenericLightChainRequest req, String targetAddress)
-      throws RemoteException, FileNotFoundException {
-    switch (req.type) {
       case RemoveFlagNodeRequest:
-        {
-          lightChainNode.removeFlagNode();
-          return new EmptyResponse();
-        }
+      {
+        lightChainNode.removeFlagNode();
+        return new EmptyResponse();
+      }
       case PoVRequest:
-        {
-          PoVRequest r = (PoVRequest) req;
-          // PoV Request is either with a block or a transaction
-          if (r.blk != null) {
-            return new SignatureResponse(lightChainNode.PoV(r.blk));
-          }
-          return new SignatureResponse(lightChainNode.PoV(r.t));
+      {
+        PoVRequest r = (PoVRequest) req;
+        // PoV Request is either with a block or a transaction
+        if (r.blk != null) {
+          return new SignatureResponse(lightChainNode.PoV(r.blk));
         }
+        return new SignatureResponse(lightChainNode.PoV(r.t));
+      }
       case GetPublicKeyRequest:
-        {
-          return new PublicKeyResponse(lightChainNode.getPublicKey());
-        }
+      {
+        return new PublicKeyResponse(lightChainNode.getPublicKey());
+      }
       case GetModeRequest:
-        {
-          return new BooleanResponse(lightChainNode.getMode());
-        }
+      {
+        return new BooleanResponse(lightChainNode.getMode());
+      }
       case GetTokenRequest:
-        {
-          return new IntegerResponse(lightChainNode.getToken());
-        }
+      {
+        return new IntegerResponse(lightChainNode.getToken());
+      }
+
       default:
         return null;
     }
   }
+
 
   /**
    * This method returns the underlying RMI of the given address based on the type.

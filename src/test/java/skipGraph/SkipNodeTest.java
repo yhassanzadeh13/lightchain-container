@@ -49,7 +49,7 @@ class SkipNodeTest {
 		sameNameIDConfig3 = new NodeConfig(maxLevels, port++, numID6, nameID4);
 	}
 
-	
+
 	@Test
 	void testDelete() {
 
