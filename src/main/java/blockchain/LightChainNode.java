@@ -9,6 +9,7 @@ import simulation.SimLog;
 import skipGraph.NodeInfo;
 import skipGraph.SkipNode;
 import underlay.InterfaceType;
+import underlay.Underlay;
 import underlay.rmi.RMIUnderlay;
 import underlay.requests.lightchain.GetPublicKeyRequest;
 import underlay.requests.lightchain.PoVRequest;
@@ -42,8 +43,9 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
   private int token; // Is used to store the value of tokens owned by a node.
   private CorrectnessVerifier cv;
   public int Tmode; // Defines the mode for every node eg. 1 -> consumer | 2 -> producer
+  private Underlay underlay;
 
-  public RMIUnderlay getUnderlay() {
+  public Underlay getUnderlay() {
     return underlay;
   }
 
@@ -53,9 +55,9 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param isInitial a flag signaling whether this node is the first node in the network
    *     <p>TODO: add a specific LightChain config that includes Mode and remove it from params
    */
-  public LightChainNode(Parameters params, int port, String introducer, boolean isInitial)
+  public LightChainNode(Parameters params, int port, String introducer, boolean isInitial, Underlay underlay)
       throws RemoteException {
-    super(port, params.getLevels(), introducer);
+    super(port, params.getLevels(), introducer, underlay);
     this.params = params;
     this.digitalSignature = new DigitalSignature();
     this.hasher = new HashingTools();
@@ -76,7 +78,8 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
     NodeInfo peer = new NodeInfo(address, numID, nameID);
     addPeerNode(peer);
 
-    underlay = new RMIUnderlay(super.IP, port,this);
+    this.underlay = underlay;
+    underlay.setLightChainNode(this);
 
     if (!isInitial) {
       insertNode(peer);
@@ -263,7 +266,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
       throws FileNotFoundException, RemoteException {
     if (!prevAddress.equals(getAddress())) {
       underlay.sendMessage(
-          new RemoveFlagNodeRequest(), prevAddress, InterfaceType.LightChainInterface);
+          new RemoveFlagNodeRequest(), prevAddress);
 
       insertNode(blk);
       insertFlagNode(blk);
@@ -380,8 +383,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
         // TODO: add a dummy signedBytes value
         SignatureResponse response = SignatureResponseOf(underlay.sendMessage(
                 new PoVRequest(blk),
-                validators.get(i).getAddress(),
-                InterfaceType.LightChainInterface));
+                validators.get(i).getAddress()));
         SignedBytes signature = response.result;
 
         // if one validator returns null, then validation has failed
@@ -436,8 +438,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
       for (int i = 0; i < validators.size(); ++i) {
         SignatureResponse response = SignatureResponseOf(underlay.sendMessage(
                 new PoVRequest(t),
-                validators.get(i).getAddress(),
-                InterfaceType.LightChainInterface));
+                validators.get(i).getAddress()));
         SignedBytes signature = response.result;
 
         if (signature.isAuth()) isAuthenticated++;
@@ -787,8 +788,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
 
       PublicKeyResponse response = PublicKeyResponseOf(underlay.sendMessage(
               new GetPublicKeyRequest(),
-              owner.getAddress(),
-              InterfaceType.LightChainInterface));
+              owner.getAddress()));
       PublicKey pk = response.result;
 
       // Hash the public key and store the hash value as int

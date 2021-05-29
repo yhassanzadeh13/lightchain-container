@@ -27,8 +27,8 @@ class LightChainCV extends CorrectnessVerifier {
       if (!owner.view.hasModeEntry(t.getOwner())) {
         BooleanResponse ownerModeResponse =
             BooleanResponseOf(
-                RMIUnderlay.sendMessage(
-                    new GetModeRequest(), t.getAddress(), InterfaceType.LightChainInterface));
+                underlay.sendMessage(
+                    new GetModeRequest(), t.getAddress()));
         boolean ownerMode = ownerModeResponse.result;
         owner.view.updateMode(t.getOwner(), ownerMode);
 

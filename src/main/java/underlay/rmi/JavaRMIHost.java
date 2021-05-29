@@ -8,7 +8,7 @@ import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-public class JavaRMIHost extends UnicastRemoteObject implements RMIService {
+public class JavaRMIHost extends UnicastRemoteObject implements RMIService{
 
   private final RMIUnderlay underlay;
 
@@ -16,14 +16,6 @@ public class JavaRMIHost extends UnicastRemoteObject implements RMIService {
     this.underlay = underlay;
   }
 
-  @Override
-  public GenericResponse sendMessage(
-      GenericRequest req, String targetAddress, InterfaceType interfaceType)
-      throws RemoteException, FileNotFoundException {
-    return underlay.sendMessage(req, targetAddress, interfaceType);
-  }
-
-  @Override
   public GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException {
     return underlay.answer(req);
   }

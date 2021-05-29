@@ -3,8 +3,11 @@ package blockchain;
 //import jdk.nashorn.internal.ir.annotations.Ignore;
 import java.io.*;
 import evm.*;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import underlay.Underlay;
+import underlay.rmi.RMIUnderlay;
 import util.Const;
 import util.Util;
 import org.ethereum.vm.DataWord;
@@ -28,27 +31,53 @@ class LightChainNodeTest {
 	private int RMIPort4;
 	private RepositoryMock repository = new RepositoryMock();
 	private ContractTransaction tesq = new ContractTransaction();
-	
+
+	private LightChainNode node1;
+	private LightChainNode node2;
+	private LightChainNode node3;
+	private LightChainNode node4;
+
+	private Underlay underlay1;
+	private Underlay underlay2;
+	private Underlay underlay3;
+	private Underlay underlay4;
+
+
 	@BeforeEach
-	void init() {
+	void init() throws RemoteException {
 		params = new Parameters();
 
 		RMIPort1 = port++;
 		RMIPort2 = port++;
 		RMIPort3 = port++;
 		RMIPort4 = port++;
+
+		underlay1 = new RMIUnderlay(RMIPort1);
+		underlay2 = new RMIUnderlay(RMIPort2);
+		underlay3 = new RMIUnderlay(RMIPort3);
+		underlay4 = new RMIUnderlay(RMIPort4);
+
+		node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true, underlay1);
+		node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false, underlay2);
+		node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false, underlay3);
+		node4 = new LightChainNode(params, RMIPort4, node1.getAddress(), false, underlay4);
+
 	}
+
+	@AfterEach
+	void destroy(){
+		underlay1.terminate();
+		underlay2.terminate();
+		underlay3.terminate();
+		underlay4.terminate();
+	}
+
 
 	@Test
 	void testUpdateView() {
 		try {
 
 			// test view update gotten by 3 transaction pointing at genesis block
-
-			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
-			LightChainNode node4 = new LightChainNode(params, RMIPort4, node1.getAddress(), false);
 
 			Block blk = node1.insertGenesis();
 
@@ -95,11 +124,6 @@ class LightChainNodeTest {
 			params.setAlpha(10);
 			params.setSignaturesThreshold(1);
 
-			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
-			LightChainNode node4 = new LightChainNode(params, RMIPort4, node1.getAddress(), false);
-
 			Block blk = node1.insertGenesis();
 
 			String randStr1 = Util.getRandomString(10);
@@ -131,11 +155,6 @@ class LightChainNodeTest {
 	@Test
 	void testGetLatestBlockExtensively() {
 		try {
-
-			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
-			LightChainNode node4 = new LightChainNode(params, RMIPort4, node1.getAddress(), false);
 
 			List<LightChainNode> nodeList = new ArrayList<>();
 			nodeList.add(node1);
@@ -181,9 +200,6 @@ class LightChainNodeTest {
 		try {
 
 			// test detecting genesis block
-			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
 
 			Block blk = node1.insertGenesis();
 
@@ -307,8 +323,6 @@ class LightChainNodeTest {
 	@Test
     void testIsCorrectContractMode() {
         try {
-            LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
-            LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
             Block blk = node1.insertGenesis();
             String randStr1 = Util.getRandomString(10);
             
@@ -334,8 +348,6 @@ class LightChainNodeTest {
 	@Test
     void testIsCorrectOriginalMode() {
         try {
-            LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
-            LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
             Block blk = node1.insertGenesis();
             String randStr1 = Util.getRandomString(10);
             
@@ -403,10 +415,6 @@ class LightChainNodeTest {
 	@Test
 	void testGetOwnerPublicKey() {
 		try {
-			LightChainNode node1 = new LightChainNode(params, RMIPort1, Const.DUMMY_INTRODUCER, true);
-			LightChainNode node2 = new LightChainNode(params, RMIPort2, node1.getAddress(), false);
-			LightChainNode node3 = new LightChainNode(params, RMIPort3, node1.getAddress(), false);
-
 			PublicKey pk2 = node1.getOwnerPublicKey(node2.getNumID());
 			PublicKey pk3 = node1.getOwnerPublicKey(node3.getNumID());
 

@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import remoteTest.Configuration;
 import remoteTest.PingLog;
 import remoteTest.TestingLog;
+import underlay.Underlay;
 import underlay.rmi.RMIUnderlay;
 import underlay.requests.skipgraph.*;
 import underlay.responses.NodeInfoListResponse;
@@ -23,7 +24,7 @@ import static underlay.responses.IntegerResponse.IntegerResponseOf;
 import static underlay.responses.NodeInfoListResponse.NodeInfoListResponseOf;
 import static underlay.responses.NodeInfoResponse.NodeInfoResponseOf;
 
-public class SkipNode extends UnicastRemoteObject implements SkipNodeInterface {
+public class SkipNode implements SkipNodeInterface {
 
     private static final long serialVersionUID = 1L;
 
@@ -39,11 +40,43 @@ public class SkipNode extends UnicastRemoteObject implements SkipNodeInterface {
     private LookupTable lookup;
     private Logger logger;
 
-    // RMIUnderlay
-    protected RMIUnderlay underlay;
+    protected Underlay underlay;
 
     // TODO: fork-resolving mechanism unimplemented
     // TODO: bootstrapping unimplemented
+
+
+
+    /**
+     * This version of the constructor is used as long as LightChainNode extends SkipNode
+     * Because it defers RMI binding and insertion task to LightChainNode after setting
+     * the correct information (numID and nameID
+     *
+     * @param introducer
+     */
+    public SkipNode(int port, int maxLevels, String introducer, Underlay underlay) {
+        this.port = port;
+        this.maxLevels = maxLevels;
+        this.introducer = introducer;
+        this.IP = Util.grabIP();
+        this.address = IP + ":" + port;
+        this.logger = Logger.getLogger(port + "");
+
+        this.underlay = underlay;
+        underlay.setSkipNode(this);
+
+        // check if introducer has valid address
+        if (!introducer.equals(Const.DUMMY_INTRODUCER) && !Util.validateIP(introducer)) {
+            logger.error("Invalid introducer address");
+        }
+
+        // check if node address it valid
+        if (!Util.validateIP(address)) {
+            logger.error("Invalid node adress");
+        }
+        lookup = new LookupTable(maxLevels);
+
+    }
 
     /**
      * Constructor for SkipNode class The node requires the following info to be
@@ -53,67 +86,21 @@ public class SkipNode extends UnicastRemoteObject implements SkipNodeInterface {
      * @param isInitial  Indicator that this node is an initial node in the
      *                   skipGraph
      */
-    public SkipNode(NodeConfig config, String introducer, boolean isInitial) throws RemoteException {
-        super(config.getPort());
-        this.port = config.getPort();
-        this.maxLevels = config.getMaxLevels();
+
+    public SkipNode(NodeConfig config, String introducer, boolean isInitial, Underlay underlay) {
+        this(config.getPort(), config.getMaxLevels(), introducer, underlay);
         this.numID = config.getNumID();
         this.nameID = config.getNameID();
-        this.introducer = introducer;
-        this.IP = Util.grabIP();
-        this.address = IP + ":" + port;
-        this.logger = Logger.getLogger(port + "");
 
-        // check if introducer has valid address
-        if (!introducer.equals(Const.DUMMY_INTRODUCER) && !Util.validateIP(introducer)) {
-            logger.error("Invalid introducer address");
-        }
-
-        // check if node address it valid
-        if (!Util.validateIP(address)) {
-            logger.error("Invalid node adress");
-        }
-
-        lookup = new LookupTable(maxLevels);
         peerNode = new NodeInfo(address, numID, nameID);
         lookup.addNode(peerNode);
         if (isInitial)
             isInserted = true;
 
         // TODO: this should be removed when launching LightChainNode
-        underlay = new RMIUnderlay(IP, port, this);
-
         if (!isInitial) {
             insertNode(peerNode);
         }
-
-    }
-
-    /**
-     * This version of the constructor is used as long as LightChainNode extends SkipNode
-     * Because it defers RMI binding and insertion task to LightChainNode after setting
-     * the correct information (numID and nameID
-     *
-     * @param introducer
-     * @throws RemoteException
-     */
-    public SkipNode(int port, int maxLevels, String introducer) throws RemoteException {
-        this.port = port;
-        this.maxLevels = maxLevels;
-        this.introducer = introducer;
-        this.IP = Util.grabIP();
-        this.address = IP + ":" + port;
-        this.logger = Logger.getLogger(port + "");
-        // check if introducer has valid address
-        if (!introducer.equals(Const.DUMMY_INTRODUCER) && !Util.validateIP(introducer)) {
-            logger.error("Invalid introducer address");
-        }
-
-        // check if node address it valid
-        if (!Util.validateIP(address)) {
-            logger.error("Invalid node adress");
-        }
-        lookup = new LookupTable(maxLevels);
 
     }
 

@@ -1,7 +1,10 @@
 package skipGraph;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import underlay.Underlay;
+import underlay.rmi.RMIUnderlay;
 import util.Const;
 
 import java.rmi.RemoteException;
@@ -33,6 +36,8 @@ class SkipNodeTest {
 	private NodeConfig sameNameIDConfig2;
 	private NodeConfig sameNameIDConfig3;
 
+	private Underlay underlay;
+
 	@BeforeEach
 	public void init() {
 		initialConfig = new NodeConfig(maxLevels, port++, numID2, nameID2);
@@ -44,13 +49,14 @@ class SkipNodeTest {
 		sameNameIDConfig3 = new NodeConfig(maxLevels, port++, numID6, nameID4);
 	}
 
+	
 	@Test
 	void testDelete() {
 
 		// test if deletion of data nodes is successful
 		try {
-
-			SkipNode node = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true);
+			Underlay underlay = new RMIUnderlay(initialConfig.getPort());
+			SkipNode node = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true, underlay);
 			node.insertDataNode(numID1, nameID1);
 			node.insertDataNode(numID3, nameID3);
 			node.insertDataNode(numID4, nameID4);
@@ -66,6 +72,8 @@ class SkipNodeTest {
 			assertNull(node.getNode(numID3));
 			assertNotNull(node.getNode(numID4));
 
+
+			underlay.terminate();
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -76,52 +84,59 @@ class SkipNodeTest {
 	void testInsertNode() {
 
 		// test if position of insertion is correct;
-		try {
-			// test if node1 in the middle
-			SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true);
-			SkipNode node2 = new SkipNode(config1, node1.getAddress(), false);
-			SkipNode node3 = new SkipNode(config2, node1.getAddress(), false);
+		// test if node1 in the middle
+		Underlay underlay1 = new RMIUnderlay(initialConfig.getPort());
+		SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true, underlay1);
+		Underlay underlay2 = new RMIUnderlay(config1.getPort());
+		SkipNode node2 = new SkipNode(config1, node1.getAddress(), false, underlay2);
+		Underlay underlay3 = new RMIUnderlay(config2.getPort());
+		SkipNode node3 = new SkipNode(config2, node1.getAddress(), false, underlay3);
 
-			assertEquals(node2.getPeer(), node1.getPeerLeftNode(Const.ZERO_LEVEL), "Node 2 is not left of 1");
-			assertEquals(node3.getPeer(), node1.getPeerRightNode(Const.ZERO_LEVEL), "Node 3 is not right of 1 ");
+		assertEquals(node2.getPeer(), node1.getPeerLeftNode(Const.ZERO_LEVEL), "Node 2 is not left of 1");
+		assertEquals(node3.getPeer(), node1.getPeerRightNode(Const.ZERO_LEVEL), "Node 3 is not right of 1 ");
 
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
+
+		underlay1.terminate();
+		underlay2.terminate();
+		underlay3.terminate();
 
 	}
 
 	// Test if num ID search find exact results
 	@Test
 	void testSearchByNumIDExact() {
-		try {
 
-			// everything search for everything
-			SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true);
-			SkipNode node2 = new SkipNode(config1, node1.getAddress(), false);
-			SkipNode node3 = new SkipNode(config2, node1.getAddress(), false);
+		// everything search for everything
+		Underlay underlay1 = new RMIUnderlay(initialConfig.getPort());
+		SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true, underlay1);
+		Underlay underlay2 = new RMIUnderlay(config1.getPort());
+		SkipNode node2 = new SkipNode(config1, node1.getAddress(), false, underlay2);
+		Underlay underlay3 = new RMIUnderlay(config2.getPort());
+		SkipNode node3 = new SkipNode(config2, node1.getAddress(), false, underlay3);
 
-			NodeInfo res1 = node1.searchByNumID(node2.getNumID());
-			assertEquals(node2.getPeer(), res1, "node 2 not found");
+		NodeInfo res1 = node1.searchByNumID(node2.getNumID());
+		assertEquals(node2.getPeer(), res1, "node 2 not found");
 
-			NodeInfo res2 = node1.searchByNumID(node3.getNumID());
-			assertEquals(node3.getPeer(), res2, "node 3 not found");
+		NodeInfo res2 = node1.searchByNumID(node3.getNumID());
+		assertEquals(node3.getPeer(), res2, "node 3 not found");
 
-			NodeInfo res3 = node2.searchByNumID(node1.getNumID());
-			assertEquals(node1.getPeer(), res3, "node 1 not found");
+		NodeInfo res3 = node2.searchByNumID(node1.getNumID());
+		assertEquals(node1.getPeer(), res3, "node 1 not found");
 
-			NodeInfo res4 = node2.searchByNumID(node3.getNumID());
-			assertEquals(node3.getPeer(), res4, "node 3 not found");
+		NodeInfo res4 = node2.searchByNumID(node3.getNumID());
+		assertEquals(node3.getPeer(), res4, "node 3 not found");
 
-			NodeInfo res5 = node3.searchByNumID(node1.getNumID());
-			assertEquals(node1.getPeer(), res5, "node 1 not found");
+		NodeInfo res5 = node3.searchByNumID(node1.getNumID());
+		assertEquals(node1.getPeer(), res5, "node 1 not found");
 
-			NodeInfo res6 = node3.searchByNumID(node2.getNumID());
-			assertEquals(node2.getPeer(), res6, "node 2 not found");
+		NodeInfo res6 = node3.searchByNumID(node2.getNumID());
+		assertEquals(node2.getPeer(), res6, "node 2 not found");
 
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
+		underlay1.terminate();
+		underlay2.terminate();
+		underlay3.terminate();
+
+
 	}
 
 	// Test if name ID search finds exact results
@@ -130,9 +145,12 @@ class SkipNodeTest {
 		try {
 
 			// everything search for everything
-			SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true);
-			SkipNode node2 = new SkipNode(config1, node1.getAddress(), false);
-			SkipNode node3 = new SkipNode(config2, node1.getAddress(), false);
+			Underlay underlay1 = new RMIUnderlay(initialConfig.getPort());
+			SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true, underlay1);
+			Underlay underlay2 = new RMIUnderlay(config1.getPort());
+			SkipNode node2 = new SkipNode(config1, node1.getAddress(), false, underlay2);
+			Underlay underlay3 = new RMIUnderlay(config2.getPort());
+			SkipNode node3 = new SkipNode(config2, node1.getAddress(), false, underlay3);
 
 			NodeInfo res1 = node1.searchByNameID(node2.getNameID());
 			assertEquals(node2.getPeer(), res1, "node 2 not found");
@@ -152,6 +170,11 @@ class SkipNodeTest {
 			NodeInfo res6 = node3.searchByNameID(node2.getNameID());
 			assertEquals(node2.getPeer(), res6, "node 2 not found");
 
+			underlay1.terminate();
+			underlay2.terminate();
+			underlay3.terminate();
+
+
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -162,9 +185,12 @@ class SkipNodeTest {
 	void testSearchByNameIDSimilarity() {
 
 		try {
-			SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true);
-			SkipNode node2 = new SkipNode(config1, node1.getAddress(), false);
-			SkipNode node3 = new SkipNode(config2, node1.getAddress(), false);
+			Underlay underlay1 = new RMIUnderlay(initialConfig.getPort());
+			SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true, underlay1);
+			Underlay underlay2 = new RMIUnderlay(config1.getPort());
+			SkipNode node2 = new SkipNode(config1, node1.getAddress(), false, underlay2);
+			Underlay underlay3 = new RMIUnderlay(config2.getPort());
+			SkipNode node3 = new SkipNode(config2, node1.getAddress(), false, underlay3);
 
 			NodeInfo res1 = node1.searchByNameID("111");
 			assertEquals(node3.getPeer(), res1, "incorrect node found");
@@ -184,6 +210,10 @@ class SkipNodeTest {
 			NodeInfo res6 = node2.searchByNameID("010");
 			assertEquals(node2.getPeer(), res6, "node could not find itself");
 
+			underlay1.terminate();
+			underlay2.terminate();
+			underlay3.terminate();
+
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -193,36 +223,42 @@ class SkipNodeTest {
 	// Test if testGetNodesWithNameID returns correct results
 	@Test
 	void testGetNodesWithNameID() {
-		try {
-			SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true);
-			SkipNode node2 = new SkipNode(sameNameIDConfig1, node1.getAddress(), false);
-			SkipNode node3 = new SkipNode(sameNameIDConfig2, node1.getAddress(), false);
-			SkipNode node4 = new SkipNode(sameNameIDConfig3, node1.getAddress(), false);
+		Underlay underlay1 = new RMIUnderlay(initialConfig.getPort());
+		SkipNode node1 = new SkipNode(initialConfig, Const.DUMMY_INTRODUCER, true, underlay1);
+		Underlay underlay2 = new RMIUnderlay(sameNameIDConfig1.getPort());
+		SkipNode node2 = new SkipNode(sameNameIDConfig1, node1.getAddress(), false, underlay2);
+		Underlay underlay3 = new RMIUnderlay(sameNameIDConfig2.getPort());
+		SkipNode node3 = new SkipNode(sameNameIDConfig2, node1.getAddress(), false, underlay3);
+		Underlay underlay4 = new RMIUnderlay(sameNameIDConfig3.getPort());
+		SkipNode node4 = new SkipNode(sameNameIDConfig3, node1.getAddress(), false, underlay4);
 
-			List<NodeInfo> list = node1.getNodesWithNameID(node2.getNameID());
+		List<NodeInfo> list = node1.getNodesWithNameID(node2.getNameID());
 
-			assertEquals(list.size(), 3);
+		assertEquals(list.size(), 3);
 
-			boolean exists2 = false;
-			boolean exists3 = false;
-			boolean exists4 = false;
+		boolean exists2 = false;
+		boolean exists3 = false;
+		boolean exists4 = false;
 
-			for (NodeInfo el : list) {
-				if (el.equals(node2.getPeer()))
-					exists2 = true;
-				if (el.equals(node3.getPeer()))
-					exists3 = true;
-				if (el.equals(node4.getPeer()))
-					exists4 = true;
-			}
-
-			assertTrue(exists2, "node 2 was not found");
-			assertTrue(exists3, "node 3 was not found");
-			assertTrue(exists4, "node 4 was not found");
-
-		} catch (RemoteException e) {
-			e.printStackTrace();
+		for (NodeInfo el : list) {
+			if (el.equals(node2.getPeer()))
+				exists2 = true;
+			if (el.equals(node3.getPeer()))
+				exists3 = true;
+			if (el.equals(node4.getPeer()))
+				exists4 = true;
 		}
+
+		assertTrue(exists2, "node 2 was not found");
+		assertTrue(exists3, "node 3 was not found");
+		assertTrue(exists4, "node 4 was not found");
+
+		underlay1.terminate();
+		underlay2.terminate();
+		underlay3.terminate();
+		underlay4.terminate();
+
+
 	}
 
 }

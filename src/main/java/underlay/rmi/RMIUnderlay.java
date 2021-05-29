@@ -1,10 +1,7 @@
 package underlay.rmi;
 
-import blockchain.LightChainInterface;
 import org.apache.log4j.Logger;
 import skipGraph.NodeInfo;
-import skipGraph.SkipNodeInterface;
-import underlay.InterfaceType;
 import underlay.Underlay;
 import underlay.requests.GenericRequest;
 import underlay.requests.lightchain.GenericLightChainRequest;
@@ -24,12 +21,6 @@ import java.rmi.registry.LocateRegistry;
  */
 public class RMIUnderlay extends Underlay {
 
-  /** The underlying SkipNodeInterface instance. Is used for skipnode calls */
-  private SkipNodeInterface skipNode;
-
-  /** The underlying LightChainInterface instance. Is used for lightchainnode class */
-  private LightChainInterface lightChainNode;
-
   private String IP;
   private int port;
   private String address;
@@ -37,11 +28,10 @@ public class RMIUnderlay extends Underlay {
 
   private final Logger logger = Logger.getLogger("" + port);
 
-  public RMIUnderlay(String IP, int port, SkipNodeInterface skipNode) {
-    this.IP = IP;
+  public RMIUnderlay(int port) {
+    this.IP = Util.grabIP();
     this.port = port;
     this.address = IP + ":" + port;
-    this.skipNode = skipNode;
     try {
       initRMI();
       host = new JavaRMIHost(this);
@@ -53,29 +43,18 @@ public class RMIUnderlay extends Underlay {
     logger.info("Rebinding Successful");
   }
 
-  public RMIUnderlay(String IP, int port, LightChainInterface lightChainNode) {
-    this.IP = IP;
-    this.port = port;
-    this.address = IP + ":" + port;
-    this.skipNode = lightChainNode;
-    this.lightChainNode = lightChainNode;
-    try {
-      initRMI();
-      host = new JavaRMIHost(this);
-      LocateRegistry.createRegistry(port).rebind("RMIImpl", host);
-      System.out.println("rebind");
-    } catch (Exception e) {
-      System.err.println("[RMIUnderlay] Error while initializing at port " + port);
-      e.printStackTrace();
-    }
-    logger.info("Rebinding Successful");
-  }
-
-  public GenericResponse sendMessage(
-      GenericRequest req, String targetAddress, InterfaceType interfaceType)
+  public GenericResponse sendMessage(GenericSkipGraphRequest req, String targetAddress)
       throws RemoteException, FileNotFoundException {
-    RMIService underlay = getRMI(targetAddress);
-    return underlay.answer(req);
+    RMIService remote = getRMI(targetAddress);
+    if (remote == null)
+      return null;
+    try {
+      return remote.answer(req);
+    } catch (Exception e) {
+      System.err.println("[JavaRMIUnderlay] Could not send the message.");
+      e.printStackTrace();
+      return null;
+    }
   }
 
   public GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException {
@@ -157,6 +136,24 @@ public class RMIUnderlay extends Underlay {
           return new NodeInfoResponse(skipNode.getNode(r.num));
         }
 
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * This method returns a response after calling the underlying RMI implementation based on the
+   * request type.
+   *
+   * @param req The request
+   * @param targetAddress A string which specifies the address of the target node
+   * @return GenericResponse, the base class for all responses.
+   * @throws RemoteException
+   * @throws FileNotFoundException
+   */
+  public GenericResponse sendMessage(GenericLightChainRequest req, String targetAddress)
+      throws RemoteException, FileNotFoundException {
+    switch (req.type) {
       case RemoveFlagNodeRequest:
         {
           lightChainNode.removeFlagNode();
@@ -183,30 +180,9 @@ public class RMIUnderlay extends Underlay {
         {
           return new IntegerResponse(lightChainNode.getToken());
         }
-
       default:
         return null;
     }
-  }
-
-  /**
-   * This method returns a response after calling the underlying RMI implementation based on the
-   * request type.
-   *
-   * @param req The request
-   * @param targetAddress A string which specifies the address of the target node
-   * @return GenericResponse, the base class for all responses.
-   * @throws RemoteException
-   * @throws FileNotFoundException
-   */
-  public GenericResponse sendMessage(GenericSkipGraphRequest req, String targetAddress)
-      throws RemoteException, FileNotFoundException {
-    return sendMessage(req, targetAddress, InterfaceType.SkipNodeInterface);
-  }
-
-  public GenericResponse sendMessage(GenericLightChainRequest req, String targetAddress)
-      throws RemoteException, FileNotFoundException {
-    return sendMessage(req, targetAddress, InterfaceType.LightChainInterface);
   }
 
   /**
@@ -218,13 +194,15 @@ public class RMIUnderlay extends Underlay {
     if (!Util.validateIP(adrs)) {
       logger.debug("Error in lookup up RMI. Address " + adrs + " is not a valid address");
     }
+    RMIService remote;
 
     try {
-      return (RMIService) Naming.lookup("//" + adrs + "/RMIImpl");
+      remote = (RMIService) Naming.lookup("//" + adrs + "/RMIImpl");
     } catch (Exception e) {
-      e.printStackTrace();
+      System.err.println("[JavaRMIUnderlay] Could not connect to the remote RMI server!");
       return null;
     }
+    return remote;
   }
 
   /** This method initializes all the RMI system properties required for proper functionality */
@@ -238,5 +216,17 @@ public class RMIUnderlay extends Underlay {
       System.err.println("Exception in initialization. Please try running the program again.");
       System.exit(0);
     }
+  }
+
+  /** Terminates the Java RMI underlay service. */
+  public boolean terminate() {
+    try {
+      Naming.unbind("//" + address + "/RMIImpl");
+    } catch (Exception e) {
+      System.err.println("[JavaRMIUnderlay] Could not terminate.");
+      e.printStackTrace();
+      return false;
+    }
+    return true;
   }
 }

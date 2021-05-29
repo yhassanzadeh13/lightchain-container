@@ -4,6 +4,7 @@ import evm.Contract;
 import evm.ContractTransaction;
 import skipGraph.NodeInfo;
 import underlay.InterfaceType;
+import underlay.Underlay;
 import underlay.rmi.RMIUnderlay;
 import underlay.requests.lightchain.GetTokenRequest;
 import underlay.responses.IntegerResponse;
@@ -17,13 +18,13 @@ import static underlay.responses.IntegerResponse.IntegerResponseOf;
  * TransctSol()
  */
 class ContractCV extends CorrectnessVerifier {
-  RMIUnderlay RMIUnderlay;
+  Underlay underlay;
   Contract ct = new Contract();
   ContractTransaction tesq = new ContractTransaction();
 
   public ContractCV(LightChainNode owner) throws RemoteException {
     super(owner);
-    this.RMIUnderlay = owner.getUnderlay();
+    this.underlay = owner.getUnderlay();
   }
 
   /**
@@ -37,10 +38,9 @@ class ContractCV extends CorrectnessVerifier {
   public boolean isCorrect(Transaction t) {
     try {
       NodeInfo ndowner = owner.searchByNumID(t.getOwner());
-      IntegerResponse response = IntegerResponseOf(RMIUnderlay.sendMessage(
+      IntegerResponse response = IntegerResponseOf(underlay.sendMessage(
               new GetTokenRequest(),
-              ndowner.getAddress(),
-              InterfaceType.LightChainInterface));
+              ndowner.getAddress()));
       int token1 = response.result;
       tesq.setup();
       boolean value = tesq.TransctSol(token1, ct.contractName1, ct.functname1);

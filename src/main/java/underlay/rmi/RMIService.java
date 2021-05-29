@@ -12,6 +12,5 @@ import java.rmi.RemoteException;
  * to the local `RequestHandler` instance.
  */
 public interface RMIService extends Remote {
-    GenericResponse sendMessage(GenericRequest req, String targetAddress, InterfaceType interfaceType) throws RemoteException, FileNotFoundException;
     GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException;
 }
