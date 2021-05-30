@@ -83,11 +83,11 @@ public class SkipNode implements SkipNodeInterface {
      * able to function:
      *
      * @param introducer the node that helps in inserting the current node
-     * @param isInitial  Indicator that this node is an initial node in the
-     *                   skipGraph
+     * @param isInitial  Indicator that this node is an initial node in the skipGraph
+     *
      */
-
     public SkipNode(NodeConfig config, String introducer, boolean isInitial, Underlay underlay) {
+
         this(config.getPort(), config.getMaxLevels(), introducer, underlay);
         this.numID = config.getNumID();
         this.nameID = config.getNameID();
