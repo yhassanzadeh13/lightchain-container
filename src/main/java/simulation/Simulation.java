@@ -34,11 +34,9 @@ public class Simulation {
 					Underlay underlay = new RMIUnderlay(port);
 					if(i == 0){
 						node = new LightChainNode(params, port, Const.DUMMY_INTRODUCER, true, underlay);
-						underlay.setLightChainNode(node);
 						initialNode = node;
 					} else {
 						node = new LightChainNode(params, port, initialNode.getAddress(), false, underlay);
-						underlay.setLightChainNode(node);
 					}
 					nodes.add(node);
 				}catch(RemoteException re){
