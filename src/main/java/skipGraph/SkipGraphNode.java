@@ -7,7 +7,7 @@ import java.util.List;
 
 import remoteTest.PingLog;
 
-public interface SkipNodeInterface {
+public interface SkipGraphNode {
 
 	/*
 	 * This are the signatures of the methods we are calling using RMI for the

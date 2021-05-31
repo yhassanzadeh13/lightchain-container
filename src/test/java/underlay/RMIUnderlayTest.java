@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import signature.SignedBytes;
 import skipGraph.NodeInfo;
-import skipGraph.SkipNodeInterface;
+import skipGraph.SkipGraphNode;
 import underlay.requests.lightchain.GetPublicKeyRequest;
 import underlay.requests.lightchain.PoVRequest;
 import underlay.requests.skipgraph.GetLeftNodeRequest;
@@ -36,13 +36,13 @@ import static underlay.responses.SignatureResponse.SignatureResponseOf;
  * through mocking.
  */
 public class RMIUnderlayTest {
-  private SkipNodeInterface targetSkipNode;
+  private SkipGraphNode targetSkipNode;
   private RMIUnderlay underlay;
   private LightChainInterface targetLightChain;
 
   @BeforeEach
   public void init() {
-    targetSkipNode = mock(SkipNodeInterface.class);
+    targetSkipNode = mock(SkipGraphNode.class);
     targetLightChain = mock(LightChainInterface.class);
     underlay = new RMIUnderlay(Fixtures.PortFixture());
     underlay.setSkipNode(targetSkipNode);

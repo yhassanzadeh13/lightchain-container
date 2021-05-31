@@ -6,9 +6,9 @@ import java.security.PublicKey;
 import remoteTest.Configuration;
 import signature.SignedBytes;
 import simulation.SimLog;
-import skipGraph.SkipNodeInterface;
+import skipGraph.SkipGraphNode;
 
-public interface LightChainInterface extends SkipNodeInterface {
+public interface LightChainInterface extends SkipGraphNode {
 	public SignedBytes PoV(Transaction t) throws RemoteException;
 
 	public SignedBytes PoV(Block blk) throws RemoteException;

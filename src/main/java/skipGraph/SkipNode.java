@@ -5,7 +5,6 @@ import remoteTest.Configuration;
 import remoteTest.PingLog;
 import remoteTest.TestingLog;
 import underlay.Underlay;
-import underlay.rmi.RMIUnderlay;
 import underlay.requests.skipgraph.*;
 import underlay.responses.NodeInfoListResponse;
 import underlay.responses.NodeInfoResponse;
@@ -15,7 +14,6 @@ import util.Util;
 
 import java.io.*;
 import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -24,7 +22,7 @@ import static underlay.responses.IntegerResponse.IntegerResponseOf;
 import static underlay.responses.NodeInfoListResponse.NodeInfoListResponseOf;
 import static underlay.responses.NodeInfoResponse.NodeInfoResponseOf;
 
-public class SkipNode implements SkipNodeInterface {
+public class SkipNode implements SkipGraphNode {
 
     private static final long serialVersionUID = 1L;
 
@@ -299,7 +297,7 @@ public class SkipNode implements SkipNodeInterface {
      * @param target    the name ID of the inserted node.
      * @return Right neighbor if direction is RIGHT, and left neighbor if direction
      * is LEFT
-     * @see SkipNodeInterface#insertSearch(int, int, int, java.lang.String)
+     * @see SkipGraphNode#insertSearch(int, int, int, java.lang.String)
      */
     public NodeInfo insertSearch(int level, int direction, int nodeNumID, String target) throws RemoteException {
         try {
@@ -519,7 +517,7 @@ public class SkipNode implements SkipNodeInterface {
      *
      * @param searchTarget name ID which we are searching for
      * @return NodeInfo of target if found, or its closest node found
-     * @see SkipNodeInterface#searchByNameID(java.lang.String)
+     * @see SkipGraphNode#searchByNameID(java.lang.String)
      * <p>
      * TODO: currently, when a numID search for a value that does not exist in
      * the skip graph occurs, the returned result depends on the side from

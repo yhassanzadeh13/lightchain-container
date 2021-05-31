@@ -3,7 +3,7 @@ package remoteTest;
 import blockchain.LightChainInterface;
 import simulation.SimLog;
 import skipGraph.NodeInfo;
-import skipGraph.SkipNodeInterface;
+import skipGraph.SkipGraphNode;
 import underlay.rmi.RMIUnderlay;
 import underlay.requests.skipgraph.GetNodeRequest;
 import underlay.requests.skipgraph.GetNumIDRequest;
@@ -12,7 +12,6 @@ import underlay.responses.IntegerResponse;
 import underlay.responses.NodeInfoResponse;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.rmi.Naming;
@@ -606,7 +605,7 @@ public class RemoteAccessTool {
     boolean flag = false;
     for (NodeInfo cur : nodeList) {
       try {
-        SkipNodeInterface nd = getRMI(cur.getAddress());
+        SkipGraphNode nd = getRMI(cur.getAddress());
         //				curlookup = nd.getLookupTable();
         //				for(int i=0;i<curlookup.length;i++) {
         //					for(int j=0;j<curlookup[0].length;j++) {
@@ -743,7 +742,7 @@ public class RemoteAccessTool {
     }
 
     public void run() {
-      SkipNodeInterface curRMI = getRMI(pinger);
+      SkipGraphNode curRMI = getRMI(pinger);
       for (int i = 0; i < nodeList.size(); i++) {
         if (i == index) continue;
         PingLog current;
