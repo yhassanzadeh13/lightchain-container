@@ -31,13 +31,12 @@ public class Simulation {
 				try{
 					int port = rnd.nextInt(65535);
 					LightChainNode node;
+					Underlay underlay = new RMIUnderlay(port);
 					if(i == 0){
-						Underlay underlay = new RMIUnderlay(port);
 						node = new LightChainNode(params, port, Const.DUMMY_INTRODUCER, true, underlay);
 						underlay.setLightChainNode(node);
 						initialNode = node;
 					} else {
-						Underlay underlay = new RMIUnderlay(port);
 						node = new LightChainNode(params, port, initialNode.getAddress(), false, underlay);
 						underlay.setLightChainNode(node);
 					}
