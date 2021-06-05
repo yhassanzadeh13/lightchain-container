@@ -161,7 +161,7 @@ class LightChainNodeTest {
 					Util.log("Comparing " + latestBlock.getNumID() + " and " + testBlock.getNumID());
 				}
 				
-				if (i % 2 == 0) {
+				if (i % 2 == 1) {
 					int index = i % nodeList.size();
 					Block blk = new Block(latestBlock.getHash(), nodeList.get(index).getNumID(),
 							nodeList.get(index).getAddress(), latestBlock.getIndex(), params.getLevels());
