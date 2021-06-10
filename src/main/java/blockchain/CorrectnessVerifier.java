@@ -1,19 +1,27 @@
 package blockchain;
 
 import underlay.Underlay;
-import underlay.rmi.RMIUnderlay;
 
 import java.rmi.RemoteException;
 
+
 public abstract class CorrectnessVerifier {
-  protected LightChainNode owner;
-  Underlay underlay;
+    protected LightChainNode owner;
+    Underlay underlay;
 
-  /** Implements a abstract class isCorrect( ) which can be used ContractCV and LightchainCV */
-  public CorrectnessVerifier(LightChainNode owner) throws RemoteException {
-    this.owner = owner;
-    this.underlay = owner.getUnderlay();
-  }
+    // TODO: owner name misleading. Refactor needed. 
+    public CorrectnessVerifier(LightChainNode owner) {
+        this.owner = owner;
+        this.underlay = owner.getUnderlay();
+    }
 
-  public abstract boolean isCorrect(Transaction t) throws RemoteException;
+    /**
+     * isCorrect receives traction t and verifiers its correctness. The correctness of transaction implies its
+     * valid format.
+     *
+     * @param t transaction to be validated.
+     * @return true if transaction is correct and false otherwise.
+     * @throws RemoteException
+     */
+    public abstract boolean isCorrect(Transaction t) throws RemoteException;
 }
