@@ -54,3 +54,18 @@ sudo docker rm $(sudo docker ps -a -q)
 - Hassanzadeh-Nazarabadi, Yahya, Alptekin Küpçü, and Öznur Özkasap. "LightChain: Scalable DHT-Based Blockchain." IEEE Transactions on Parallel and Distributed Systems 32.10 (2021): 2582-2593. [(PDF)](https://ieeexplore.ieee.org/abstract/document/9397334)
 - Hassanzadeh-Nazarabadi, Yahya, et al. "A containerized proof-of-concept implementation of lightchain system." 2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC). IEEE, 2020. [(PDF)](https://arxiv.org/pdf/2007.13203.pdf)
 - Hassanzadeh-Nazarabadi, Yahya, Alptekin Küpçü, and Öznur Özkasap. "Lightchain: A dht-based blockchain for resource constrained environments." arXiv preprint arXiv:1904.00375 (2019). [(PDF)](https://arxiv.org/pdf/1904.00375.pdf)
+
+## Citation
+For citing this implementation in a publication please use: 
+
+_Hassanzadeh-Nazarabadi, Yahya, et al. "A containerized proof-of-concept implementation of lightchain system." 2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC). IEEE, 2020._
+```
+@inproceedings{hassanzadeh2020containerized,
+  title={A containerized proof-of-concept implementation of lightchain system},
+  author={Hassanzadeh-Nazarabadi, Yahya and Nayal, Nazir and Hamdan, Shadi Sameh and {\"O}zkasap, {\"O}znur and K{\"u}p{\c{c}}{\"u}, Alptekin},
+  booktitle={2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC)},
+  pages={1--2},
+  year={2020},
+  organization={IEEE}
+}
+```
