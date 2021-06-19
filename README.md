@@ -7,7 +7,7 @@ This repository implements a proof-of-concept version of [LightChain](https://ar
 ## Setting the parameters:
 Modify the simulation parameters in simulation.config, which looks something like this:
 ```
-nodeCount = 3 [//The](//the) number of nodes to spawn
+nodeCount = 3 // number of nodes to spawn
 iterations = 100 // The number of transactions to generate
 pace = 1 // The time between every transaction generated (in seconds)
 alpha = 10  // upper limit of attempts to search for validators
@@ -48,4 +48,24 @@ sudo docker cp simdocker:/app/ .
 If you have too many containers that are stopped and you want to remove them, the following command is useful:
 ```
 sudo docker rm $(sudo docker ps -a -q)
+```
+
+## Publications
+- Hassanzadeh-Nazarabadi, Yahya, Alptekin Küpçü, and Öznur Özkasap. "LightChain: Scalable DHT-Based Blockchain." IEEE Transactions on Parallel and Distributed Systems 32.10 (2021): 2582-2593. [(PDF)](https://ieeexplore.ieee.org/abstract/document/9397334)
+- Hassanzadeh-Nazarabadi, Yahya, Nazir Nayal, Shadi Sameh Hamdan, Öznur Özkasap, and Alptekin Küpçü. "A containerized proof-of-concept implementation of lightchain system." In 2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC), pp. 1-2. IEEE, 2020. [(PDF)](https://arxiv.org/pdf/2007.13203.pdf)
+- Hassanzadeh-Nazarabadi, Yahya, Alptekin Küpçü, and Öznur Özkasap. "Lightchain: A dht-based blockchain for resource constrained environments." arXiv preprint arXiv:1904.00375 (2019). [(PDF)](https://arxiv.org/pdf/1904.00375.pdf)
+
+## Citation
+For citing this implementation in a publication please use: 
+
+_Hassanzadeh-Nazarabadi, Yahya, Nazir Nayal, Shadi Sameh Hamdan, Öznur Özkasap, and Alptekin Küpçü. "A containerized proof-of-concept implementation of lightchain system." In 2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC), pp. 1-2. IEEE, 2020._
+```
+@inproceedings{hassanzadeh2020containerized,
+  title={A containerized proof-of-concept implementation of lightchain system},
+  author={Hassanzadeh-Nazarabadi, Yahya and Nayal, Nazir and Hamdan, Shadi Sameh and {\"O}zkasap, {\"O}znur and K{\"u}p{\c{c}}{\"u}, Alptekin},
+  booktitle={2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC)},
+  pages={1--2},
+  year={2020},
+  organization={IEEE}
+}
 ```
