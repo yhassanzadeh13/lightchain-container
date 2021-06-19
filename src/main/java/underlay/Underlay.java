@@ -36,19 +36,6 @@ public abstract class Underlay {
   public abstract GenericResponse sendMessage(GenericRequest req, String targetAddress)
       throws RemoteException, FileNotFoundException;
 
-
-  /**
-   * This is the method that is invoked when this underlay instance is sent a message
-   * by another underlay. The request is transmitted to the underlying LightChainNode
-   * or the SkipNode.
-   * @param req     The request
-   * @return        The response emitted
-   * @throws RemoteException
-   * @throws FileNotFoundException
-   */
-  public abstract GenericResponse answer(GenericRequest req)
-      throws RemoteException, FileNotFoundException;
-
   /**
    * Terminates the underlay.
    * @return true iff the termination was successful.
