@@ -1,15 +1,11 @@
 package simulation;
 
-import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import blockchain.LightChainNode;
-import blockchain.LightChainRMIInterface;
-import remoteTest.TestingLog;
 import skipGraph.NodeInfo;
-import util.Util;
 
 public class SimThread extends Thread {
 	Thread t;

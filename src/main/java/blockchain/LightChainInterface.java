@@ -4,12 +4,11 @@ import java.rmi.RemoteException;
 import java.security.PublicKey;
 
 import remoteTest.Configuration;
-import remoteTest.TestingLog;
 import signature.SignedBytes;
 import simulation.SimLog;
-import skipGraph.RMIInterface;
+import skipGraph.SkipGraphNode;
 
-public interface LightChainRMIInterface extends RMIInterface {
+public interface LightChainInterface extends SkipGraphNode {
 	public SignedBytes PoV(Transaction t) throws RemoteException;
 
 	public SignedBytes PoV(Block blk) throws RemoteException;

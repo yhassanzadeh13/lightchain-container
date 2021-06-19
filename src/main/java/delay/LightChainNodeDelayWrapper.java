@@ -1,21 +1,21 @@
 package delay;
 
 import blockchain.Block;
-import blockchain.LightChainRMIInterface;
+import blockchain.LightChainNode;
+import blockchain.LightChainInterface;
 import blockchain.Transaction;
 import remoteTest.Configuration;
 import signature.SignedBytes;
 import simulation.SimLog;
-import skipGraph.RMIInterface;
 
 import java.rmi.RemoteException;
 import java.security.PublicKey;
 
-public class LightChainNodeDelayWrapper extends SkipNodeDelayWrapper implements LightChainRMIInterface {
-    private LightChainRMIInterface innerNode;
+public class LightChainNodeDelayWrapper extends SkipNodeDelayWrapper implements LightChainInterface {
+    private LightChainNode innerNode;
     private int delay;
 
-    public LightChainNodeDelayWrapper(LightChainRMIInterface innerNode, String senderAddress, String receiverAddress) {
+    public LightChainNodeDelayWrapper(LightChainNode innerNode, String senderAddress, String receiverAddress) {
         super(innerNode, senderAddress, receiverAddress);
         this.innerNode = innerNode;
         delay = DelayTracker.getInstance().getDelay(senderAddress, receiverAddress);

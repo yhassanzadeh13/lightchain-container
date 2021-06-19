@@ -1,17 +1,15 @@
 package skipGraph;
 
-import java.rmi.RemoteException;
-
 public class NodeConfig {
 	
 	private int maxLevels;
-	private int RMIPort;
+	private int port;
 	private int numID;
 	private String nameID;
 	
-	public NodeConfig(int maxLevels, int RMIPort, int numID, String nameID) {
+	public NodeConfig(int maxLevels, int port, int numID, String nameID) {
 		this.maxLevels = maxLevels;
-		this.RMIPort = RMIPort;
+		this.port = port;
 		this.numID = numID;
 		this.nameID = nameID;
 	}
@@ -24,12 +22,12 @@ public class NodeConfig {
 		this.maxLevels = maxLevels;
 	}
 
-	public int getRMIPort() {
-		return RMIPort;
+	public int getPort() {
+		return port;
 	}
 
-	public void setRMIPort(int rMIPort) {
-		RMIPort = rMIPort;
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	public int getNumID() {

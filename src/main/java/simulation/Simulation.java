@@ -4,6 +4,8 @@ import blockchain.LightChainNode;
 import blockchain.Parameters;
 import skipGraph.LookupTable;
 import skipGraph.NodeInfo;
+import underlay.Underlay;
+import underlay.rmi.RMIUnderlay;
 import util.Const;
 import util.Util;
 
@@ -29,11 +31,12 @@ public class Simulation {
 				try{
 					int port = rnd.nextInt(65535);
 					LightChainNode node;
+					Underlay underlay = new RMIUnderlay(port);
 					if(i == 0){
-						node = new LightChainNode(params, port, Const.DUMMY_INTRODUCER, true);
+						node = new LightChainNode(params, port, Const.DUMMY_INTRODUCER, true, underlay);
 						initialNode = node;
 					} else {
-						node = new LightChainNode(params, port, initialNode.getAddress(), false);
+						node = new LightChainNode(params, port, initialNode.getAddress(), false, underlay);
 					}
 					nodes.add(node);
 				}catch(RemoteException re){

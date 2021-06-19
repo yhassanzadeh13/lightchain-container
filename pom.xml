@@ -6,7 +6,7 @@
     <artifactId>lightchain-container</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <build>
-        <sourceDirectory>src</sourceDirectory>
+        <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
                 <directory>src</directory>
@@ -52,11 +52,22 @@
             <version>5.6.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>3.9.0</version>
+        </dependency>
 		<dependency>
 			<groupId>com.github.semuxproject</groupId>
 			<artifactId>evm</artifactId>
 			<version>187074ab71</version>
 		</dependency>
+        <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>8.42</version>
+        </dependency>
+
     </dependencies>
     <repositories>
 		<repository>
