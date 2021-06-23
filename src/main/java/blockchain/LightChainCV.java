@@ -2,9 +2,6 @@ package blockchain;
 
 import underlay.requests.lightchain.GetModeRequest;
 
-import java.io.FileNotFoundException;
-import java.rmi.RemoteException;
-
 import static underlay.responses.BooleanResponse.BooleanResponseOf;
 
 /**
@@ -18,7 +15,7 @@ import static underlay.responses.BooleanResponse.BooleanResponseOf;
  */
 class LightChainCV extends CorrectnessVerifier {
     // TODO: owner is a confusing name, should be refactored.
-    public LightChainCV(LightChainNode owner) throws RemoteException {
+    public LightChainCV(LightChainNode owner)  {
         super(owner);
     }
 
@@ -31,26 +28,19 @@ class LightChainCV extends CorrectnessVerifier {
      */
     @Override
     public boolean isCorrect(Transaction t) {
-        try {
-            // updates view with the mode of transaction owner (i.e., malicious or honest)
-            if (!owner.view.hasModeEntry(t.getOwner())) {
-                boolean ownerMode = BooleanResponseOf(underlay.sendMessage(new GetModeRequest(), t.getAddress())).result;
-                owner.view.updateMode(t.getOwner(), ownerMode);
-                return ownerMode == owner.mode;
-            }
-            boolean ownerMode = owner.view.getMode(t.getOwner());
-            if (ownerMode != owner.mode) {
-                // TODO: apply logging best practice.
-                owner.logger.debug("Transaction not correct");
-            }
-            // by convention of prototyping, a transaction is correct if both owner and validator (i.e., this node)
-            // are of the same mode, otherwise it is incorrect.
+        // updates view with the mode of transaction owner (i.e., malicious or honest)
+        if (!owner.view.hasModeEntry(t.getOwner())) {
+            boolean ownerMode = BooleanResponseOf(underlay.sendMessage(new GetModeRequest(), t.getAddress())).result;
+            owner.view.updateMode(t.getOwner(), ownerMode);
             return ownerMode == owner.mode;
         }
-        catch (RemoteException | FileNotFoundException e) {
-            // TODO: check for exception best practice.
-            e.printStackTrace();
-            return false;
+        boolean ownerMode = owner.view.getMode(t.getOwner());
+        if (ownerMode != owner.mode) {
+            // TODO: apply logging best practice.
+            owner.logger.debug("Transaction not correct");
         }
+        // by convention of prototyping, a transaction is correct if both owner and validator (i.e., this node)
+        // are of the same mode, otherwise it is incorrect.
+        return ownerMode == owner.mode;
     }
 }

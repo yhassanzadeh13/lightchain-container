@@ -5,9 +5,6 @@ import skipGraph.SkipGraphNode;
 import underlay.requests.GenericRequest;
 import underlay.responses.GenericResponse;
 
-import java.io.FileNotFoundException;
-import java.rmi.RemoteException;
-
 public abstract class Underlay {
   /** The underlying SkipGraphNode instance. Is used for skipnode calls */
   protected SkipGraphNode skipNode;
@@ -30,11 +27,8 @@ public abstract class Underlay {
    * @param req             The request which will be invoked on the remote server
    * @param targetAddress   The address used to specify the target remote server
    * @return                The response returned by the remote server
-   * @throws RemoteException
-   * @throws FileNotFoundException
    */
-  public abstract GenericResponse sendMessage(GenericRequest req, String targetAddress)
-      throws RemoteException, FileNotFoundException;
+  public abstract GenericResponse sendMessage(GenericRequest req, String targetAddress);
 
   /**
    * Terminates the underlay.

@@ -8,7 +8,6 @@ import underlay.requests.skipgraph.*;
 import underlay.responses.*;
 
 import java.io.FileNotFoundException;
-import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,14 +25,13 @@ public class MockUnderlay extends Underlay {
 
 
     @Override
-    public GenericResponse sendMessage(GenericRequest req, String targetAddress) throws RemoteException, FileNotFoundException {
+    public GenericResponse sendMessage(GenericRequest req, String targetAddress) {
         try {
             return inventory.get(targetAddress).answer(req);
-        } catch (NullPointerException e) {
-            throw new RemoteException("target address not found");
-        } catch (Exception e){
-           throw e;         // TODO: gotta be some better fix than this
+        } catch (Exception e) {
+            System.out.println("target address not found");
         }
+        return null;
     }
 
     @Override
@@ -45,7 +43,7 @@ public class MockUnderlay extends Underlay {
      * This is the exact same method as in RMIUnderlay. I believe it would be better to refactor it as the
      * method of the generic Underlay, as I think all implementations of the Underlay will use the same method.
      */
-    public GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException {
+    public GenericResponse answer(GenericRequest req) throws FileNotFoundException {
         switch (req.type) {
             case PingRequest:
             {

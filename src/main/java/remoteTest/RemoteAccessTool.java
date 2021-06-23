@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.rmi.Naming;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -100,7 +99,7 @@ public class RemoteAccessTool {
             NodeInfo result = null;
             try {
               result = node.searchByNameID(name);
-            } catch (RemoteException e) {
+            } catch (Exception e) {
               e.printStackTrace();
               log("Remote Exception in query.");
             }
@@ -119,7 +118,7 @@ public class RemoteAccessTool {
             try {
               lst = node.searchByNumIDHelper(num, lst);
               result = lst.get(lst.size() - 1);
-            } catch (RemoteException e) {
+            } catch (Exception e) {
               e.printStackTrace();
               log("Remote Exception in query.");
             }
@@ -562,7 +561,7 @@ public class RemoteAccessTool {
                 new GetRightNodeRequest(0, curNode.getNumID()), curNode.getAddress()));
         curNode = response.result;
       }
-    } catch (RemoteException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       return;
     }
@@ -591,7 +590,7 @@ public class RemoteAccessTool {
         NodeInfo nodeInfo = nodeInfoResponse.result;
         nodeList.add(nodeInfo);
       }
-    } catch (RemoteException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       return;
     }
@@ -797,7 +796,7 @@ public class RemoteAccessTool {
         }
         SimLog lg = curRMI.startSim(count, pace);
         // TestingLogMap.put(nodeList.get(ind), lg);
-      } catch (RemoteException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       }
       latch.countDown();

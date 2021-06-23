@@ -14,6 +14,7 @@ import java.io.FileNotFoundException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.server.ExportException;
 
 /**
  * The underlay class is used to abstract away the RMI primitives used in the skipGraph and
@@ -64,7 +65,7 @@ public class RMIUnderlay extends Underlay {
     }
   }
 
-  public GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException {
+  public GenericResponse answer(GenericRequest req) throws FileNotFoundException {
     switch (req.type) {
       case PingRequest:
         {

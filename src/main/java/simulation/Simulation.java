@@ -12,7 +12,6 @@ import util.Util;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -39,7 +38,7 @@ public class Simulation {
 						node = new LightChainNode(params, port, initialNode.getAddress(), false, underlay);
 					}
 					nodes.add(node);
-				}catch(RemoteException re){
+				}catch(Exception e){
 					i--;
 					continue;
 				}
@@ -65,8 +64,6 @@ public class Simulation {
 			
 			processData(map, iterations);
 
-		} catch (RemoteException e) {
-			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}   }

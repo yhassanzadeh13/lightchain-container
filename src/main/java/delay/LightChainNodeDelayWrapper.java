@@ -8,7 +8,6 @@ import remoteTest.Configuration;
 import signature.SignedBytes;
 import simulation.SimLog;
 
-import java.rmi.RemoteException;
 import java.security.PublicKey;
 
 public class LightChainNodeDelayWrapper extends SkipNodeDelayWrapper implements LightChainInterface {
@@ -32,61 +31,61 @@ public class LightChainNodeDelayWrapper extends SkipNodeDelayWrapper implements 
     }
 
     @Override
-    public SignedBytes PoV(Transaction t) throws RemoteException {
+    public SignedBytes PoV(Transaction t) {
         before();
         return innerNode.PoV(t);
     }
 
     @Override
-    public SignedBytes PoV(Block blk) throws RemoteException {
+    public SignedBytes PoV(Block blk) {
         before();
         return innerNode.PoV(blk);
     }
 
     @Override
-    public boolean getMode() throws RemoteException {
+    public boolean getMode() {
         before();
         return innerNode.getMode();
     }
 
     @Override
-    public PublicKey getPublicKey() throws RemoteException {
+    public PublicKey getPublicKey() {
         before();
         return innerNode.getPublicKey();
     }
 
     @Override
-    public void removeFlagNode() throws RemoteException {
+    public void removeFlagNode() {
         before();
         innerNode.removeFlagNode();
     }
 
     @Override
-    public Configuration getConf() throws RemoteException {
+    public Configuration getConf() {
         before();
         return innerNode.getConf();
     }
 
     @Override
-    public SimLog startSim(int numTransactions, int pace) throws RemoteException {
+    public SimLog startSim(int numTransactions, int pace) {
         before();
         return innerNode.startSim(numTransactions, pace);
     }
 
     @Override
-    public Block insertGenesis() throws RemoteException {
+    public Block insertGenesis() {
         before();
         return innerNode.insertGenesis();
     }
 
     @Override
-    public void shutDown() throws RemoteException {
+    public void shutDown() {
         before();
         innerNode.shutDown();
     }
 
     @Override
-    public int getToken() throws RemoteException {
+    public int getToken() {
         before();
         return innerNode.getToken();
     }

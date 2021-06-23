@@ -28,15 +28,15 @@ public class MockUnderlayTest {
     static LightChainNode node1;
     static LightChainNode node2;
     private static Parameters params;
-    private static int port1 = 7000;
-    private static int port2 = 7001;
+    private static int port1 = 7050;
+    private static int port2 = 7051;
     private static String IP = Util.grabIP();
     private static String address1 = IP + ":" + port1;
     private static String address2 = IP + ":" + port2;
 
 
     @BeforeAll
-    static void init() throws RemoteException {
+    static void init() {
         params = new Parameters();
         mockUnderlay1 = new MockUnderlay(address1);
         node1 = new LightChainNode(params, port1, Const.DUMMY_INTRODUCER, true, mockUnderlay1);

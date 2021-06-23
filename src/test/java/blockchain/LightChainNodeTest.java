@@ -14,7 +14,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.util.BytecodeCompiler;
 import org.ethereum.vm.util.HexUtil;
 import java.math.BigInteger;
-import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +43,7 @@ class LightChainNodeTest {
 
 
 	@BeforeEach
-	void init() throws RemoteException {
+	void init() {
 		params = new Parameters();
 
 		RMIPort1 = port++;
@@ -104,7 +103,7 @@ class LightChainNodeTest {
 			assertEquals(blk.getNumID(), v.getLastBlk(node3.getNumID()), "view not updated correctly");
 			assertEquals(blk.getNumID(), v.getLastBlk(node4.getNumID()), "view not updated correctly");
 
-		} catch (RemoteException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -147,7 +146,7 @@ class LightChainNodeTest {
 			assertNotNull(newBlk, "block was not mining failed");
 			assertEquals(newBlk, lstBlk, "new block was not properly added");
 
-		} catch (RemoteException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -233,7 +232,7 @@ class LightChainNodeTest {
 
 			// TODO: Test with transactions of similar nameID
 
-		} catch (RemoteException | FileNotFoundException e) {
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 
@@ -332,7 +331,7 @@ class LightChainNodeTest {
             ContractCV cv = new ContractCV(node2);
             assertEquals(true, cv.isCorrect(t2), "working correctly");
 
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -358,7 +357,7 @@ class LightChainNodeTest {
             
             assertEquals(true, cv.isCorrect(t2), "working correctly");
 
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -421,7 +420,7 @@ class LightChainNodeTest {
 			assertEquals(node2.getPublicKey(), pk2, "wrong public key found");
 			assertEquals(node3.getPublicKey(), pk3, "wrong public key found");
 
-		} catch (RemoteException e) {
+		} catch (Exception e) {
 
 		}
 	}

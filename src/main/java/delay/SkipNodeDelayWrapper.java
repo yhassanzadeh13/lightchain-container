@@ -6,7 +6,6 @@ import skipGraph.SkipGraphNode;
 import skipGraph.SkipNode;
 
 import java.io.FileNotFoundException;
-import java.rmi.RemoteException;
 import java.util.List;
 
 public class SkipNodeDelayWrapper implements SkipGraphNode {
@@ -31,133 +30,133 @@ public class SkipNodeDelayWrapper implements SkipGraphNode {
 
 
     @Override
-    public NodeInfo getLeftNode(int level, int num) throws RemoteException {
+    public NodeInfo getLeftNode(int level, int num)  {
         before();
         return innerNode.getLeftNode(level, num);
     }
 
     @Override
-    public NodeInfo getRightNode(int level, int num) throws RemoteException {
+    public NodeInfo getRightNode(int level, int num) {
         before();
         return innerNode.getRightNode(level, num);
     }
 
     @Override
-    public String getNameID() throws RemoteException {
+    public String getNameID() {
         before();
         return innerNode.getNameID();
     }
 
     @Override
-    public String getAddress() throws RemoteException {
+    public String getAddress() {
         before();
         return innerNode.getAddress();
     }
 
     @Override
-    public String getLeftNameID(int level, int num) throws RemoteException {
+    public String getLeftNameID(int level, int num) {
         before();
         return innerNode.getLeftNameID(level, num);
     }
 
     @Override
-    public String getRightNameID(int level, int num) throws RemoteException {
+    public String getRightNameID(int level, int num) {
         before();
         return innerNode.getRightNameID(level,num);
     }
 
     @Override
-    public NodeInfo getNode(int num) throws RemoteException {
+    public NodeInfo getNode(int num) {
         before();
         return innerNode.getNode(num);
     }
 
     @Override
-    public int getNumID() throws RemoteException {
+    public int getNumID() {
         before();
         return innerNode.getNumID();
     }
 
     @Override
-    public int getLeftNumID(int level, int num) throws RemoteException {
+    public int getLeftNumID(int level, int num) {
         before();
         return innerNode.getLeftNumID(level, num);
     }
 
     @Override
-    public int getRightNumID(int level, int num) throws RemoteException {
+    public int getRightNumID(int level, int num) {
         before();
         return innerNode.getRightNumID(level, num);
     }
 
     @Override
-    public void delete(int num) throws RemoteException{
+    public void delete(int num) {
         before();
         innerNode.delete(num);
     }
 
     @Override
-    public boolean setLeftNode(int num, int level, NodeInfo newNode, NodeInfo oldNode) throws RemoteException {
+    public boolean setLeftNode(int num, int level, NodeInfo newNode, NodeInfo oldNode) {
         before();
         return innerNode.setLeftNode(num, level, newNode, oldNode);
     }
 
     @Override
-    public boolean setRightNode(int num, int level, NodeInfo newNode, NodeInfo oldNode) throws RemoteException {
+    public boolean setRightNode(int num, int level, NodeInfo newNode, NodeInfo oldNode) {
         before();
         return innerNode.setRightNode(num, level, newNode, oldNode);
     }
 
     @Override
-    public NodeInfo searchByNameID(String targetString) throws RemoteException {
+    public NodeInfo searchByNameID(String targetString) {
         before();
         return innerNode.searchByNameID(targetString);
     }
 
     @Override
-    public NodeInfo searchByNumID(int targetNum) throws RemoteException {
+    public NodeInfo searchByNumID(int targetNum) {
         before();
         return innerNode.searchByNumID(targetNum);
     }
 
     @Override
-    public List<NodeInfo> searchByNumIDHelper(int targetNum, List<NodeInfo> lst) throws RemoteException {
+    public List<NodeInfo> searchByNumIDHelper(int targetNum, List<NodeInfo> lst) {
         before();
         return innerNode.searchByNumIDHelper(targetNum, lst);
     }
 
     @Override
-    public List<NodeInfo> searchNumID(int numID, int searchTarget, int level, List<NodeInfo> lst) throws RemoteException {
+    public List<NodeInfo> searchNumID(int numID, int searchTarget, int level, List<NodeInfo> lst) {
         before();
         return innerNode.searchNumID(numID, searchTarget, level, lst);
     }
 
     @Override
-    public NodeInfo searchName(int numID, String searchTarget, int level, int direction) throws RemoteException {
+    public NodeInfo searchName(int numID, String searchTarget, int level, int direction) {
         before();
         return innerNode.searchName(numID, searchTarget, level, direction);
     }
 
     @Override
-    public NodeInfo insertSearch(int level, int direction, int num, String target) throws RemoteException, FileNotFoundException {
+    public NodeInfo insertSearch(int level, int direction, int num, String target) throws FileNotFoundException {
         before();
         return innerNode.insertSearch(level, direction, num, target);
     }
 
     @Override
-    public boolean ping() throws RemoteException {
+    public boolean ping() {
         before();
         return innerNode.ping();
     }
 
     @Override
-    public PingLog pingStart(NodeInfo node, int freq) throws RemoteException {
+    public PingLog pingStart(NodeInfo node, int freq) {
         before();
         return innerNode.pingStart(node, freq);
     }
 
     @Override
-    public PingLog retroPingStart(NodeInfo node, int freq) throws RemoteException {
+    public PingLog retroPingStart(NodeInfo node, int freq) {
         before();
         return innerNode.retroPingStart(node, freq);
     }
