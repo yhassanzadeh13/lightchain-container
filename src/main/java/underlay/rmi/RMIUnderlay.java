@@ -36,8 +36,16 @@ public class RMIUnderlay extends Underlay {
       initRMI();
       host = new JavaRMIHost(this);
       LocateRegistry.createRegistry(port).rebind("RMIImpl", host);
-    } catch (Exception e) {
-      System.err.println("[RMIUnderlay] Error while initializing at port " + port);
+    } catch (ExportException ee) {
+      try {
+        System.out.println("error during creation");
+        LocateRegistry.getRegistry(port).rebind("RMIImpl", host);
+      } catch (RemoteException re) {
+        System.err.println("[RMIUnderlay] Error while getting registry at port " + port);
+        re.printStackTrace();
+      }
+    } catch (RemoteException e){
+      System.err.println("[RMIUnderlay] Error while creating registry at port " + port);
       e.printStackTrace();
     }
     logger.info("Rebinding Successful");
