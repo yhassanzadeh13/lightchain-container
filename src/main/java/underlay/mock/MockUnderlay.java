@@ -32,6 +32,7 @@ public class MockUnderlay extends Underlay {
             return inventory.get(targetAddress).answer(req);
         } catch (Exception e) {
             System.out.println("target address not found");
+            e.printStackTrace();
         }
         return null;
     }
