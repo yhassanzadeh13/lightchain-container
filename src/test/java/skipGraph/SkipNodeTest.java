@@ -16,17 +16,17 @@ class SkipNodeTest {
     // TODO: add tests to cover more data nodes scenarios
 
     private static int port = 7000;
-    private int maxLevels = 3;
-    private int numID1 = 1;
-    private int numID2 = 2;
-    private int numID3 = 3;
-    private int numID4 = 15;
-    private int numID5 = 50;
-    private int numID6 = 100;
-    private String nameID1 = "011";
-    private String nameID2 = "001";
-    private String nameID3 = "100";
-    private String nameID4 = "111";
+    private final int maxLevels = 3;
+    private final int numID1 = 1;
+    private final int numID2 = 2;
+    private final int numID3 = 3;
+    private final int numID4 = 15;
+    private final int numID5 = 50;
+    private final int numID6 = 100;
+    private final String nameID1 = "011";
+    private final String nameID2 = "001";
+    private final String nameID3 = "100";
+    private final String nameID4 = "111";
     private NodeConfig initialConfig;
     private NodeConfig config1;
     private NodeConfig config2;
@@ -49,7 +49,7 @@ class SkipNodeTest {
 
 
     @Test
-    void testDelete() {
+    void testDeleteDataNode() {
 
         // test if deletion of data nodes is successful
 
