@@ -11,10 +11,6 @@ import underlay.requests.skipgraph.PingRequest;
 import underlay.responses.EmptyResponse;
 import util.Const;
 import util.Util;
-
-import java.io.FileNotFoundException;
-import java.rmi.RemoteException;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static underlay.responses.BooleanResponse.BooleanResponseOf;
 import static underlay.responses.PublicKeyResponse.PublicKeyResponseOf;
@@ -47,13 +43,11 @@ public class MockUnderlayTest {
 
     /**
      * When both underlays A and B are up and ready, their exchanged messages are delivered to each other intact.
-     * We test different messages to make sure all of them are sent correctly
+     * We test different messages of lightchain to make sure all of them are sent correctly
      * We compare the results with the actual values returned by the nodes themselves
-     * @throws RemoteException
-     * @throws FileNotFoundException
      */
     @Test
-    void sendMessageTest() throws RemoteException, FileNotFoundException {
+    void sendMessageLightChainTest() {
         assertEquals(node2.getMode(), (BooleanResponseOf(mockUnderlay1.sendMessage(new GetModeRequest(), address2)).result), "not equal");
         assertEquals(node1.getMode(), (BooleanResponseOf(mockUnderlay2.sendMessage(new GetModeRequest(), address1)).result), "not equal");
 
@@ -61,6 +55,20 @@ public class MockUnderlayTest {
         assertEquals(node1.getPublicKey(), (PublicKeyResponseOf(mockUnderlay2.sendMessage(new GetPublicKeyRequest(), address1)).result), "not equal");
 
         assertEquals(mockUnderlay1.sendMessage(new PingRequest(), address2).getClass(), EmptyResponse.class, "not equal");
+    }
+
+    /**
+     * When both underlays A and B are up and ready, their exchanged messages are delivered to each other intact.
+     * We test different messages of skipNode to make sure all of them are sent correctly
+     * We compare the results with the actual values returned by the nodes themselves
+     */
+    @Test
+    void sendMessageSkipNodeTest(){
+        assertEquals(node2.getPeer(), node1.searchByNumID(node2.getNumID()), "node 2 not found");
+        assertEquals(node1.getPeer(), node2.searchByNumID(node1.getNumID()), "node 1 not found");
+
+        assertEquals(node2.getPeer(), node1.searchByNameID(node2.getNameID()), "node 2 not found");
+        assertEquals(node1.getPeer(), node2.searchByNameID(node1.getNameID()), "node 1 not found");
     }
 
 
