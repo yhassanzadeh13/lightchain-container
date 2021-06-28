@@ -7,8 +7,6 @@ import underlay.Underlay;
 import underlay.requests.lightchain.GetTokenRequest;
 import underlay.responses.IntegerResponse;
 
-import java.rmi.RemoteException;
-
 import static underlay.responses.IntegerResponse.IntegerResponseOf;
 
 /**
@@ -20,7 +18,7 @@ class ContractCV extends CorrectnessVerifier {
     Contract ct = new Contract();
     ContractTransaction tesq = new ContractTransaction();
 
-    public ContractCV(LightChainNode owner) throws RemoteException {
+    public ContractCV(LightChainNode owner) {
         super(owner);
         this.underlay = owner.getUnderlay();
     }

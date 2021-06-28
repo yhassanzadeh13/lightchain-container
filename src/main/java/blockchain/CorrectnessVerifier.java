@@ -2,8 +2,6 @@ package blockchain;
 
 import underlay.Underlay;
 
-import java.rmi.RemoteException;
-
 
 public abstract class CorrectnessVerifier {
     protected LightChainNode owner;
@@ -21,7 +19,6 @@ public abstract class CorrectnessVerifier {
      *
      * @param t transaction to be validated.
      * @return true if transaction is correct and false otherwise.
-     * @throws RemoteException
      */
-    public abstract boolean isCorrect(Transaction t) throws RemoteException;
+    public abstract boolean isCorrect(Transaction t);
 }

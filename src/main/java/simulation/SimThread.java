@@ -1,6 +1,5 @@
 package simulation;
 
-import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
@@ -29,7 +28,7 @@ public class SimThread extends Thread {
 
 			SimLog lg = node.startSim(count, pace);
 			map.put(node.getPeer(), lg);
-		} catch (RemoteException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		latch.countDown();

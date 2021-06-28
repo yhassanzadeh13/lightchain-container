@@ -1,6 +1,5 @@
 package blockchain;
 
-import java.rmi.RemoteException;
 import java.security.PublicKey;
 
 import remoteTest.Configuration;
@@ -9,25 +8,25 @@ import simulation.SimLog;
 import skipGraph.SkipGraphNode;
 
 public interface LightChainInterface extends SkipGraphNode {
-	public SignedBytes PoV(Transaction t) throws RemoteException;
+	public SignedBytes PoV(Transaction t);
 
-	public SignedBytes PoV(Block blk) throws RemoteException;
+	public SignedBytes PoV(Block blk);
 
-	public boolean getMode() throws RemoteException;
+	public boolean getMode();
 
-	public PublicKey getPublicKey() throws RemoteException;
+	public PublicKey getPublicKey();
 
-	public void removeFlagNode() throws RemoteException;
+	public void removeFlagNode();
 
-	public Configuration getConf() throws RemoteException;
+	public Configuration getConf();
 
-	public SimLog startSim(int numTransactions, int pace) throws RemoteException;
+	public SimLog startSim(int numTransactions, int pace);
 
-	public Block insertGenesis() throws RemoteException;
+	public Block insertGenesis();
 
 	// To shut down all instances
-	public void shutDown() throws RemoteException;
+	public void shutDown();
 
 	// For token
-	public int getToken() throws RemoteException;
+	public int getToken();
 }

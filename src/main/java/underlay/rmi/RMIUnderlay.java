@@ -1,7 +1,10 @@
 package underlay.rmi;
 
+import blockchain.LightChainInterface;
+import blockchain.LightChainNode;
 import org.apache.log4j.Logger;
 import skipGraph.NodeInfo;
+import skipGraph.SkipGraphNode;
 import underlay.Underlay;
 import underlay.requests.GenericRequest;
 import underlay.requests.lightchain.GenericLightChainRequest;
@@ -14,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.server.ExportException;
 
 /**
  * The underlay class is used to abstract away the RMI primitives used in the skipGraph and
@@ -36,8 +40,16 @@ public class RMIUnderlay extends Underlay {
       initRMI();
       host = new JavaRMIHost(this);
       LocateRegistry.createRegistry(port).rebind("RMIImpl", host);
-    } catch (Exception e) {
-      System.err.println("[RMIUnderlay] Error while initializing at port " + port);
+    } catch (ExportException ee) {
+      try {
+        System.out.println("error during creation");
+        LocateRegistry.getRegistry(port).rebind("RMIImpl", host);
+      } catch (RemoteException re) {
+        System.err.println("[RMIUnderlay] Error while getting registry at port " + port);
+        re.printStackTrace();
+      }
+    } catch (RemoteException e){
+      System.err.println("[RMIUnderlay] Error while creating registry at port " + port);
       e.printStackTrace();
     }
     logger.info("Rebinding Successful");
@@ -56,83 +68,87 @@ public class RMIUnderlay extends Underlay {
     }
   }
 
-  public GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException {
+  public GenericResponse answer(GenericRequest req) throws FileNotFoundException{
+    return processRequest(this.skipNode, this.lightChainNode, req);
+  }
+
+  public static GenericResponse processRequest(SkipGraphNode skipGraphNode, LightChainInterface lightChainNode, GenericRequest req) throws FileNotFoundException {
     switch (req.type) {
       case PingRequest:
         {
-          skipNode.ping();
+          skipGraphNode.ping();
           return new EmptyResponse();
         }
       case SetLeftNodeRequest:
         {
           SetLeftNodeRequest r = (SetLeftNodeRequest) req;
-          return new BooleanResponse(skipNode.setLeftNode(r.num, r.level, r.newNode, r.oldNode));
+          return new BooleanResponse(skipGraphNode.setLeftNode(r.num, r.level, r.newNode, r.oldNode));
         }
       case SetRightNodeRequest:
         {
           SetRightNodeRequest r = (SetRightNodeRequest) req;
-          return new BooleanResponse(skipNode.setRightNode(r.num, r.level, r.newNode, r.oldNode));
+          return new BooleanResponse(skipGraphNode.setRightNode(r.num, r.level, r.newNode, r.oldNode));
         }
       case SearchByNumIDRequest:
         {
           SearchByNumIDRequest r = (SearchByNumIDRequest) req;
-          NodeInfo result = skipNode.searchByNumID(r.num);
+          NodeInfo result = skipGraphNode.searchByNumID(r.num);
           return new NodeInfoResponse(result);
         }
       case SearchByNameIDRequest:
         {
           SearchByNameIDRequest r = (SearchByNameIDRequest) req;
-          NodeInfo result = skipNode.searchByNameID(r.targetString);
+          NodeInfo result = skipGraphNode.searchByNameID(r.targetString);
           return new NodeInfoResponse(result);
         }
       case GetRightNodeRequest:
         {
           GetRightNodeRequest r = (GetRightNodeRequest) req;
-          NodeInfo result = skipNode.getRightNode(r.level, r.num);
+          NodeInfo result = skipGraphNode.getRightNode(r.level, r.num);
           return new NodeInfoResponse(result);
         }
       case GetLeftNodeRequest:
         {
           GetLeftNodeRequest r = (GetLeftNodeRequest) req;
-          NodeInfo result = skipNode.getLeftNode(r.level, r.num);
+          NodeInfo result = skipGraphNode.getLeftNode(r.level, r.num);
           return new NodeInfoResponse(result);
         }
       case GetNumIDRequest:
         {
-          return new IntegerResponse(skipNode.getNumID());
+          return new IntegerResponse(skipGraphNode.getNumID());
         }
       case InsertSearchRequest:
         {
           InsertSearchRequest r = (InsertSearchRequest) req;
-          NodeInfo result = skipNode.insertSearch(r.level, r.direction, r.num, r.target);
+          NodeInfo result = skipGraphNode.insertSearch(r.level, r.direction, r.num, r.target);
           return new NodeInfoResponse(result);
         }
       case SearchNumIDRequest:
         {
           SearchNumIDRequest r = (SearchNumIDRequest) req;
           return new NodeInfoListResponse(
-              skipNode.searchNumID(r.numID, r.searchTarget, r.level, r.lst));
+              skipGraphNode.searchNumID(r.numID, r.searchTarget, r.level, r.lst));
         }
       case SearchNameRequest:
         {
           SearchNameRequest r = (SearchNameRequest) req;
           return new NodeInfoResponse(
-              skipNode.searchName(r.numID, r.searchTarget, r.level, r.direction));
+              skipGraphNode.searchName(r.numID, r.searchTarget, r.level, r.direction));
         }
       case GetRightNumIDRequest:
         {
           GetRightNumIDRequest r = (GetRightNumIDRequest) req;
-          return new IntegerResponse(skipNode.getRightNumID(r.level, r.num));
+          return new IntegerResponse(skipGraphNode.getRightNumID(r.level, r.num));
         }
       case GetLeftNumIDRequest:
         {
           GetLeftNumIDRequest r = (GetLeftNumIDRequest) req;
-          return new IntegerResponse(skipNode.getLeftNumID(r.level, r.num));
+          return new IntegerResponse(skipGraphNode.getLeftNumID(r.level, r.num));
         }
       case GetNodeRequest:
         {
           GetNodeRequest r = (GetNodeRequest) req;
-          return new NodeInfoResponse(skipNode.getNode(r.num));
+          return new NodeInfoResponse(skipGraphNode.getNode(r.num));
         }
       case RemoveFlagNodeRequest:
       {

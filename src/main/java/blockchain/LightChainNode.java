@@ -20,7 +20,6 @@ import util.Const;
 import util.Util;
 
 import java.io.FileNotFoundException;
-import java.rmi.RemoteException;
 import java.security.PublicKey;
 import java.util.*;
 
@@ -56,7 +55,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    *     <p>TODO: add a specific LightChain config that includes Mode and remove it from params
    */
   public LightChainNode(Parameters params, int port, String introducer, boolean isInitial, Underlay underlay)
-      throws RemoteException {
+      {
     super(port, params.getLevels(), introducer, underlay);
     this.params = params;
     this.digitalSignature = new DigitalSignature();
@@ -133,7 +132,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * get such transactions, and if the number of found transactions is at least TX_MIN, the
    * transactions are casted into a block and the block is sent for validation.
    */
-  public Block mineAttempt() throws RemoteException {
+  public Block mineAttempt() {
     try {
       long startTotal = System.currentTimeMillis();
 
@@ -209,7 +208,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
   }
 
   /** removes the flag node pointing to the latest block that was inserted by this node */
-  public void removeFlagNode() throws RemoteException {
+  public void removeFlagNode() {
     super.delete(Const.ZERO_ID);
   }
 
@@ -263,7 +262,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param blk block to be inserted into the overlay
    */
   public void insertBlock(Block blk, String prevAddress)
-      throws FileNotFoundException, RemoteException {
+      throws FileNotFoundException {
     if (!prevAddress.equals(getAddress())) {
       underlay.sendMessage(
           new RemoveFlagNodeRequest(), prevAddress);
@@ -274,7 +273,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
   }
 
   /** inserts the first block to the blockchain */
-  public Block insertGenesis() throws RemoteException {
+  public Block insertGenesis() {
     StringBuilder st = new StringBuilder();
     for (int i = 0; i < params.getLevels(); i++) {
       st.append("0");
@@ -295,7 +294,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @return the latest block on the ledger
    *     <p>TODO: this should be refactored
    */
-  public Block getLatestBlock() throws RemoteException {
+  public Block getLatestBlock() {
     try {
       logger.debug("searching for flag");
 
@@ -331,7 +330,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @return the latest transaction for a particular owner
    */
   // TODO: this should be refactored, also check where it is being called
-  public Transaction getLatestTransaction(int numID) throws RemoteException {
+  public Transaction getLatestTransaction(int numID) {
 
     try {
       Transaction t = (Transaction) searchByNameID(numToName(numID));
@@ -411,7 +410,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param t transaction to be validated
    * @return true if transaction is valid, and false if it is not valid
    */
-  public boolean validateTransaction(Transaction t) throws RemoteException {
+  public boolean validateTransaction(Transaction t) {
 
     long start = System.currentTimeMillis();
 
@@ -486,7 +485,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param blk is block to be validated using proof of validation
    * @return signature of validator in case block is valid, or null if block is invalid
    */
-  public SignedBytes PoV(Block blk) throws RemoteException {
+  public SignedBytes PoV(Block blk) {
     try {
       updateView();
       boolean isAuth = isAuthenticated(blk);
@@ -519,7 +518,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param blk is block whose authenticity is to be checked
    * @return true if block is authentic, or false if block is unauthentic
    */
-  public boolean isAuthenticated(Block blk) throws RemoteException {
+  public boolean isAuthenticated(Block blk) {
     try {
 
       // concatenate the string values of transactions
@@ -564,7 +563,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param blk whose consistency is to be checked
    * @return true of block is consistent, or false if it is not consistent
    */
-  public boolean isConsistent(Block blk) throws RemoteException {
+  public boolean isConsistent(Block blk) {
     try {
 
       Block lstBlk = getLatestBlock();
@@ -619,7 +618,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param t transaction to be validated by proof of validation
    * @return signature of validators in case transaction is valid, or null if not
    */
-  public SignedBytes PoV(Transaction t) throws RemoteException {
+  public SignedBytes PoV(Transaction t) {
     boolean isAuth = false;
     boolean isCorrect = false;
     boolean isSound = false;
@@ -710,7 +709,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param t transaction whose authenticity is to be verified
    * @return true if transaction is authentic, or false if not.
    */
-  public boolean isAuthenticated(Transaction t) throws RemoteException {
+  public boolean isAuthenticated(Transaction t) {
     try {
 
       // generate the hash using the equation to check if it was generated correctly
@@ -775,7 +774,7 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
    * @param num numerical ID of node whose public key is to be retrieved
    * @return the public key of the node whose numerical ID was supplied
    */
-  public PublicKey getOwnerPublicKey(int num) throws RemoteException {
+  public PublicKey getOwnerPublicKey(int num) {
     try {
       // find owner from the network
       NodeInfo owner = searchByNumID(num);
@@ -800,17 +799,17 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
         return null;
       }
       return pk;
-    } catch (NumberFormatException | FileNotFoundException e) {
+    } catch (NumberFormatException e) {
       e.printStackTrace();
       return null;
     }
   }
 
-  public PublicKey getPublicKey() throws RemoteException {
+  public PublicKey getPublicKey() {
     return digitalSignature.getPublicKey();
   }
 
-  public List<Transaction> getTransactions() throws RemoteException {
+  public List<Transaction> getTransactions() {
     return transactions;
   }
 
@@ -826,14 +825,14 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
     return name;
   }
 
-  public boolean getMode() throws RemoteException {
+  public boolean getMode() {
     return mode;
   }
 
   // TODO: decide on keeping or removing those after refactoring simulation
   // approach
 
-  public SimLog startSim(int numTransactions, int pace) throws RemoteException {
+  public SimLog startSim(int numTransactions, int pace) {
 
     simLog = new SimLog(Const.HONEST);
     Random rnd = new Random();
@@ -856,12 +855,12 @@ public class LightChainNode extends SkipNode implements LightChainInterface {
     return simLog;
   }
 
-  public void shutDown() throws RemoteException {
+  public void shutDown() {
     System.exit(0);
   }
 
   @Override
-  public int getToken() throws RemoteException {
+  public int getToken() {
     return token;
   }
 }

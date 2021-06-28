@@ -1,6 +1,5 @@
 package underlay.rmi;
 
-import underlay.InterfaceType;
 import underlay.requests.GenericRequest;
 import underlay.responses.GenericResponse;
 
@@ -16,7 +15,7 @@ public class JavaRMIHost extends UnicastRemoteObject implements RMIService{
     this.underlay = underlay;
   }
 
-  public GenericResponse answer(GenericRequest req) throws RemoteException, FileNotFoundException {
+  public GenericResponse answer(GenericRequest req) throws FileNotFoundException {
     return underlay.answer(req);
   }
 }
