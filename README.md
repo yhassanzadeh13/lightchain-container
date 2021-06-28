@@ -57,15 +57,16 @@ sudo docker rm $(sudo docker ps -a -q)
 
 ## Citation
 For citing this implementation in a publication please use: 
-
-_Hassanzadeh-Nazarabadi, Yahya, Nazir Nayal, Shadi Sameh Hamdan, Öznur Özkasap, and Alptekin Küpçü. "A containerized proof-of-concept implementation of lightchain system." In 2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC), pp. 1-2. IEEE, 2020._
+_Hassanzadeh-Nazarabadi, Yahya, Alptekin Küpçü, and Öznur Özkasap. "LightChain: Scalable DHT-Based Blockchain." IEEE Transactions on Parallel and Distributed Systems 32.10 (2021): 2582-2593._
 ```
-@inproceedings{hassanzadeh2020containerized,
-  title={A containerized proof-of-concept implementation of lightchain system},
-  author={Hassanzadeh-Nazarabadi, Yahya and Nayal, Nazir and Hamdan, Shadi Sameh and {\"O}zkasap, {\"O}znur and K{\"u}p{\c{c}}{\"u}, Alptekin},
-  booktitle={2020 IEEE International Conference on Blockchain and Cryptocurrency (ICBC)},
-  pages={1--2},
-  year={2020},
-  organization={IEEE}
+@article{hassanzadeh2021lightchain,
+  title={LightChain: Scalable DHT-Based Blockchain},
+  author={Hassanzadeh-Nazarabadi, Yahya and K{\"u}p{\c{c}}{\"u}, Alptekin and {\"O}zkasap, {\"O}znur},
+  journal={IEEE Transactions on Parallel and Distributed Systems},
+  volume={32},
+  number={10},
+  pages={2582--2593},
+  year={2021},
+  publisher={IEEE}
 }
 ```
